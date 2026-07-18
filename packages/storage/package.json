@@ -1,0 +1,24 @@
+{
+  "name": "@outlet/storage",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "echo skip"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.620.0",
+    "@aws-sdk/s3-request-presigner": "^3.620.0"
+  },
+  "devDependencies": {
+    "@outlet/eslint-config": "workspace:*",
+    "@outlet/typescript-config": "workspace:*",
+    "@types/node": "^20.14.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.5.4"
+  }
+}

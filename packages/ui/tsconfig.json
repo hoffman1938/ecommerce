@@ -1,0 +1,4 @@
+{
+  "extends": "@outlet/typescript-config/react-library.json",
+  "include": ["src"]
+}

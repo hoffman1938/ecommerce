@@ -1,0 +1,5 @@
+{
+  "extends": "@outlet/typescript-config/library.json",
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

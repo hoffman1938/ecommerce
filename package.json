@@ -1,0 +1,35 @@
+{
+  "name": "outlet-marketplace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first outlet e-commerce marketplace MVP (modular monolith monorepo)",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "local:up": "docker compose up --build -d",
+    "local:down": "docker compose down",
+    "local:reset": "node infrastructure/scripts/local-reset.mjs",
+    "db:migrate": "pnpm --filter @outlet/database migrate:deploy",
+    "db:migrate:dev": "pnpm --filter @outlet/database migrate:dev",
+    "db:generate": "pnpm --filter @outlet/database generate",
+    "db:seed": "pnpm --filter @outlet/database build && pnpm --filter @outlet/database seed",
+    "build": "pnpm -r --filter \"./packages/**\" build && pnpm -r --filter \"./apps/**\" build",
+    "dev:api": "pnpm --filter @outlet/api dev",
+    "dev:worker": "pnpm --filter @outlet/worker dev",
+    "dev:storefront": "pnpm --filter @outlet/storefront dev",
+    "dev:admin": "pnpm --filter @outlet/admin dev",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
+    "test": "pnpm -r --filter \"!@outlet/e2e\" test",
+    "test:integration": "pnpm --filter @outlet/api test:integration",
+    "test:e2e": "pnpm --filter @outlet/e2e test"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
+}

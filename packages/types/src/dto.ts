@@ -1,0 +1,402 @@
+/**
+ * API response shapes shared between the backend and both frontends.
+ * All money values are integer minor units (e.g. cents).
+ */
+import type {
+  CampaignStatus,
+  OrderStatus,
+  PaymentStatus,
+  ProductStatus,
+  RefundStatus,
+  ReservationStatus,
+  ReturnItemCondition,
+  ReturnStatus,
+  ShipmentStatus,
+  ShippingMethod,
+  TargetGroup,
+  TaxClass,
+} from './enums';
+
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface ApiError {
+  statusCode: number;
+  message: string;
+  error?: string;
+  code?: string;
+}
+
+// --- Catalog ---------------------------------------------------------------
+
+export interface BrandDto {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  logoUrl: string | null;
+  isFeatured: boolean;
+}
+
+export interface CategoryDto {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  position: number;
+  children?: CategoryDto[];
+}
+
+export interface ProductImageDto {
+  id: string;
+  url: string;
+  altText: string | null;
+  position: number;
+  variantId: string | null;
+}
+
+export interface VariantDto {
+  id: string;
+  sku: string;
+  barcode: string | null;
+  size: string | null;
+  color: string | null;
+  priceMinor: number;
+  isEnabled: boolean;
+  availableQuantity: number;
+  attributes: Record<string, string> | null;
+}
+
+export interface ProductListItemDto {
+  id: string;
+  name: string;
+  slug: string;
+  brand: { id: string; name: string; slug: string };
+  category: { id: string; name: string; slug: string } | null;
+  targetGroup: TargetGroup;
+  originalPriceMinor: number;
+  currentPriceMinor: number;
+  discountPercent: number;
+  currencyCode: string;
+  imageUrl: string | null;
+  campaignId: string | null;
+  campaignSlug: string | null;
+  totalAvailable: number;
+  createdAt: string;
+}
+
+export interface ProductDetailDto extends ProductListItemDto {
+  shortDescription: string | null;
+  description: string | null;
+  materials: string | null;
+  careInstructions: string | null;
+  countryOfOrigin: string | null;
+  status: ProductStatus;
+  taxClass: TaxClass;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  images: ProductImageDto[];
+  variants: VariantDto[];
+}
+
+export interface CampaignDto {
+  id: string;
+  title: string;
+  slug: string;
+  shortDescription: string | null;
+  description: string | null;
+  coverImageUrl: string | null;
+  startsAt: string;
+  endsAt: string;
+  status: CampaignStatus;
+  position: number;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  productCount?: number;
+}
+
+// --- Cart ------------------------------------------------------------------
+
+export interface CartItemDto {
+  id: string;
+  variantId: string;
+  productId: string;
+  productSlug: string;
+  productName: string;
+  brandName: string;
+  sku: string;
+  size: string | null;
+  color: string | null;
+  imageUrl: string | null;
+  quantity: number;
+  unitPriceMinor: number;
+  originalUnitPriceMinor: number;
+  lineTotalMinor: number;
+  campaignId: string | null;
+  campaignTitle: string | null;
+  reservation: {
+    id: string;
+    status: ReservationStatus;
+    /** Authoritative server-side expiration timestamp (ISO 8601). */
+    expiresAt: string;
+    /** Seconds remaining at response time; frontend timers are cosmetic. */
+    secondsRemaining: number;
+  } | null;
+  isExpired: boolean;
+  message: string | null;
+}
+
+export interface CartDto {
+  id: string;
+  items: CartItemDto[];
+  currencyCode: string;
+  subtotalMinor: number;
+  discountMinor: number;
+  shippingMinor: number;
+  taxMinor: number;
+  totalMinor: number;
+  couponCode: string | null;
+  couponDiscountMinor: number;
+  itemCount: number;
+  messages: string[];
+}
+
+// --- Checkout / orders -----------------------------------------------------
+
+export interface AddressDto {
+  id?: string;
+  firstName: string;
+  lastName: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  region?: string | null;
+  postalCode: string;
+  countryCode: string;
+  phone?: string | null;
+}
+
+export interface ShippingMethodDto {
+  id: ShippingMethod;
+  label: string;
+  priceMinor: number;
+  estimatedDays: string;
+}
+
+export interface CheckoutQuoteDto {
+  cart: CartDto;
+  shippingMethods: ShippingMethodDto[];
+  /** Earliest reservation expiration across cart items (ISO 8601). */
+  reservationDeadline: string | null;
+}
+
+export interface PaymentSessionDto {
+  paymentId: string;
+  orderId: string;
+  provider: string;
+  /** URL the browser should navigate to in order to complete payment. */
+  redirectUrl: string;
+  amountMinor: number;
+  currencyCode: string;
+}
+
+export interface OrderItemDto {
+  id: string;
+  name: string;
+  sku: string;
+  brandName: string | null;
+  size: string | null;
+  color: string | null;
+  imageUrl: string | null;
+  quantity: number;
+  unitPriceMinor: number;
+  totalMinor: number;
+  returnedQuantity: number;
+  returnableQuantity: number;
+}
+
+export interface OrderDto {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  currencyCode: string;
+  subtotalMinor: number;
+  discountMinor: number;
+  shippingMinor: number;
+  taxMinor: number;
+  totalMinor: number;
+  couponCode: string | null;
+  email: string;
+  shippingAddress: AddressDto;
+  billingAddress: AddressDto;
+  shippingMethod: ShippingMethod;
+  items: OrderItemDto[];
+  payments: PaymentSummaryDto[];
+  shipments: ShipmentDto[];
+  placedAt: string;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+export interface PaymentSummaryDto {
+  id: string;
+  provider: string;
+  status: PaymentStatus;
+  amountMinor: number;
+  refundedAmountMinor: number;
+  failureReason: string | null;
+  createdAt: string;
+}
+
+export interface ShipmentDto {
+  id: string;
+  carrier: string | null;
+  trackingNumber: string | null;
+  status: ShipmentStatus;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+}
+
+export interface ReturnRequestDto {
+  id: string;
+  rmaNumber: string;
+  orderId: string;
+  orderNumber: string;
+  status: ReturnStatus;
+  reason: string;
+  customerNote: string | null;
+  items: ReturnItemDto[];
+  refunds: RefundDto[];
+  createdAt: string;
+}
+
+export interface ReturnItemDto {
+  id: string;
+  orderItemId: string;
+  name: string;
+  sku: string;
+  quantity: number;
+  receivedQuantity: number;
+  restockedQuantity: number;
+  condition: ReturnItemCondition;
+  reason: string | null;
+}
+
+export interface RefundDto {
+  id: string;
+  amountMinor: number;
+  status: RefundStatus;
+  reason: string | null;
+  createdAt: string;
+}
+
+// --- Account ---------------------------------------------------------------
+
+export interface UserDto {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  isEmailVerified: boolean;
+  createdAt: string;
+}
+
+export interface AdminUserDto extends UserDto {
+  roles: string[];
+  permissions: string[];
+}
+
+export interface NotificationPreferencesDto {
+  orderUpdates: boolean;
+  campaignAnnouncements: boolean;
+  newsletter: boolean;
+}
+
+// --- Admin -----------------------------------------------------------------
+
+export interface DashboardStatsDto {
+  revenueMinor: number;
+  orderCount: number;
+  averageOrderValueMinor: number;
+  lowStockCount: number;
+  activeReservationCount: number;
+  expiredReservationCount: number;
+  failedPaymentCount: number;
+  activeCampaignCount: number;
+  upcomingCampaignCount: number;
+  openReturnCount: number;
+  recentOrders: Array<{
+    id: string;
+    orderNumber: string;
+    email: string;
+    totalMinor: number;
+    status: OrderStatus;
+    placedAt: string;
+  }>;
+  salesByDay: Array<{ day: string; revenueMinor: number; orderCount: number }>;
+  salesByBrand: Array<{ brandName: string; revenueMinor: number; unitsSold: number }>;
+  salesByCampaign: Array<{ campaignTitle: string; revenueMinor: number; unitsSold: number }>;
+  lowStockVariants: Array<{
+    variantId: string;
+    sku: string;
+    productName: string;
+    availableQuantity: number;
+  }>;
+}
+
+export interface InventoryRowDto {
+  variantId: string;
+  sku: string;
+  productId: string;
+  productName: string;
+  brandName: string;
+  size: string | null;
+  color: string | null;
+  onHandQuantity: number;
+  reservedQuantity: number;
+  soldQuantity: number;
+  damagedQuantity: number;
+  returnedQuantity: number;
+  availableQuantity: number;
+  isEnabled: boolean;
+}
+
+export interface InventoryMovementDto {
+  id: string;
+  variantId: string;
+  sku: string;
+  type: string;
+  quantityChange: number;
+  previousOnHand: number;
+  newOnHand: number;
+  reason: string | null;
+  actorEmail: string | null;
+  createdAt: string;
+}
+
+export interface ReservationAdminDto {
+  id: string;
+  sku: string;
+  productName: string;
+  quantity: number;
+  status: ReservationStatus;
+  customerEmail: string | null;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface AuditLogDto {
+  id: string;
+  actorEmail: string | null;
+  actorType: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  reason: string | null;
+  createdAt: string;
+}

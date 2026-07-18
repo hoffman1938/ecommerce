@@ -1,0 +1,34 @@
+{
+  "name": "@outlet/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "generate": "prisma generate",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:status": "prisma migrate status",
+    "seed": "node dist/seed/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "echo skip"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.620.0",
+    "@prisma/client": "^5.19.0",
+    "argon2": "^0.40.3"
+  },
+  "devDependencies": {
+    "@outlet/eslint-config": "workspace:*",
+    "@outlet/typescript-config": "workspace:*",
+    "@types/node": "^20.14.0",
+    "eslint": "^8.57.0",
+    "prisma": "^5.19.0",
+    "typescript": "^5.5.4"
+  }
+}
