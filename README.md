@@ -1,3 +1,18 @@
+That is where you have stopped: Continue from here: Now the catalog module with SQL-backed filtering/sorting:
+Created 3 files
+Created
+catalog.service.ts
++321
+-0
+Created
+catalog.controller.ts
++37
+-0
+Created
+campaigns.controller.ts
++87
+-0
+Now checkout, orders, and payments — the money path:
 I updated the architecture so **all core functionality works locally without paid external services**, while keeping the frontend independent and compatible with a future Cloudflare Pages deployment. Cloudflare-specific services are treated as production adapters rather than local-development requirements.
 
 Act as a senior software architect, product manager, database engineer, security engineer, QA engineer, DevOps engineer, and full-stack developer.
