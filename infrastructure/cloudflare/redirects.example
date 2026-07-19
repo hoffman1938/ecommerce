@@ -1,0 +1,12 @@
+# Example Cloudflare Pages `_redirects` file.
+
+# Apex to www (storefront project)
+https://example.com/*  https://www.example.com/:splat  301
+
+# Legacy path examples
+/shop/*     /products/:splat   301
+/sale       /campaigns         301
+
+# SPA fallback — ONLY if an app is ever exported fully statically
+# (the Next.js Pages adapter handles routing itself; do not add this by default)
+# /*  /index.html  200

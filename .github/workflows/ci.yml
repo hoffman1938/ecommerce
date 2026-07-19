@@ -1,0 +1,152 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: postgresql://outlet:outlet@localhost:5432/outlet_test
+  TEST_DATABASE_URL: postgresql://outlet:outlet@localhost:5432/outlet_test
+  REDIS_URL: redis://localhost:6379
+
+jobs:
+  quality:
+    name: Format, lint, typecheck, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm db:generate
+      - name: Build shared packages
+        run: pnpm -r --filter "./packages/**" build
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - name: Unit tests
+        run: pnpm test
+
+  integration:
+    name: Integration tests (reservations, payments, concurrency)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: outlet
+          POSTGRES_PASSWORD: outlet
+          POSTGRES_DB: outlet_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U outlet" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm -r --filter "./packages/**" build
+      - name: Migration validation (deploy against a clean database)
+        run: pnpm db:migrate
+      - name: Integration tests
+        run: pnpm test:integration
+
+  build-api:
+    name: Production build — API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm -r --filter "./packages/**" build
+      - run: pnpm --filter @outlet/api build
+
+  build-worker:
+    name: Production build — worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm -r --filter "./packages/**" build
+      - run: pnpm --filter @outlet/worker build
+
+  build-storefront:
+    name: Production build — storefront (+ Pages compatibility)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm -r --filter "./packages/**" build
+      - run: pnpm --filter @outlet/storefront build
+      - name: Cloudflare Pages compatibility check
+        working-directory: apps/storefront
+        # Non-blocking while the official adapter evolves; surfaces breakage early.
+        run: npx --yes @cloudflare/next-on-pages@latest || echo "::warning::next-on-pages build failed — review before a Pages deployment"
+
+  build-admin:
+    name: Production build — admin (+ Pages compatibility)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm -r --filter "./packages/**" build
+      - run: pnpm --filter @outlet/admin build
+      - name: Cloudflare Pages compatibility check
+        working-directory: apps/admin
+        run: npx --yes @cloudflare/next-on-pages@latest || echo "::warning::next-on-pages build failed — review before a Pages deployment"
+
+# No automatic deployment — the MVP is local-first by design.

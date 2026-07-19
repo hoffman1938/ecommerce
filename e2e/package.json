@@ -1,0 +1,19 @@
+{
+  "name": "@outlet/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "install-browsers": "playwright install chromium",
+    "lint": "echo skip",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "echo skip"
+  },
+  "devDependencies": {
+    "@outlet/typescript-config": "workspace:*",
+    "@playwright/test": "^1.45.3",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.4"
+  }
+}
