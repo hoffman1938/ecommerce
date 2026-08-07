@@ -3,9 +3,8 @@ set -euo pipefail
 
 cd /workspaces/ecommerce
 
-echo "Enable corepack and activate pnpm"
-corepack enable
-corepack prepare pnpm@latest --activate
+echo "Prepare and activate corepack with pinned pnpm version"
+corepack prepare pnpm@9.15.0 --activate
 
 echo "Install dependencies"
 pnpm install --frozen-lockfile
