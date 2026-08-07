@@ -11,5 +11,6 @@
     "dbaeumer.vscode-eslint",
     "ms-azuretools.vscode-docker"
   ],
-  "remoteUser": "node"
+  "remoteUser": "node",
+  "postCreateCommand": "sudo corepack enable"
 }
