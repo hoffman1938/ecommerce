@@ -2,7 +2,6 @@
   "name": "ecommerce Codespace",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:0-20",
   "workspaceFolder": "/workspaces/ecommerce",
-  "shutdownAction": "stopCompose",
   "forwardPorts": [3000, 3001, 4000, 9001, 8025, 5432, 6379],
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:1": {}
