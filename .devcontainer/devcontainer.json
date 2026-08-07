@@ -1,10 +1,9 @@
 {
   "name": "ecommerce Codespace",
-  "dockerComposeFile": ["docker-compose.codespace.yml"],
-  "service": "codespace",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-20",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
-  "postCreateCommand": "corepack enable && pnpm install --frozen-lockfile",
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@latest --activate && pnpm install --frozen-lockfile",
   "postStartCommand": "echo 'Start services with: docker compose -f docker-compose.codespace.yml up -d'",
   "forwardPorts": [3000, 3001, 4000, 9001, 8025, 5432, 6379],
   "features": {
