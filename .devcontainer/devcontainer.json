@@ -1,11 +1,8 @@
 {
   "name": "ecommerce Codespace",
-  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.codespace.yml"],
-  "service": "codespace",
-  "workspaceFolder": "/workspace",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-20",
+  "workspaceFolder": "/workspaces/ecommerce",
   "shutdownAction": "stopCompose",
-  "postCreateCommand": "corepack enable && pnpm install --frozen-lockfile",
-  "postStartCommand": "pnpm local:up --silent || echo 'pnpm local:up failed; start services manually in a Codespace terminal'",
   "forwardPorts": [3000, 3001, 4000, 9001, 8025, 5432, 6379],
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:1": {}
