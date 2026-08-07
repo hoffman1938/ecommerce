@@ -6,8 +6,3 @@ services:
       - ..:/workspace:cached
     working_dir: /workspace
     command: sleep infinity
-    depends_on:
-      - postgres
-      - redis
-      - minio
-      - mailpit
