@@ -1,7 +1,13 @@
 {
   "extends": "@outlet/typescript-config/nestjs.json",
   "compilerOptions": {
-    "outDir": "dist"
+    "baseUrl": ".",
+    "outDir": "dist",
+    // Applications are never imported as libraries. Emitting declarations here
+    // forces TypeScript to name Prisma's runtime types, which pnpm's isolated
+    // node_modules keeps unreachable from this package (TS2742).
+    "declaration": false,
+    "declarationMap": false
   },
   "include": ["src", "test"]
 }
