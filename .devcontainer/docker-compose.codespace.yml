@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  codespace:
+    image: mcr.microsoft.com/devcontainers/javascript-node:0-20
+    volumes:
+      - ..:/workspace:cached
+    working_dir: /workspace
+    command: sleep infinity
+    depends_on:
+      - postgres
+      - redis
+      - minio
+      - mailpit
