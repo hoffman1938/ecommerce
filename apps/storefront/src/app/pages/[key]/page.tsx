@@ -17,17 +17,33 @@ const KNOWN_KEYS = new Set([
   'contact_info',
 ]);
 
+type ContentPage = { key: string; title: string; body: string };
+
+export async function generateMetadata({ params }: { params: { key: string } }) {
+  const page = await serverGet<ContentPage>(`/content/pages/${params.key}`);
+  return { title: page?.title ?? 'Page' };
+}
+
 export default async function ContentPage({ params }: { params: { key: string } }) {
   if (!KNOWN_KEYS.has(params.key)) notFound();
-  const page = await serverGet<{ key: string; title: string; body: string }>(
-    `/content/pages/${params.key}`,
-  );
+  const page = await serverGet<ContentPage>(`/content/pages/${params.key}`);
   if (!page) notFound();
 
   return (
-    <article className="mx-auto max-w-2xl py-6">
-      <h1 className="text-3xl font-bold">{page.title}</h1>
-      <div className="prose mt-6 whitespace-pre-line text-gray-700">{page.body}</div>
-    </article>
+    <div className="container-page py-10 lg:py-16">
+      {/* Measured column: long-form copy should not run the full page width. */}
+      <article className="mx-auto max-w-prose">
+        <h1 className="text-3xl font-bold tracking-[-0.025em] text-ink-950 lg:text-4xl">
+          {page.title}
+        </h1>
+        <div className="mt-8 space-y-4 border-t border-ink-200 pt-8 text-base leading-relaxed text-ink-700">
+          {page.body.split('\n\n').map((paragraph, i) => (
+            <p key={i} className="whitespace-pre-line">
+              {paragraph}
+            </p>
+          ))}
+        </div>
+      </article>
+    </div>
   );
 }

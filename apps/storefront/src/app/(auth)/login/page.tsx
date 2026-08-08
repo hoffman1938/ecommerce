@@ -7,6 +7,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginInput } from '@outlet/validation';
 import { useQueryClient } from '@tanstack/react-query';
+import { Alert, Button, TextField } from '@outlet/ui';
+import { useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
 function LoginInner() {
@@ -28,52 +30,59 @@ function LoginInner() {
   };
 
   return (
-    <div className="mx-auto max-w-sm py-10">
-      <h1 className="text-2xl font-bold">Sign in</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Your cart and its reservation timers carry over when you sign in.
+    <div>
+      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">Sign in</h1>
+      <p className="mt-1.5 text-sm text-ink-600">
+        Your bag and its reservation timers carry over when you sign in.
       </p>
+
       {error ? (
-        <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+        <div className="mt-6">
+          <Alert tone="error">{error}</Alert>
+        </div>
       ) : null}
-      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">Email</span>
-          <input
-            type="email"
-            autoComplete="email"
-            {...form.register('email')}
-            className="w-full rounded-md border border-gray-300 px-3 py-2"
-          />
-          {form.formState.errors.email ? (
-            <span className="text-xs text-red-600">{form.formState.errors.email.message}</span>
-          ) : null}
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">Password</span>
-          <input
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-7 space-y-4" noValidate>
+        <TextField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          error={form.formState.errors.email?.message}
+          {...form.register('email')}
+        />
+        <div>
+          <TextField
+            id="password"
+            label="Password"
             type="password"
             autoComplete="current-password"
+            error={form.formState.errors.password?.message}
             {...form.register('password')}
-            className="w-full rounded-md border border-gray-300 px-3 py-2"
           />
-        </label>
-        <button
-          type="submit"
-          disabled={form.formState.isSubmitting}
-          className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 disabled:bg-gray-400"
-        >
+          <div className="mt-2 text-right">
+            <Link
+              href="/forgot-password"
+              className="text-xs text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
+            >
+              Forgot your password?
+            </Link>
+          </div>
+        </div>
+        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}>
           Sign in
-        </button>
+        </Button>
       </form>
-      <div className="mt-4 flex justify-between text-sm">
-        <Link href="/forgot-password" className="text-gray-500 hover:underline">
-          Forgot password?
-        </Link>
-        <Link href="/register" className="font-medium hover:underline">
+
+      <p className="mt-8 border-t border-ink-200 pt-6 text-sm text-ink-600">
+        New here?{' '}
+        <Link
+          href="/register"
+          className="font-medium text-ink-950 underline underline-offset-2 decoration-ink-300 transition-colors hover:decoration-ink-950"
+        >
           Create an account
         </Link>
-      </div>
+      </p>
     </div>
   );
 }

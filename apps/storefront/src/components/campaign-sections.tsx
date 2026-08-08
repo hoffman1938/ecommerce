@@ -11,18 +11,22 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { CampaignDto, ProductListItemDto } from '@outlet/types';
+import { EmptyState, Skeleton } from '@outlet/ui';
 import { api } from '@/lib/api';
 import { CampaignCard } from './campaign-card';
-import { ProductGrid } from './product-card';
+import { ProductGrid, ProductGridSkeleton } from './product-card';
 import { Countdown } from './countdown';
+import { Section, SectionHeader } from './section';
 
 type CampaignDetailDto = CampaignDto & { products: ProductListItemDto[] };
 
-function CardSkeleton() {
+const CAMPAIGN_GRID = 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5';
+
+function CampaignGridSkeleton({ count = 3 }: { count?: number }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="h-44 animate-pulse rounded-lg bg-gray-100" />
+    <div className={CAMPAIGN_GRID} aria-hidden="true">
+      {Array.from({ length: count }).map((_, i) => (
+        <Skeleton key={i} className="aspect-[16/10] w-full sm:aspect-[3/2] lg:aspect-[16/10]" />
       ))}
     </div>
   );
@@ -41,38 +45,49 @@ export function CampaignSections({ limit }: { limit?: number }) {
   const cut = (list: CampaignDto[] | undefined) =>
     limit ? (list ?? []).slice(0, limit) : (list ?? []);
 
+  const activeItems = cut(active.data);
+  const upcomingItems = cut(upcoming.data);
+
   return (
-    <div className="space-y-10">
-      <section>
-        <h2 className="mb-4 text-xl font-bold">Active campaigns</h2>
+    <>
+      <Section>
+        <SectionHeader
+          title="Campaigns live now"
+          description="Short windows, limited stock. Prices return to normal when the timer ends."
+          action={limit ? { href: '/campaigns', label: 'All campaigns' } : undefined}
+        />
         {active.isPending ? (
-          <CardSkeleton />
-        ) : cut(active.data).length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {cut(active.data).map((c) => (
+          <CampaignGridSkeleton count={limit ?? 3} />
+        ) : activeItems.length > 0 ? (
+          <div className={CAMPAIGN_GRID}>
+            {activeItems.map((c) => (
               <CampaignCard key={c.id} campaign={c} />
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500">No campaigns are running right now.</p>
+          <p className="border-t border-ink-200 py-12 text-center text-sm text-ink-500">
+            No campaigns are running right now.
+          </p>
         )}
-      </section>
+      </Section>
 
-      <section>
-        <h2 className="mb-4 text-xl font-bold">Upcoming campaigns</h2>
+      <Section>
+        <SectionHeader title="Coming soon" />
         {upcoming.isPending ? (
-          <CardSkeleton />
-        ) : cut(upcoming.data).length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {cut(upcoming.data).map((c) => (
+          <CampaignGridSkeleton count={limit ?? 2} />
+        ) : upcomingItems.length > 0 ? (
+          <div className={CAMPAIGN_GRID}>
+            {upcomingItems.map((c) => (
               <CampaignCard key={c.id} campaign={c} upcoming />
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500">Nothing scheduled yet — check back soon.</p>
+          <p className="border-t border-ink-200 py-12 text-center text-sm text-ink-500">
+            Nothing scheduled yet — check back soon.
+          </p>
         )}
-      </section>
-    </div>
+      </Section>
+    </>
   );
 }
 
@@ -85,12 +100,11 @@ export function CampaignDetail({ slug }: { slug: string }) {
 
   if (isPending) {
     return (
-      <div>
-        <div className="mb-6 h-56 animate-pulse rounded-xl bg-gray-100" />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="aspect-[3/4] animate-pulse rounded-lg bg-gray-100" />
-          ))}
+      <div className="container-page py-8">
+        <Skeleton className="h-56 w-full rounded lg:h-72" />
+        <Skeleton className="mt-8 h-6 w-40" />
+        <div className="mt-6">
+          <ProductGridSkeleton count={8} />
         </div>
       </div>
     );
@@ -98,54 +112,72 @@ export function CampaignDetail({ slug }: { slug: string }) {
 
   if (isError || !campaign) {
     return (
-      <p className="py-16 text-center text-sm text-gray-500">
-        This campaign could not be found.
-      </p>
+      <div className="container-page">
+        <EmptyState
+          title="Campaign not found"
+          description="This campaign may have ended or the link is no longer valid."
+        />
+      </div>
     );
   }
 
   const isUpcoming = new Date(campaign.startsAt) > new Date();
 
   return (
-    <div>
-      <div className="relative mb-6 overflow-hidden rounded-xl bg-gray-900">
-        {campaign.coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={campaign.coverImageUrl}
-            alt={campaign.title}
-            className="h-56 w-full object-cover opacity-70"
-          />
-        ) : (
-          <div className="h-56" />
-        )}
-        <div className="absolute inset-0 flex flex-col justify-center px-8 text-white">
-          <h1 className="text-3xl font-black">{campaign.title}</h1>
-          {campaign.shortDescription ? (
-            <p className="mt-1 max-w-lg text-gray-200">{campaign.shortDescription}</p>
+    <div className="container-page py-6 lg:py-8">
+      <div className="relative overflow-hidden rounded bg-ink-900">
+        <div className="relative aspect-[16/9] sm:aspect-[21/8] lg:aspect-[3/1]">
+          {campaign.coverImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={campaign.coverImageUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           ) : null}
-          <p className="mt-3 text-sm">
-            {isUpcoming ? (
-              <>Starts: {new Date(campaign.startsAt).toLocaleString()}</>
-            ) : (
-              <>
-                Ends in <Countdown expiresAt={campaign.endsAt} className="text-white" />
-              </>
-            )}
-          </p>
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-ink-950/45 to-ink-950/10"
+            aria-hidden="true"
+          />
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 lg:p-9">
+            <p className="text-2xs font-bold uppercase tracking-[0.09em] text-white/70">
+              {isUpcoming ? 'Upcoming campaign' : 'Live campaign'}
+            </p>
+            <h1 className="mt-2 text-2xl font-extrabold tracking-[-0.025em] text-white sm:text-3xl lg:text-4xl">
+              {campaign.title}
+            </h1>
+            {campaign.shortDescription ? (
+              <p className="mt-2 max-w-xl text-sm text-white/80 sm:text-base">
+                {campaign.shortDescription}
+              </p>
+            ) : null}
+            <p className="mt-4 text-sm text-white/85">
+              {isUpcoming ? (
+                <>Opens {new Date(campaign.startsAt).toLocaleString()}</>
+              ) : (
+                <>
+                  Ends in <Countdown expiresAt={campaign.endsAt} tone="inverse" />
+                </>
+              )}
+            </p>
+          </div>
         </div>
       </div>
 
       {isUpcoming ? (
-        <p className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
-          This campaign has not started yet. Prices shown below are the campaign prices that will
-          apply once it goes live.
+        <p className="mt-6 border-l-2 border-ink-950 bg-ink-25 px-4 py-3 text-sm text-ink-700">
+          This campaign has not started yet. The prices below are the campaign prices that will
+          apply once it opens.
         </p>
       ) : null}
 
-      <div className="mt-6">
-        <ProductGrid products={campaign.products} />
-      </div>
+      <Section className="mt-8 lg:mt-10">
+        <SectionHeader
+          title={isUpcoming ? 'What will be included' : 'In this campaign'}
+          description={`${campaign.products.length} ${campaign.products.length === 1 ? 'product' : 'products'}`}
+        />
+        <ProductGrid products={campaign.products} priorityCount={4} />
+      </Section>
     </div>
   );
 }

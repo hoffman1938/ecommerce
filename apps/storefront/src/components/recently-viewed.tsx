@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import type { ProductDetailDto } from '@outlet/types';
 import { api } from '@/lib/api';
 import { rememberViewedProduct, recentlyViewedSlugs } from '@/lib/hooks';
-import type { ProductDetailDto } from '@outlet/types';
-import { formatMoney } from '@outlet/ui';
+import { ProductGrid } from './product-card';
+import { Section, SectionHeader } from './section';
 
 /** Records a product view in localStorage (client-side only). */
 export function TrackProductView({ slug }: { slug: string }) {
@@ -29,27 +29,13 @@ export function RecentlyViewed({ excludeSlug }: { excludeSlug?: string }) {
   }, [excludeSlug]);
 
   if (products.length === 0) return null;
+
   return (
-    <section className="mt-12">
-      <h2 className="mb-4 text-xl font-bold">Recently viewed</h2>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {products.map((p) => (
-          <Link
-            key={p.id}
-            href={`/products/${p.slug}`}
-            className="rounded-lg border border-gray-200 bg-white p-3 hover:shadow-md"
-          >
-            {p.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.imageUrl} alt={p.name} className="aspect-square w-full rounded object-cover" />
-            ) : null}
-            <p className="mt-2 line-clamp-1 text-sm font-medium">{p.name}</p>
-            <p className="text-sm font-bold text-red-600">
-              {formatMoney(p.currentPriceMinor, p.currencyCode)}
-            </p>
-          </Link>
-        ))}
-      </div>
-    </section>
+    <Section>
+      <SectionHeader title="Recently viewed" />
+      {/* Reuses the catalog tile so a product looks identical wherever it
+          appears, rather than having a second, smaller card style. */}
+      <ProductGrid products={products} />
+    </Section>
   );
 }

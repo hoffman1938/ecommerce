@@ -45,7 +45,7 @@ function MockPaymentInner() {
   }
 
   return (
-    <div className="mx-auto max-w-md py-10">
+    <div className="mx-auto max-w-md px-4 py-12 sm:px-6">
       <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
           Mock payment provider · local test mode

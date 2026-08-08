@@ -106,7 +106,11 @@ export default function CheckoutPage() {
   };
 
   if (!quote) {
-    return <p className="py-10 text-center text-gray-500">{error ?? 'Preparing checkout…'}</p>;
+    return (
+      <div className="container-page py-16 text-center text-sm text-ink-500">
+        {error ?? 'Preparing checkout…'}
+      </div>
+    );
   }
 
   const field = (
@@ -132,17 +136,25 @@ export default function CheckoutPage() {
   );
 
   return (
-    <div>
-      <h1 className="mb-2 text-2xl font-bold">Checkout</h1>
-      {quote.reservationDeadline ? (
-        <p className="mb-6 text-sm text-gray-600">
-          Your items stay reserved for{' '}
-          <Countdown expiresAt={quote.reservationDeadline} onExpired={() => router.push('/cart')} />
-        </p>
-      ) : null}
+    <div className="container-page py-8 lg:py-12">
+      <div className="border-b border-ink-200 pb-5">
+        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">Checkout</h1>
+        {quote.reservationDeadline ? (
+          <p className="mt-1.5 text-sm text-ink-600">
+            Your items stay reserved for{' '}
+            <Countdown
+              expiresAt={quote.reservationDeadline}
+              onExpired={() => router.push('/cart')}
+            />
+          </p>
+        ) : null}
+      </div>
       {error ? (
-        <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+        <div className="mt-6 rounded border border-sale-200 bg-sale-50 px-3.5 py-3 text-sm text-sale-700" role="alert">
+          {error}
+        </div>
       ) : null}
+      <div className="h-8" />
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">

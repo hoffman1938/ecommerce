@@ -76,7 +76,7 @@ function ResultInner() {
   const waiting = !order || order.status === 'AWAITING_PAYMENT';
 
   return (
-    <div className="mx-auto max-w-lg py-12 text-center">
+    <div className="mx-auto max-w-lg px-4 py-16 text-center sm:px-6">
       {paid ? (
         <>
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">✓</div>

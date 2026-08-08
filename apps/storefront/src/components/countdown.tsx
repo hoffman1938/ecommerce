@@ -1,22 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { formatCountdown } from '@outlet/ui';
+import { cx, formatCountdown } from '@outlet/ui';
 
 /**
  * Visual countdown to a server-provided expiration timestamp. The server is
  * authoritative — this component only renders the remaining time and never
  * extends or resets anything. Refreshing the page re-reads the same
  * `expiresAt`, so the timer visibly continues instead of restarting.
+ *
+ * Uses tabular numerals rather than a monospace face so the digits hold a
+ * fixed width without switching typeface mid-sentence.
  */
 export function Countdown({
   expiresAt,
   onExpired,
   className,
+  tone = 'default',
 }: {
   expiresAt: string;
   onExpired?: () => void;
   className?: string;
+  /** `inverse` for use on dark artwork, where the urgency red would vanish. */
+  tone?: 'default' | 'inverse';
 }) {
   const [secondsLeft, setSecondsLeft] = useState(() =>
     Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)),
@@ -35,9 +41,19 @@ export function Countdown({
   }, [expiresAt, onExpired]);
 
   const urgent = secondsLeft <= 120;
+
   return (
     <span
-      className={`font-mono text-sm font-semibold ${urgent ? 'text-red-600' : 'text-gray-700'} ${className ?? ''}`}
+      data-numeric
+      className={cx(
+        'font-semibold',
+        tone === 'inverse'
+          ? 'text-white'
+          : urgent
+            ? 'text-sale-500'
+            : 'text-ink-800',
+        className,
+      )}
       data-testid="reservation-countdown"
       title="Reserved until the timer runs out"
     >

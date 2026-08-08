@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type RegisterInput } from '@outlet/validation';
 import { useQueryClient } from '@tanstack/react-query';
+import { Alert, Button, TextField } from '@outlet/ui';
 import { api, ApiError, DEMO_MODE } from '@/lib/api';
 
 export default function RegisterPage() {
@@ -30,11 +31,11 @@ export default function RegisterPage() {
 
   if (done) {
     return (
-      <div className="mx-auto max-w-sm py-16 text-center">
-        <h1 className="text-2xl font-bold">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">
           {DEMO_MODE ? 'You’re all set' : 'Check your email'}
         </h1>
-        <p className="mt-3 text-gray-600">
+        <p className="mt-3 text-sm leading-relaxed text-ink-600">
           {DEMO_MODE ? (
             <>
               Your account was created and you are signed in. The demo has no mail server, so the
@@ -43,7 +44,12 @@ export default function RegisterPage() {
           ) : (
             <>
               We sent a verification link to your address. In local development, open Mailpit at{' '}
-              <a className="underline" href="http://localhost:8025" target="_blank" rel="noreferrer">
+              <a
+                className="underline underline-offset-2"
+                href="http://localhost:8025"
+                target="_blank"
+                rel="noreferrer"
+              >
                 localhost:8025
               </a>{' '}
               to find it.
@@ -52,7 +58,7 @@ export default function RegisterPage() {
         </p>
         <Link
           href={DEMO_MODE ? '/account' : '/login'}
-          className="mt-6 inline-block text-sm font-medium underline"
+          className="mt-7 inline-flex h-11 items-center rounded bg-ink-950 px-6 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
         >
           {DEMO_MODE ? 'Go to your account' : 'Go to sign in'}
         </Link>
@@ -61,53 +67,75 @@ export default function RegisterPage() {
   }
 
   const errors = form.formState.errors;
+
   return (
-    <div className="mx-auto max-w-sm py-10">
-      <h1 className="text-2xl font-bold">Create your account</h1>
+    <div>
+      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">Create your account</h1>
+      <p className="mt-1.5 text-sm text-ink-600">
+        Track orders, save addresses, and get told when a campaign opens.
+      </p>
+
       {error ? (
-        <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
-      ) : null}
-      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium">First name</span>
-            <input {...form.register('firstName')} className="w-full rounded-md border border-gray-300 px-3 py-2" />
-            {errors.firstName ? <span className="text-xs text-red-600">{errors.firstName.message}</span> : null}
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium">Last name</span>
-            <input {...form.register('lastName')} className="w-full rounded-md border border-gray-300 px-3 py-2" />
-            {errors.lastName ? <span className="text-xs text-red-600">{errors.lastName.message}</span> : null}
-          </label>
+        <div className="mt-6">
+          <Alert tone="error">{error}</Alert>
         </div>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">Email</span>
-          <input type="email" autoComplete="email" {...form.register('email')} className="w-full rounded-md border border-gray-300 px-3 py-2" />
-          {errors.email ? <span className="text-xs text-red-600">{errors.email.message}</span> : null}
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium">Password</span>
-          <input type="password" autoComplete="new-password" {...form.register('password')} className="w-full rounded-md border border-gray-300 px-3 py-2" />
-          {errors.password ? <span className="text-xs text-red-600">{errors.password.message}</span> : null}
-          <span className="mt-1 block text-xs text-gray-500">
-            At least 8 characters with upper- and lowercase letters and a digit.
-          </span>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" {...form.register('newsletterOptIn')} />
+      ) : null}
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-7 space-y-4" noValidate>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            id="firstName"
+            label="First name"
+            autoComplete="given-name"
+            error={errors.firstName?.message}
+            {...form.register('firstName')}
+          />
+          <TextField
+            id="lastName"
+            label="Last name"
+            autoComplete="family-name"
+            error={errors.lastName?.message}
+            {...form.register('lastName')}
+          />
+        </div>
+        <TextField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          error={errors.email?.message}
+          {...form.register('email')}
+        />
+        <TextField
+          id="password"
+          label="Password"
+          type="password"
+          autoComplete="new-password"
+          hint="At least 8 characters, with upper- and lowercase letters and a digit."
+          error={errors.password?.message}
+          {...form.register('password')}
+        />
+
+        <label className="flex cursor-pointer items-start gap-2.5 pt-1 text-sm text-ink-700">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded-xs border-ink-300 text-ink-950 focus:ring-ink-950"
+            {...form.register('newsletterOptIn')}
+          />
           Send me campaign announcements
         </label>
-        <button
-          type="submit"
-          disabled={form.formState.isSubmitting}
-          className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 disabled:bg-gray-400"
-        >
+
+        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}>
           Create account
-        </button>
+        </Button>
       </form>
-      <p className="mt-4 text-sm text-gray-500">
-        Already registered?{' '}
-        <Link href="/login" className="font-medium hover:underline">
+
+      <p className="mt-8 border-t border-ink-200 pt-6 text-sm text-ink-600">
+        Already have an account?{' '}
+        <Link
+          href="/login"
+          className="font-medium text-ink-950 underline decoration-ink-300 underline-offset-2 transition-colors hover:decoration-ink-950"
+        >
           Sign in
         </Link>
       </p>

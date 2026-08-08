@@ -3,9 +3,24 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ProductDetailDto } from '@outlet/types';
-import { formatMoney } from '@outlet/ui';
+import { Alert, Button, HeartIcon, cx, formatMoney } from '@outlet/ui';
 import { useAddToCart, useCurrentUser } from '@/lib/hooks';
 import { api, ApiError } from '@/lib/api';
+
+const COLOR_HEX: Record<string, string> = {
+  Black: '#1f2937',
+  White: '#e5e7eb',
+  Red: '#dc2626',
+  Blue: '#2563eb',
+  Navy: '#1e3a5f',
+  Green: '#16a34a',
+  Grey: '#6b7280',
+  Beige: '#d6c7a1',
+  Pink: '#ec4899',
+  Orange: '#ea580c',
+};
+
+const MAX_QUANTITY = 5;
 
 export function ProductPurchasePanel({ product }: { product: ProductDetailDto }) {
   const router = useRouter();
@@ -27,6 +42,8 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
   const sizeVariants = product.variants.filter((v) => !selectedColor || v.color === selectedColor);
 
   const price = selectedVariant?.priceMinor ?? product.currentPriceMinor;
+  const soldOut = product.totalAvailable <= 0;
+  const maxForVariant = Math.min(MAX_QUANTITY, selectedVariant?.availableQuantity ?? MAX_QUANTITY);
 
   const handleAdd = async () => {
     if (!selectedVariant) {
@@ -42,7 +59,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
       });
       setFeedback({
         tone: 'success',
-        text: 'Added to cart — reserved for you for the next 20 minutes.',
+        text: 'Added to your bag — reserved for the next 20 minutes.',
       });
     } catch (err) {
       if (err instanceof ApiError && err.body.code === 'OUT_OF_STOCK') {
@@ -70,136 +87,171 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
   };
 
   return (
-    <div className="mt-5 rounded-lg border border-gray-200 bg-white p-5">
-      <p className="text-2xl font-bold text-red-600">
-        {formatMoney(price, product.currencyCode)}{' '}
+    <div>
+      {/* Price */}
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span
+          data-numeric
+          className={cx(
+            'text-3xl font-bold tracking-[-0.02em]',
+            product.discountPercent > 0 ? 'text-sale-500' : 'text-ink-950',
+          )}
+        >
+          {formatMoney(price, product.currencyCode)}
+        </span>
         {product.discountPercent > 0 ? (
           <>
-            <span className="text-base font-normal text-gray-400 line-through">
+            <span data-numeric className="text-base text-ink-400 line-through">
               {formatMoney(product.originalPriceMinor, product.currencyCode)}
-            </span>{' '}
-            <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-bold text-red-700">
-              -{product.discountPercent}%
+            </span>
+            <span data-numeric className="text-sm font-semibold text-sale-500">
+              −{product.discountPercent}%
             </span>
           </>
         ) : null}
+      </div>
+      <p className="mt-1 text-xs text-ink-500">
+        Incl. VAT
+        {product.campaignSlug ? (
+          <>
+            {' · '}
+            <span className="font-medium text-sale-500">Campaign price applied</span>
+          </>
+        ) : null}
       </p>
-      {product.campaignSlug ? (
-        <p className="mt-1 text-xs font-medium text-red-600">Campaign price applied</p>
-      ) : null}
-      <p className="mt-0.5 text-xs text-gray-500">Price includes VAT</p>
 
+      {/* Colour */}
       {colors.length > 1 ? (
-        <div className="mt-4">
-          <p className="mb-1 text-sm font-medium">Color</p>
+        <fieldset className="mt-7">
+          <legend className="mb-2.5 flex w-full items-baseline justify-between text-sm">
+            <span className="font-semibold text-ink-950">Colour</span>
+            <span className="text-ink-500">{selectedColor}</span>
+          </legend>
           <div className="flex flex-wrap gap-2">
-            {colors.map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => {
-                  setSelectedColor(color);
-                  setSelectedVariantId(null);
-                }}
-                className={`rounded-md border px-3 py-1.5 text-sm ${
-                  selectedColor === color
-                    ? 'border-gray-900 bg-gray-900 text-white'
-                    : 'border-gray-300 hover:border-gray-500'
-                }`}
-              >
-                {color}
-              </button>
-            ))}
+            {colors.map((color) => {
+              const active = selectedColor === color;
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  aria-pressed={active}
+                  aria-label={color}
+                  onClick={() => {
+                    setSelectedColor(color);
+                    setSelectedVariantId(null);
+                    setQuantity(1);
+                  }}
+                  className={cx(
+                    'relative h-9 w-9 rounded-full transition-shadow',
+                    active
+                      ? 'ring-2 ring-ink-950 ring-offset-2'
+                      : 'ring-1 ring-inset ring-ink-950/15 hover:ring-ink-400',
+                  )}
+                  style={{ backgroundColor: COLOR_HEX[color] ?? '#9ca3af' }}
+                />
+              );
+            })}
           </div>
-        </div>
+        </fieldset>
       ) : null}
 
-      <div className="mt-4">
-        <p className="mb-1 text-sm font-medium">Size</p>
-        <div className="flex flex-wrap gap-2">
+      {/* Size */}
+      <fieldset className="mt-7">
+        <legend className="mb-2.5 text-sm font-semibold text-ink-950">Size</legend>
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
           {sizeVariants.map((variant) => {
             const disabled = variant.availableQuantity <= 0;
+            const active = selectedVariantId === variant.id;
             return (
               <button
                 key={variant.id}
                 type="button"
                 disabled={disabled}
-                onClick={() => setSelectedVariantId(variant.id)}
+                aria-pressed={active}
+                onClick={() => {
+                  setSelectedVariantId(variant.id);
+                  setQuantity(1);
+                  setFeedback(null);
+                }}
                 data-testid={`variant-${variant.sku}`}
-                className={`relative rounded-md border px-3 py-1.5 text-sm ${
-                  selectedVariantId === variant.id
-                    ? 'border-gray-900 bg-gray-900 text-white'
-                    : disabled
-                      ? 'cursor-not-allowed border-gray-200 text-gray-300 line-through'
-                      : 'border-gray-300 hover:border-gray-500'
-                }`}
+                className={cx(
+                  'relative h-11 rounded text-sm font-medium transition-colors',
+                  active && 'bg-ink-950 text-white',
+                  !active &&
+                    !disabled &&
+                    'text-ink-900 ring-1 ring-inset ring-ink-300 hover:ring-ink-950',
+                  disabled &&
+                    'cursor-not-allowed text-ink-300 ring-1 ring-inset ring-ink-100 line-through',
+                )}
               >
                 {variant.size ?? variant.sku}
-                {!disabled && variant.availableQuantity <= 3 ? (
-                  <span className="ml-1 text-[10px] text-amber-600">
-                    ({variant.availableQuantity})
-                  </span>
-                ) : null}
               </button>
             );
           })}
         </div>
-        {selectedVariant && selectedVariant.availableQuantity <= 3 ? (
-          <p className="mt-1 text-xs font-medium text-amber-600">
-            Only {selectedVariant.availableQuantity} left in this size!
+        {selectedVariant && selectedVariant.availableQuantity > 0 && selectedVariant.availableQuantity <= 3 ? (
+          <p data-numeric className="mt-2.5 text-sm font-medium text-warning-600">
+            Only {selectedVariant.availableQuantity} left in this size
           </p>
         ) : null}
-      </div>
+      </fieldset>
 
-      <div className="mt-4 flex items-center gap-3">
-        <label className="flex items-center gap-1.5 text-sm">
-          Qty
-          <select
-            value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
-            className="rounded border border-gray-300 px-2 py-1.5"
+      {/* Quantity + actions */}
+      <div className="mt-7 flex items-stretch gap-2">
+        <div className="flex h-12 shrink-0 items-center rounded ring-1 ring-inset ring-ink-300">
+          <button
+            type="button"
+            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            disabled={quantity <= 1}
+            aria-label="Decrease quantity"
+            className="h-full w-10 text-lg text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300"
           >
-            {[1, 2, 3, 4, 5].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
+            −
+          </button>
+          <span data-numeric className="w-6 text-center text-sm font-semibold text-ink-950">
+            {quantity}
+          </span>
+          <button
+            type="button"
+            onClick={() => setQuantity((q) => Math.min(maxForVariant, q + 1))}
+            disabled={quantity >= maxForVariant}
+            aria-label="Increase quantity"
+            className="h-full w-10 text-lg text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300"
+          >
+            +
+          </button>
+        </div>
+
+        <Button
+          size="lg"
           onClick={handleAdd}
-          disabled={addToCart.isPending || product.totalAvailable <= 0}
+          loading={addToCart.isPending}
+          disabled={soldOut}
           data-testid="add-to-cart"
-          className="flex-1 rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+          className="flex-1"
         >
-          {product.totalAvailable <= 0
-            ? 'Sold out'
-            : addToCart.isPending
-              ? 'Adding…'
-              : 'Add to cart'}
-        </button>
+          {soldOut ? 'Sold out' : 'Add to bag'}
+        </Button>
+
         <button
           type="button"
           onClick={handleWishlist}
-          className="rounded-md border border-gray-300 px-3 py-2.5 text-sm hover:border-gray-900"
-          aria-label="Add to wishlist"
+          aria-label="Save to wishlist"
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded text-ink-700 ring-1 ring-inset ring-ink-300 transition-colors hover:text-sale-500 hover:ring-ink-400"
         >
-          ♥
+          <HeartIcon className="h-5 w-5" />
         </button>
       </div>
 
       {feedback ? (
-        <p
-          className={`mt-3 text-sm ${feedback.tone === 'success' ? 'text-green-700' : 'text-red-600'}`}
-          data-testid="purchase-feedback"
-        >
-          {feedback.text}
-        </p>
+        <div className="mt-4" data-testid="purchase-feedback">
+          <Alert tone={feedback.tone === 'success' ? 'success' : 'error'}>{feedback.text}</Alert>
+        </div>
       ) : null}
-      <p className="mt-3 text-xs text-gray-500">
-        Items in your cart are reserved for 20 minutes. The timer does not restart when you refresh
-        or log in.
+
+      <p className="mt-4 text-xs leading-relaxed text-ink-500">
+        Items in your bag are reserved for 20 minutes. The timer does not restart when you refresh
+        or sign in.
       </p>
     </div>
   );
