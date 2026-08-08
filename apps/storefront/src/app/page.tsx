@@ -29,14 +29,18 @@ export default async function HomePage() {
       <section className="container-page">
         <div className="grid items-end gap-8 border-b border-ink-200 pb-10 pt-10 lg:grid-cols-12 lg:pb-14 lg:pt-16">
           <div className="lg:col-span-8">
-            <p className="eyebrow"><T id="home.eyebrow" /></p>
+            <p className="eyebrow">
+              <T id="home.eyebrow" />
+            </p>
             <h1 className="display mt-5 whitespace-pre-line text-5xl sm:text-7xl lg:text-8xl">
               <T id="home.headline" />
             </h1>
           </div>
 
           <div className="lg:col-span-4 lg:pb-2">
-            <p className="max-w-sm text-lg text-ink-600"><T id="home.description" /></p>
+            <p className="max-w-sm text-lg text-ink-600">
+              <T id="home.description" />
+            </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/campaigns"
@@ -51,7 +55,9 @@ export default async function HomePage() {
                 href="/products?sort=discount"
                 className="inline-flex h-12 items-center px-1 text-sm font-semibold uppercase tracking-[0.06em] text-ink-950"
               >
-                <span className="link-underline"><T id="home.bestDiscounts" /></span>
+                <span className="link-underline">
+                  <T id="home.bestDiscounts" />
+                </span>
               </Link>
             </div>
           </div>
@@ -111,7 +117,9 @@ export default async function HomePage() {
                 <h2 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
                   <T id="home.theBrands" />
                 </h2>
-                <p className="mt-2 max-w-xs text-sm text-ink-600"><T id="home.brandsDesc" /></p>
+                <p className="mt-2 max-w-xs text-sm text-ink-600">
+                  <T id="home.brandsDesc" />
+                </p>
               </div>
               <ul className="lg:col-span-8">
                 {featured.map((brand) => (
