@@ -13,7 +13,9 @@
     "yourAccount": "Ваш аккаунт",
     "orders": "Заказы",
     "createAccount": "Создать аккаунт",
-    "skipToContent": "Перейти к содержимому"
+    "skipToContent": "Перейти к содержимому",
+    "shopByCategory": "По категориям",
+    "account": "Аккаунт"
   },
   "categories": {
     "tShirts": "Футболки",
@@ -87,7 +89,8 @@
       "privacy": "Политика конфиденциальности",
       "terms": "Условия использования",
       "cookies": "Политика Cookie"
-    }
+    },
+    "emailLabel": "Адрес электронной почты"
   },
   "lang": {
     "en": "EN",

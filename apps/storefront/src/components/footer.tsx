@@ -84,7 +84,7 @@ export function Footer() {
               }}
             >
               <label htmlFor="newsletter-email" className="sr-only">
-                {t('footer.emailPlaceholder')}
+                {t('footer.emailLabel')}
               </label>
               <input
                 id="newsletter-email"

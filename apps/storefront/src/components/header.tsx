@@ -319,14 +319,14 @@ function MobileMenu({
           </MenuLink>
           <MenuLink href="/products">{t('nav.allProducts')}</MenuLink>
 
-          <p className="eyebrow px-4 pb-1 pt-5">Shop by category</p>
+          <p className="eyebrow px-4 pb-1 pt-5">{t('nav.shopByCategory')}</p>
           {CATEGORY_KEYS.map((c) => (
             <MenuLink key={c.slug} href={`/category/${c.slug}`}>
               {t(`categories.${c.key}`)}
             </MenuLink>
           ))}
 
-          <p className="eyebrow px-4 pb-1 pt-5">Account</p>
+          <p className="eyebrow px-4 pb-1 pt-5">{t('nav.account')}</p>
           {me?.user ? (
             <>
               <MenuLink href="/account">{t('nav.yourAccount')}</MenuLink>

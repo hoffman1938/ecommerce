@@ -13,7 +13,9 @@
     "yourAccount": "Your account",
     "orders": "Orders",
     "createAccount": "Create an account",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "shopByCategory": "Shop by category",
+    "account": "Account"
   },
   "categories": {
     "tShirts": "T-Shirts",
@@ -87,7 +89,8 @@
       "privacy": "Privacy policy",
       "terms": "Terms & conditions",
       "cookies": "Cookie policy"
-    }
+    },
+    "emailLabel": "Email address"
   },
   "lang": {
     "en": "EN",

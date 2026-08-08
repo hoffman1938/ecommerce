@@ -13,7 +13,9 @@
     "yourAccount": "თქვენი ანგარიში",
     "orders": "შეკვეთები",
     "createAccount": "ანგარიშის შექმნა",
-    "skipToContent": "კონტენტზე გადასვლა"
+    "skipToContent": "კონტენტზე გადასვლა",
+    "shopByCategory": "კატეგორიებით ძიება",
+    "account": "ანგარიში"
   },
   "categories": {
     "tShirts": "მაისური",
@@ -87,7 +89,8 @@
       "privacy": "კონფიდენციალურობის პოლიტიკა",
       "terms": "წესები და პირობები",
       "cookies": "Cookie პოლიტიკა"
-    }
+    },
+    "emailLabel": "ელ-ფოსტის მისამართი"
   },
   "lang": {
     "en": "EN",
