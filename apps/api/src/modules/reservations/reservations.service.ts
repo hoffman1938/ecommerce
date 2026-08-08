@@ -273,7 +273,10 @@ export class ReservationsService {
     const reservations = await tx.inventoryReservation.findMany({
       where: { orderId, status: { in: [...HOLDING] } },
     });
-    const reservedByVariant = new Map<string, { id: string; quantity: number; expiresAt: Date }[]>();
+    const reservedByVariant = new Map<
+      string,
+      { id: string; quantity: number; expiresAt: Date }[]
+    >();
     for (const r of reservations) {
       const list = reservedByVariant.get(r.variantId) ?? [];
       list.push({ id: r.id, quantity: r.quantity, expiresAt: r.expiresAt });

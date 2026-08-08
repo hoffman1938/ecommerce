@@ -33,7 +33,11 @@ export function AccountOrderDetail() {
           <h1 className="text-2xl font-bold">{order.orderNumber}</h1>
           <p className="text-sm text-ink-500">Placed {formatDate(order.placedAt)}</p>
         </div>
-        <Badge tone={order.status === 'CANCELLED' ? 'red' : order.status === 'DELIVERED' ? 'green' : 'blue'}>
+        <Badge
+          tone={
+            order.status === 'CANCELLED' ? 'red' : order.status === 'DELIVERED' ? 'green' : 'blue'
+          }
+        >
           {order.status}
         </Badge>
       </div>
@@ -42,10 +46,17 @@ export function AccountOrderDetail() {
         <h2 className="mb-3 font-semibold">Items</h2>
         <div className="space-y-3">
           {order.items.map((item) => (
-            <div key={item.id} className="flex items-center gap-4 border-t border-ink-100 pt-3 first:border-t-0 first:pt-0">
+            <div
+              key={item.id}
+              className="flex items-center gap-4 border-t border-ink-100 pt-3 first:border-t-0 first:pt-0"
+            >
               {item.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.imageUrl} alt={item.name} className="h-16 w-16 rounded object-cover" />
+                <img
+                  src={item.imageUrl}
+                  alt={item.name}
+                  className="h-16 w-16 rounded object-cover"
+                />
               ) : (
                 <div className="h-16 w-16 rounded bg-ink-100" />
               )}
@@ -111,7 +122,12 @@ export function AccountOrderDetail() {
           <div className="mt-3 border-t border-ink-100 pt-3">
             {order.payments.map((p) => (
               <p key={p.id} className="text-ink-600">
-                {p.provider} · <Badge tone={p.status === 'PAID' ? 'green' : p.status === 'FAILED' ? 'red' : 'gray'}>{p.status}</Badge>
+                {p.provider} ·{' '}
+                <Badge
+                  tone={p.status === 'PAID' ? 'green' : p.status === 'FAILED' ? 'red' : 'gray'}
+                >
+                  {p.status}
+                </Badge>
                 {p.refundedAmountMinor > 0
                   ? ` · refunded ${formatMoney(p.refundedAmountMinor, order.currencyCode)}`
                   : ''}

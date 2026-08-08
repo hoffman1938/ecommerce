@@ -77,7 +77,10 @@ export interface PaymentProvider {
    * Verify a raw webhook request (signature + payload) and normalize it.
    * Throws WebhookVerificationError when the signature is invalid.
    */
-  verifyWebhook(rawBody: Buffer | string, signatureHeader: string | undefined): Promise<VerifiedPaymentEvent>;
+  verifyWebhook(
+    rawBody: Buffer | string,
+    signatureHeader: string | undefined,
+  ): Promise<VerifiedPaymentEvent>;
   refund(input: RefundInput): Promise<RefundResult>;
   cancel(providerPaymentId: string): Promise<CancelResult>;
 }

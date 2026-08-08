@@ -9,7 +9,10 @@ function includedTax(grossMinor: number): number {
 
 type VariantWithProduct = ProductVariant & { product: Product & { brand: Brand } };
 
-async function findVariant(prisma: PrismaClient, skuPrefix: string): Promise<VariantWithProduct | null> {
+async function findVariant(
+  prisma: PrismaClient,
+  skuPrefix: string,
+): Promise<VariantWithProduct | null> {
   return prisma.productVariant.findFirst({
     where: { sku: { startsWith: skuPrefix } },
     include: { product: { include: { brand: true } } },
@@ -53,7 +56,8 @@ async function createSeedOrder(
   const placedAt = new Date(Date.now() - opts.daysAgo * 24 * 60 * 60 * 1000);
   const subtotal = opts.items.reduce(
     (sum, item) =>
-      sum + (item.variant.priceOverrideMinor ?? item.variant.product.outletPriceMinor) * item.quantity,
+      sum +
+      (item.variant.priceOverrideMinor ?? item.variant.product.outletPriceMinor) * item.quantity,
     0,
   );
   const shipping = subtotal >= 10000 ? 0 : 495;

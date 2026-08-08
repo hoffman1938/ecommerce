@@ -92,7 +92,11 @@ export function CampaignSections({ limit }: { limit?: number }) {
 }
 
 export function CampaignDetail({ slug }: { slug: string }) {
-  const { data: campaign, isPending, isError } = useQuery({
+  const {
+    data: campaign,
+    isPending,
+    isError,
+  } = useQuery({
     queryKey: ['campaign', slug],
     queryFn: () => api.get<CampaignDetailDto>(`/campaigns/${slug}`),
     retry: false,
@@ -129,11 +133,7 @@ export function CampaignDetail({ slug }: { slug: string }) {
         <div className="relative aspect-[16/9] sm:aspect-[21/8] lg:aspect-[3/1]">
           {campaign.coverImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={campaign.coverImageUrl}
-              alt=""
-              className="h-full w-full object-cover"
-            />
+            <img src={campaign.coverImageUrl} alt="" className="h-full w-full object-cover" />
           ) : null}
           <div
             className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-ink-950/45 to-ink-950/10"

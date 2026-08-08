@@ -132,9 +132,7 @@ export function deleteAddress(addressId: string) {
   return mutate((state) => {
     const user = requireUser(state);
     const before = state.addresses.length;
-    state.addresses = state.addresses.filter(
-      (a) => !(a.id === addressId && a.userId === user.id),
-    );
+    state.addresses = state.addresses.filter((a) => !(a.id === addressId && a.userId === user.id));
     if (state.addresses.length === before) {
       throw new DemoApiError(404, 'That address no longer exists.');
     }

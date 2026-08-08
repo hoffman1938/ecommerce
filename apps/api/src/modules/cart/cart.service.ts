@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as crypto from 'node:crypto';
 import type { Cart } from '@outlet/database';
 import {
@@ -28,7 +24,13 @@ const CART_INCLUDE = {
     include: {
       variant: {
         include: {
-          product: { include: { brand: true, category: true, images: { orderBy: { position: 'asc' as const } } } },
+          product: {
+            include: {
+              brand: true,
+              category: true,
+              images: { orderBy: { position: 'asc' as const } },
+            },
+          },
           inventory: true,
         },
       },
@@ -65,9 +67,7 @@ export class CartService {
   }
 
   /** Returns the cart and, when a new anonymous cart was made, its token. */
-  async getOrCreateCart(
-    identity: CartIdentity,
-  ): Promise<{ cart: Cart; createdToken?: string }> {
+  async getOrCreateCart(identity: CartIdentity): Promise<{ cart: Cart; createdToken?: string }> {
     const existing = await this.findActiveCart(identity);
     if (existing) return { cart: existing };
 
@@ -75,7 +75,7 @@ export class CartService {
       const cart = await this.prisma.cart.create({ data: { userId: identity.userId } });
       return { cart };
     }
-    const token = crypto.randomBytes(24).toString('base64url');
+    const token = identity.cartToken ?? crypto.randomBytes(24).toString('base64url');
     const cart = await this.prisma.cart.create({ data: { anonymousToken: token } });
     return { cart, createdToken: token };
   }
@@ -346,7 +346,10 @@ export class CartService {
       }
 
       const reservation = await this.prisma.inventoryReservation.findFirst({
-        where: { cartItemId: item.id, status: { in: ['ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING'] } },
+        where: {
+          cartItemId: item.id,
+          status: { in: ['ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING'] },
+        },
         orderBy: { createdAt: 'desc' },
       });
       const image = item.variant.product.images[0];

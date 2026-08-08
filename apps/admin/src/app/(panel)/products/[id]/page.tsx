@@ -5,7 +5,12 @@ import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatMoney, Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
-import { EMPTY_PRODUCT, ProductForm, toApiPayload, type ProductFormValues } from '@/components/product-form';
+import {
+  EMPTY_PRODUCT,
+  ProductForm,
+  toApiPayload,
+  type ProductFormValues,
+} from '@/components/product-form';
 
 interface AdminVariant {
   id: string;
@@ -30,7 +35,12 @@ export default function EditProductPage() {
   const [values, setValues] = useState<ProductFormValues>(EMPTY_PRODUCT);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [newVariant, setNewVariant] = useState({ sku: '', size: '', color: '', initialQuantity: 0 });
+  const [newVariant, setNewVariant] = useState({
+    sku: '',
+    size: '',
+    color: '',
+    initialQuantity: 0,
+  });
 
   const { data: product } = useQuery({
     queryKey: ['admin-product', params.id],
@@ -73,7 +83,9 @@ export default function EditProductPage() {
           <button
             type="button"
             onClick={async () => {
-              const copy = await api.post<{ id: string }>(`/admin/products/${product.id}/duplicate`);
+              const copy = await api.post<{ id: string }>(
+                `/admin/products/${product.id}/duplicate`,
+              );
               window.location.href = `/products/${copy.id}`;
             }}
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
@@ -117,8 +129,13 @@ export default function EditProductPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>SKU</th><th>Size</th><th>Color</th><th className="text-right">On hand</th>
-              <th className="text-right">Reserved</th><th>Status</th><th></th>
+              <th>SKU</th>
+              <th>Size</th>
+              <th>Color</th>
+              <th className="text-right">On hand</th>
+              <th className="text-right">Reserved</th>
+              <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -212,7 +229,11 @@ export default function EditProductPage() {
           {product.images.map((image) => (
             <div key={image.id} className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image.url} alt={image.altText ?? ''} className="h-24 w-24 rounded border object-cover" />
+              <img
+                src={image.url}
+                alt={image.altText ?? ''}
+                className="h-24 w-24 rounded border object-cover"
+              />
               <button
                 type="button"
                 onClick={async () => {

@@ -2,7 +2,9 @@
   "name": "@outlet/typescript-config",
   "version": "0.1.0",
   "private": true,
-  "files": ["*.json"],
+  "files": [
+    "*.json"
+  ],
   "scripts": {
     "build": "echo skip",
     "lint": "echo skip",

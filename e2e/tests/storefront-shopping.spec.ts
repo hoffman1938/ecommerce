@@ -1,10 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  fillCheckout,
-  loginStorefront,
-  registerAndVerify,
-  uniqueEmail,
-} from './helpers';
+import { fillCheckout, loginStorefront, registerAndVerify, uniqueEmail } from './helpers';
 
 const PASSWORD = 'E2ePassw0rd!';
 

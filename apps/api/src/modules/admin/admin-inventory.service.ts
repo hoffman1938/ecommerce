@@ -254,7 +254,9 @@ export class AdminInventoryService {
       type: 'ADMIN',
     });
     if (!released) {
-      throw new ConflictException('Reservation is not active (already converted, expired, or cancelled).');
+      throw new ConflictException(
+        'Reservation is not active (already converted, expired, or cancelled).',
+      );
     }
     return { released: true };
   }

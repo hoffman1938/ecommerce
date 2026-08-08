@@ -41,7 +41,12 @@ export default function AdminUsersPage() {
       <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
-            <tr><th>User</th><th>Status</th><th>Roles</th><th></th></tr>
+            <tr>
+              <th>User</th>
+              <th>Status</th>
+              <th>Roles</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
             {(users ?? []).map((user) => (
@@ -50,7 +55,9 @@ export default function AdminUsersPage() {
                   {user.firstName} {user.lastName}
                   <span className="block text-xs text-gray-400">{user.email}</span>
                 </td>
-                <td><Badge tone={user.status === 'ACTIVE' ? 'green' : 'red'}>{user.status}</Badge></td>
+                <td>
+                  <Badge tone={user.status === 'ACTIVE' ? 'green' : 'red'}>{user.status}</Badge>
+                </td>
                 <td className="text-xs">{user.roles.join(', ') || '—'}</td>
                 <td className="text-right">
                   <button

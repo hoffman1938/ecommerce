@@ -6,7 +6,15 @@ import type { ReservationAdminDto } from '@outlet/types';
 import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
 
-const STATUSES = ['', 'ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING', 'CONVERTED', 'EXPIRED', 'CANCELLED'];
+const STATUSES = [
+  '',
+  'ACTIVE',
+  'CHECKOUT_STARTED',
+  'PAYMENT_PROCESSING',
+  'CONVERTED',
+  'EXPIRED',
+  'CANCELLED',
+];
 
 export default function ReservationsPage() {
   const queryClient = useQueryClient();
@@ -44,14 +52,21 @@ export default function ReservationsPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>SKU</th><th>Product</th><th className="text-right">Qty</th><th>Status</th>
-              <th>Customer</th><th>Expires</th><th></th>
+              <th>SKU</th>
+              <th>Product</th>
+              <th className="text-right">Qty</th>
+              <th>Status</th>
+              <th>Customer</th>
+              <th>Expires</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {(data?.items ?? []).map((r) => {
               const expired = new Date(r.expiresAt) <= new Date();
-              const holding = ['ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING'].includes(r.status);
+              const holding = ['ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING'].includes(
+                r.status,
+              );
               return (
                 <tr key={r.id}>
                   <td className="font-mono text-xs">{r.sku}</td>
@@ -63,7 +78,9 @@ export default function ReservationsPage() {
                     </Badge>
                   </td>
                   <td className="text-gray-500">{r.customerEmail ?? 'anonymous'}</td>
-                  <td className={`text-xs ${expired && holding ? 'text-red-600' : 'text-gray-500'}`}>
+                  <td
+                    className={`text-xs ${expired && holding ? 'text-red-600' : 'text-gray-500'}`}
+                  >
                     {new Date(r.expiresAt).toLocaleString()}
                   </td>
                   <td className="text-right">
@@ -75,7 +92,9 @@ export default function ReservationsPage() {
                           if (!reason) return;
                           setError(null);
                           try {
-                            await api.post(`/admin/inventory/reservations/${r.id}/cancel`, { reason });
+                            await api.post(`/admin/inventory/reservations/${r.id}/cancel`, {
+                              reason,
+                            });
                             queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
                           } catch (err) {
                             setError(err instanceof ApiError ? err.message : 'Cancel failed.');
@@ -91,7 +110,11 @@ export default function ReservationsPage() {
               );
             })}
             {data && data.items.length === 0 ? (
-              <tr><td colSpan={7} className="text-gray-400">No reservations with this status.</td></tr>
+              <tr>
+                <td colSpan={7} className="text-gray-400">
+                  No reservations with this status.
+                </td>
+              </tr>
             ) : null}
           </tbody>
         </table>

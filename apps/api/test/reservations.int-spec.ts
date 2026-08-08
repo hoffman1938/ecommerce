@@ -135,7 +135,10 @@ describe('inventory reservations (integration)', () => {
 
     // A delayed status flip must not resurrect the hold.
     const flipped = await ctx.prisma.inventoryReservation.updateMany({
-      where: { id: reservation.id, status: { in: ['ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING'] } },
+      where: {
+        id: reservation.id,
+        status: { in: ['ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING'] },
+      },
       data: { status: 'CONVERTED' },
     });
     expect(flipped.count).toBe(0);
@@ -171,9 +174,7 @@ describe('inventory reservations (integration)', () => {
     );
 
     const fulfilled = results.filter((r) => r.status === 'fulfilled');
-    const rejected = results.filter(
-      (r): r is PromiseRejectedResult => r.status === 'rejected',
-    );
+    const rejected = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
 
     // Exactly one success; 99 out-of-stock failures.
     expect(fulfilled).toHaveLength(1);

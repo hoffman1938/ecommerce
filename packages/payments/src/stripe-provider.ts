@@ -67,7 +67,9 @@ export class StripePaymentProvider implements PaymentProvider {
         this.options.webhookSecret,
       );
     } catch (err) {
-      throw new WebhookVerificationError(`Stripe signature verification failed: ${(err as Error).message}`);
+      throw new WebhookVerificationError(
+        `Stripe signature verification failed: ${(err as Error).message}`,
+      );
     }
 
     switch (event.type) {
@@ -101,7 +103,8 @@ export class StripePaymentProvider implements PaymentProvider {
           provider: this.name,
           providerEventId: event.id,
           type: 'refund.succeeded',
-          providerPaymentId: typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.id,
+          providerPaymentId:
+            typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.id,
           amountMinor: charge.amount_refunded,
           currencyCode: charge.currency?.toUpperCase(),
           raw: event,
@@ -122,7 +125,9 @@ export class StripePaymentProvider implements PaymentProvider {
     // providerPaymentId is a Checkout Session id; resolve its PaymentIntent.
     const session = await this.stripe.checkout.sessions.retrieve(input.providerPaymentId);
     const paymentIntent =
-      typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+      typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id;
     if (!paymentIntent) throw new Error('No payment intent found for session');
     const refund = await this.stripe.refunds.create(
       { payment_intent: paymentIntent, amount: input.amountMinor },
@@ -131,7 +136,12 @@ export class StripePaymentProvider implements PaymentProvider {
     return {
       provider: this.name,
       providerRefundId: refund.id,
-      status: refund.status === 'succeeded' ? 'SUCCEEDED' : refund.status === 'failed' ? 'FAILED' : 'PENDING',
+      status:
+        refund.status === 'succeeded'
+          ? 'SUCCEEDED'
+          : refund.status === 'failed'
+            ? 'FAILED'
+            : 'PENDING',
     };
   }
 

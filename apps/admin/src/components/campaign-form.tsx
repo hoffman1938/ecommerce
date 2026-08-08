@@ -65,7 +65,9 @@ export function CampaignForm({
       }}
     >
       {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm sm:col-span-2">
@@ -80,7 +82,10 @@ export function CampaignForm({
                 title,
                 slug:
                   values.slug ||
-                  title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+                  title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/(^-|-$)/g, ''),
               });
             }}
             className="w-full rounded-md border border-gray-300 px-3 py-2"

@@ -31,13 +31,24 @@ export default function AccountOverviewPage() {
               {recent.map((order) => (
                 <tr key={order.id} className="border-t border-ink-100">
                   <td className="py-2">
-                    <Link href={`/account/orders/${order.id}`} className="font-medium hover:underline">
+                    <Link
+                      href={`/account/orders/${order.id}`}
+                      className="font-medium hover:underline"
+                    >
                       {order.orderNumber}
                     </Link>
                   </td>
                   <td className="py-2 text-ink-500">{formatDate(order.placedAt)}</td>
                   <td className="py-2">
-                    <Badge tone={order.status === 'CANCELLED' ? 'red' : order.status === 'DELIVERED' ? 'green' : 'blue'}>
+                    <Badge
+                      tone={
+                        order.status === 'CANCELLED'
+                          ? 'red'
+                          : order.status === 'DELIVERED'
+                            ? 'green'
+                            : 'blue'
+                      }
+                    >
                       {order.status}
                     </Badge>
                   </td>

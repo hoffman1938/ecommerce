@@ -46,7 +46,15 @@ export default function ReturnDetailPage() {
             <p className="mt-1 text-sm text-gray-600">“{request.customerNote}”</p>
           ) : null}
         </div>
-        <Badge tone={request.status === 'COMPLETED' ? 'green' : request.status === 'REJECTED' ? 'red' : 'blue'}>
+        <Badge
+          tone={
+            request.status === 'COMPLETED'
+              ? 'green'
+              : request.status === 'REJECTED'
+                ? 'red'
+                : 'blue'
+          }
+        >
           {request.status}
         </Badge>
       </div>
@@ -57,7 +65,9 @@ export default function ReturnDetailPage() {
           <button
             type="button"
             data-testid="approve-return"
-            onClick={() => run(() => api.post(`/admin/returns/${request.id}/decision`, { decision: 'APPROVED' }))}
+            onClick={() =>
+              run(() => api.post(`/admin/returns/${request.id}/decision`, { decision: 'APPROVED' }))
+            }
             className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500"
           >
             Approve return
@@ -84,7 +94,13 @@ export default function ReturnDetailPage() {
         <h2 className="mb-3 font-semibold">Items</h2>
         <table className="admin-table">
           <thead>
-            <tr><th>Item</th><th className="text-right">Requested</th><th className="text-right">Received</th><th>Condition</th><th>Restock</th></tr>
+            <tr>
+              <th>Item</th>
+              <th className="text-right">Requested</th>
+              <th className="text-right">Received</th>
+              <th>Condition</th>
+              <th>Restock</th>
+            </tr>
           </thead>
           <tbody>
             {request.items.map((item) => {
@@ -214,7 +230,9 @@ export default function ReturnDetailPage() {
                 <span className="text-gray-600">{refund.reason ?? 'Refund'}</span>
                 <span>
                   {formatMoney(refund.amountMinor)}{' '}
-                  <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>{refund.status}</Badge>
+                  <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>
+                    {refund.status}
+                  </Badge>
                 </span>
               </li>
             ))}
@@ -238,7 +256,9 @@ export default function ReturnDetailPage() {
             }}
           >
             <label className="block text-sm">
-              <span className="mb-1 block text-xs font-medium text-gray-500">Amount (minor units)</span>
+              <span className="mb-1 block text-xs font-medium text-gray-500">
+                Amount (minor units)
+              </span>
               <input
                 type="number"
                 min={1}

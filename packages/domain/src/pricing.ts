@@ -45,9 +45,7 @@ export function couponDiscountMinor(coupon: CouponRules, eligibleSubtotalMinor: 
   if (coupon.minOrderMinor != null && eligibleSubtotalMinor < coupon.minOrderMinor) return 0;
 
   let discount =
-    coupon.type === 'FIXED'
-      ? coupon.value
-      : percentageOfMinor(eligibleSubtotalMinor, coupon.value);
+    coupon.type === 'FIXED' ? coupon.value : percentageOfMinor(eligibleSubtotalMinor, coupon.value);
 
   if (coupon.maxDiscountMinor != null) {
     discount = Math.min(discount, coupon.maxDiscountMinor);

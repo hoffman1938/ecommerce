@@ -6,11 +6,7 @@
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:1": {}
   },
-  "extensions": [
-    "esbenp.prettier-vscode",
-    "dbaeumer.vscode-eslint",
-    "ms-azuretools.vscode-docker"
-  ],
+  "extensions": ["esbenp.prettier-vscode", "dbaeumer.vscode-eslint", "ms-azuretools.vscode-docker"],
   "remoteUser": "node",
   "postCreateCommand": "sudo npm uninstall -g pnpm || true; sudo corepack enable --install-directory $(dirname $(which node))"
 }

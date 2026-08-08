@@ -10,15 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import {
-  BagIcon,
-  CloseIcon,
-  HeartIcon,
-  MenuIcon,
-  SearchIcon,
-  UserIcon,
-  cx,
-} from '@outlet/ui';
+import { BagIcon, CloseIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon, cx } from '@outlet/ui';
 import { useCart, useCurrentUser, useLogout } from '@/lib/hooks';
 import { ThemeToggle } from './theme';
 
@@ -240,10 +232,7 @@ export function Header() {
             </li>
             {CATEGORIES.map((c) => (
               <li key={c.slug}>
-                <NavLink
-                  href={`/category/${c.slug}`}
-                  active={pathname === `/category/${c.slug}`}
-                >
+                <NavLink href={`/category/${c.slug}`} active={pathname === `/category/${c.slug}`}>
                   {c.label}
                 </NavLink>
               </li>

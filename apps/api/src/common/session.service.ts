@@ -93,7 +93,11 @@ export class SessionService {
 
   async revokeAllSessions(userId: string, exceptSessionId?: string): Promise<void> {
     await this.prisma.userSession.updateMany({
-      where: { userId, revokedAt: null, ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}) },
+      where: {
+        userId,
+        revokedAt: null,
+        ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}),
+      },
       data: { revokedAt: new Date() },
     });
   }

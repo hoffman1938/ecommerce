@@ -72,7 +72,11 @@ export async function loginStorefront(page: Page, email: string, password: strin
   await page.waitForURL(/\/account/);
 }
 
-export async function loginAdmin(page: Page, email = 'admin@example.local', password = 'Admin123!') {
+export async function loginAdmin(
+  page: Page,
+  email = 'admin@example.local',
+  password = 'Admin123!',
+) {
   await page.goto(`${ADMIN_URL}/login`);
   await page.getByTestId('admin-email').fill(email);
   await page.getByTestId('admin-password').fill(password);

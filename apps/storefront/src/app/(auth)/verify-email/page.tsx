@@ -32,7 +32,11 @@ function VerifyInner() {
   return (
     <div className="mx-auto max-w-sm py-16 text-center">
       <h1 className="text-2xl font-bold" data-testid="verify-result">
-        {state === 'working' ? 'One moment…' : state === 'ok' ? 'Email verified ✓' : 'Verification failed'}
+        {state === 'working'
+          ? 'One moment…'
+          : state === 'ok'
+            ? 'Email verified ✓'
+            : 'Verification failed'}
       </h1>
       <p className="mt-3 text-ink-600">{message}</p>
       {state !== 'working' ? (

@@ -118,7 +118,9 @@ export function ProductForm({
       }}
     >
       {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         {text('name', 'Name', true)}
@@ -126,7 +128,11 @@ export function ProductForm({
           <span className="mb-1 flex justify-between font-medium">
             Slug
             <label className="flex items-center gap-1 text-xs font-normal text-gray-500">
-              <input type="checkbox" checked={autoSlug} onChange={(e) => setAutoSlug(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={autoSlug}
+                onChange={(e) => setAutoSlug(e.target.checked)}
+              />
               auto
             </label>
           </span>
@@ -149,7 +155,9 @@ export function ProductForm({
           >
             <option value="">Select…</option>
             {(brands ?? []).map((b) => (
-              <option key={b.id} value={b.id}>{b.name}</option>
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
             ))}
           </select>
         </label>
@@ -162,7 +170,9 @@ export function ProductForm({
           >
             <option value="">None</option>
             {(categories ?? []).map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </label>

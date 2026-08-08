@@ -5,11 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Order, OrderItem, Payment, Prisma, Shipment } from '@outlet/database';
-import {
-  assertTransition,
-  CANCELLABLE_ORDER_STATUSES,
-  ORDER_TRANSITIONS,
-} from '@outlet/domain';
+import { assertTransition, CANCELLABLE_ORDER_STATUSES, ORDER_TRANSITIONS } from '@outlet/domain';
 import type { AddressDto, OrderDto } from '@outlet/types';
 import { PrismaService } from '../../common/prisma.service';
 import { AuditService } from '../../common/audit.service';

@@ -2,8 +2,7 @@
 
 /** Admin panel API client — same environment-driven pattern as the storefront. */
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
 
 export class ApiError extends Error {
   constructor(
@@ -41,9 +40,11 @@ export const api = {
   getText: (path: string) =>
     fetch(`${API_BASE_URL}${path}`, { credentials: 'include' }).then((r) => r.text()),
   post: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
-  postForm: <T>(path: string, form: FormData) =>
-    request<T>(path, { method: 'POST', body: form }),
+    request<T>(path, {
+      method: 'POST',
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+  postForm: <T>(path: string, form: FormData) => request<T>(path, { method: 'POST', body: form }),
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
   patch: <T>(path: string, body?: unknown) =>

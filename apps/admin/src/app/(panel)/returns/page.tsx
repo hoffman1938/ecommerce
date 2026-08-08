@@ -9,8 +9,12 @@ import { api } from '@/lib/api';
 
 const STATUSES = ['', 'REQUESTED', 'APPROVED', 'REJECTED', 'RECEIVED', 'COMPLETED', 'CANCELLED'];
 const TONE: Record<string, 'gray' | 'green' | 'red' | 'yellow' | 'blue'> = {
-  REQUESTED: 'yellow', APPROVED: 'blue', REJECTED: 'red',
-  RECEIVED: 'blue', COMPLETED: 'green', CANCELLED: 'gray',
+  REQUESTED: 'yellow',
+  APPROVED: 'blue',
+  REJECTED: 'red',
+  RECEIVED: 'blue',
+  COMPLETED: 'green',
+  CANCELLED: 'gray',
 };
 
 export default function ReturnsAdminPage() {
@@ -41,18 +45,31 @@ export default function ReturnsAdminPage() {
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
-            <tr><th>RMA</th><th>Order</th><th>Status</th><th>Reason</th><th>Items</th><th>Created</th></tr>
+            <tr>
+              <th>RMA</th>
+              <th>Order</th>
+              <th>Status</th>
+              <th>Reason</th>
+              <th>Items</th>
+              <th>Created</th>
+            </tr>
           </thead>
           <tbody>
             {(returns ?? []).map((request) => (
               <tr key={request.id}>
                 <td>
-                  <Link href={`/returns/${request.id}`} className="font-medium hover:underline" data-testid={`return-${request.rmaNumber}`}>
+                  <Link
+                    href={`/returns/${request.id}`}
+                    className="font-medium hover:underline"
+                    data-testid={`return-${request.rmaNumber}`}
+                  >
                     {request.rmaNumber}
                   </Link>
                 </td>
                 <td>{request.orderNumber}</td>
-                <td><Badge tone={TONE[request.status]}>{request.status}</Badge></td>
+                <td>
+                  <Badge tone={TONE[request.status]}>{request.status}</Badge>
+                </td>
                 <td className="text-gray-500">{request.reason}</td>
                 <td>{request.items.reduce((s, i) => s + i.quantity, 0)}</td>
                 <td className="text-xs text-gray-500">{formatDate(request.createdAt)}</td>

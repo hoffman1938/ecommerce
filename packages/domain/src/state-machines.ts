@@ -1,9 +1,4 @@
-import type {
-  OrderStatus,
-  PaymentStatus,
-  ReservationStatus,
-  ReturnStatus,
-} from '@outlet/types';
+import type { OrderStatus, PaymentStatus, ReservationStatus, ReturnStatus } from '@outlet/types';
 
 /**
  * Explicit state machines. Every status change in the API goes through
@@ -67,11 +62,7 @@ export class InvalidTransitionError extends Error {
   }
 }
 
-export function canTransition<S extends string>(
-  map: TransitionMap<S>,
-  from: S,
-  to: S,
-): boolean {
+export function canTransition<S extends string>(map: TransitionMap<S>, from: S, to: S): boolean {
   return from === to || (map[from] ?? []).includes(to);
 }
 

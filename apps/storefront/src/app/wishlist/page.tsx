@@ -118,7 +118,10 @@ export default function WishlistPage() {
                       {item.brandName}
                     </p>
                     <h3 className="mt-1 text-sm font-medium leading-snug text-ink-900">
-                      <Link href={`/products/${item.slug}`} className="line-clamp-2 hover:underline">
+                      <Link
+                        href={`/products/${item.slug}`}
+                        className="line-clamp-2 hover:underline"
+                      >
                         {item.name}
                       </Link>
                     </h3>

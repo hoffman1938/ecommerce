@@ -52,7 +52,12 @@ export class CampaignsController {
       status === 'upcoming'
         ? { status: 'SCHEDULED' as const, isVisible: true, startsAt: { gt: now } }
         : status === 'active'
-          ? { status: 'ACTIVE' as const, isVisible: true, startsAt: { lte: now }, endsAt: { gt: now } }
+          ? {
+              status: 'ACTIVE' as const,
+              isVisible: true,
+              startsAt: { lte: now },
+              endsAt: { gt: now },
+            }
           : {
               isVisible: true,
               OR: [

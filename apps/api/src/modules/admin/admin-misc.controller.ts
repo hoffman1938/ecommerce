@@ -123,7 +123,9 @@ export class AdminMiscController {
   @Get('audit-logs')
   @RequirePermissions(Permissions.AuditLogsView)
   @ApiOperation({ summary: 'Audit trail with filters' })
-  async auditLogs(@Query(new ZodValidationPipe(auditQuerySchema)) query: z.infer<typeof auditQuerySchema>) {
+  async auditLogs(
+    @Query(new ZodValidationPipe(auditQuerySchema)) query: z.infer<typeof auditQuerySchema>,
+  ) {
     const where = {
       ...(query.entityType ? { entityType: query.entityType } : {}),
       ...(query.action ? { action: { contains: query.action } } : {}),

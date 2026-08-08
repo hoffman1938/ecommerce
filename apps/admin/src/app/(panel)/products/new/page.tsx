@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
-import { EMPTY_PRODUCT, ProductForm, toApiPayload, type ProductFormValues } from '@/components/product-form';
+import {
+  EMPTY_PRODUCT,
+  ProductForm,
+  toApiPayload,
+  type ProductFormValues,
+} from '@/components/product-form';
 
 export default function NewProductPage() {
   const router = useRouter();

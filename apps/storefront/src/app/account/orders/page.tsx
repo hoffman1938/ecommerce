@@ -34,10 +34,20 @@ export default function OrdersPage() {
                 </p>
               </div>
               <div className="text-right">
-                <Badge tone={order.status === 'CANCELLED' ? 'red' : order.status === 'DELIVERED' ? 'green' : 'blue'}>
+                <Badge
+                  tone={
+                    order.status === 'CANCELLED'
+                      ? 'red'
+                      : order.status === 'DELIVERED'
+                        ? 'green'
+                        : 'blue'
+                  }
+                >
                   {order.status}
                 </Badge>
-                <p className="mt-1 font-medium">{formatMoney(order.totalMinor, order.currencyCode)}</p>
+                <p className="mt-1 font-medium">
+                  {formatMoney(order.totalMinor, order.currencyCode)}
+                </p>
               </div>
             </Link>
           ))}

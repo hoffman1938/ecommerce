@@ -23,7 +23,8 @@ export class CatalogController {
 
   @Get('products')
   @ApiOperation({
-    summary: 'Search products with filters (q, brand, category, size, color, price, discount, availability, campaign) and sorting',
+    summary:
+      'Search products with filters (q, brand, category, size, color, price, discount, availability, campaign) and sorting',
   })
   listProducts(@Query(new ZodValidationPipe(productQuerySchema)) query: ProductQueryInput) {
     return this.catalog.listProducts(query);

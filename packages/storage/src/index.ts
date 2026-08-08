@@ -64,8 +64,7 @@ export class S3CompatibleStorageProvider implements ObjectStorageProvider {
   }
 
   async upload(input: UploadInput): Promise<StoredFile> {
-    const body =
-      typeof input.body === 'string' ? Buffer.from(input.body) : Buffer.from(input.body);
+    const body = typeof input.body === 'string' ? Buffer.from(input.body) : Buffer.from(input.body);
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.config.bucket,
@@ -85,9 +84,7 @@ export class S3CompatibleStorageProvider implements ObjectStorageProvider {
   }
 
   async delete(objectKey: string): Promise<void> {
-    await this.client.send(
-      new DeleteObjectCommand({ Bucket: this.config.bucket, Key: objectKey }),
-    );
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.config.bucket, Key: objectKey }));
   }
 
   getPublicUrl(objectKey: string): string {

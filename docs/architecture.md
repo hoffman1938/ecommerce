@@ -33,16 +33,16 @@ BullMQ→Cloudflare Queues are configuration changes, not rewrites.
 
 ## Key technical decisions
 
-| Decision | Choice | Why |
-| --- | --- | --- |
-| ORM | Prisma | Typed client, explicit SQL escape hatch for the atomic inventory updates |
-| Auth | Opaque session tokens in HttpOnly cookies, HMAC-hashed at rest | Revocable server-side sessions; DB leak exposes no usable tokens; no JWT footguns |
-| Money | Integer minor units everywhere (`Int`), EUR default | No floating point; `packages/domain/money.ts` is the only formatter |
-| Tax | Prices are VAT-inclusive; `tax_rate_bps` setting derives the included portion | Standard EU display model; documented assumption |
-| Validation | Zod end-to-end | Same schema powers API rejection and frontend forms |
-| Search | PostgreSQL (one SQL id-selection query behind `CatalogService`) | MVP-sufficient; the service boundary is the future Meilisearch/OpenSearch seam |
-| Frontends | Client-side data fetching for personalized state; SSR for public/SEO pages | Keeps HttpOnly cookies working cross-port and stays static-friendly for Pages |
-| Rate limiting | @nestjs/throttler with stricter auth limits | Configurable via env |
+| Decision      | Choice                                                                        | Why                                                                               |
+| ------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| ORM           | Prisma                                                                        | Typed client, explicit SQL escape hatch for the atomic inventory updates          |
+| Auth          | Opaque session tokens in HttpOnly cookies, HMAC-hashed at rest                | Revocable server-side sessions; DB leak exposes no usable tokens; no JWT footguns |
+| Money         | Integer minor units everywhere (`Int`), EUR default                           | No floating point; `packages/domain/money.ts` is the only formatter               |
+| Tax           | Prices are VAT-inclusive; `tax_rate_bps` setting derives the included portion | Standard EU display model; documented assumption                                  |
+| Validation    | Zod end-to-end                                                                | Same schema powers API rejection and frontend forms                               |
+| Search        | PostgreSQL (one SQL id-selection query behind `CatalogService`)               | MVP-sufficient; the service boundary is the future Meilisearch/OpenSearch seam    |
+| Frontends     | Client-side data fetching for personalized state; SSR for public/SEO pages    | Keeps HttpOnly cookies working cross-port and stays static-friendly for Pages     |
+| Rate limiting | @nestjs/throttler with stricter auth limits                                   | Configurable via env                                                              |
 
 ## Inventory model (documented decision)
 

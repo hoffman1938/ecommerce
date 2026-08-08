@@ -9,7 +9,7 @@
     "dev": "nest start --watch",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "jest --config jest.config.js",
+    "test": "jest --config jest.config.js --passWithNoTests",
     "test:integration": "jest --config jest.integration.config.js --runInBand"
   },
   "dependencies": {

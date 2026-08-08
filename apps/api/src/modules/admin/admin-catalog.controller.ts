@@ -79,7 +79,9 @@ export class AdminCatalogController {
   @Get('products')
   @RequirePermissions(Permissions.ProductsView)
   @ApiOperation({ summary: 'Admin product list with search' })
-  listProducts(@Query(new ZodValidationPipe(listQuerySchema)) query: z.infer<typeof listQuerySchema>) {
+  listProducts(
+    @Query(new ZodValidationPipe(listQuerySchema)) query: z.infer<typeof listQuerySchema>,
+  ) {
     return this.catalog.listProducts(query);
   }
 
@@ -168,7 +170,11 @@ export class AdminCatalogController {
       throw new BadRequestException('File exceeds the 5 MB upload limit.');
     }
     const extension = file.originalname.includes('.')
-      ? file.originalname.split('.').pop()!.toLowerCase().replace(/[^a-z0-9]/g, '')
+      ? file.originalname
+          .split('.')
+          .pop()!
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '')
       : 'bin';
     const objectKey = `uploads/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${extension}`;
     const stored = await this.storage.upload({

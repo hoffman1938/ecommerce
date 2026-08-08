@@ -68,11 +68,7 @@ export default async function HomePage() {
         <div className="overflow-hidden border-b border-ink-200 py-3">
           <div className="flex w-max animate-marquee gap-10 pr-10 motion-reduce:animate-none">
             {[0, 1].map((copy) => (
-              <ul
-                key={copy}
-                className="flex shrink-0 items-center gap-10"
-                aria-hidden={copy === 1}
-              >
+              <ul key={copy} className="flex shrink-0 items-center gap-10" aria-hidden={copy === 1}>
                 {featured.map((brand) => (
                   <li key={brand.id}>
                     <Link

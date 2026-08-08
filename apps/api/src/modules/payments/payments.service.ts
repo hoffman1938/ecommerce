@@ -57,7 +57,9 @@ export class PaymentsService {
    * Exactly-once processing: the (provider, providerEventId) unique
    * constraint on payment_events suppresses duplicate deliveries.
    */
-  async processEvent(event: VerifiedPaymentEvent): Promise<{ received: boolean; duplicate: boolean }> {
+  async processEvent(
+    event: VerifiedPaymentEvent,
+  ): Promise<{ received: boolean; duplicate: boolean }> {
     try {
       await this.prisma.paymentEvent.create({
         data: {
@@ -169,46 +171,48 @@ export class PaymentsService {
 
     const order = payment.order;
     let stockSecured = false;
-    await this.prisma.$transaction(async (tx) => {
-      const result = await this.reservations.convertReservationsToSale(
-        tx,
-        order.id,
-        order.items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
-      );
-      stockSecured = result.ok;
-      if (!result.ok) {
-        // Roll back any partial conversion; handled outside the transaction.
-        throw new StockLostError();
-      }
-      await tx.payment.update({
-        where: { id: payment.id },
-        data: { status: 'PAID' },
-      });
-      await tx.order.update({
-        where: { id: order.id },
-        data: { status: 'PAID', paidAt: new Date(), version: { increment: 1 } },
-      });
-      await tx.orderStatusHistory.create({
-        data: { orderId: order.id, fromStatus: order.status, toStatus: 'PAID' },
-      });
-      if (order.couponId) {
-        await tx.coupon.update({
-          where: { id: order.couponId },
-          data: { timesRedeemed: { increment: 1 } },
+    await this.prisma
+      .$transaction(async (tx) => {
+        const result = await this.reservations.convertReservationsToSale(
+          tx,
+          order.id,
+          order.items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+        );
+        stockSecured = result.ok;
+        if (!result.ok) {
+          // Roll back any partial conversion; handled outside the transaction.
+          throw new StockLostError();
+        }
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: { status: 'PAID' },
         });
-      }
-      // The purchase is final: the originating cart is consumed.
-      await tx.cart.updateMany({
-        where: { reservations: { some: { orderId: order.id } }, status: 'ACTIVE' },
-        data: { status: 'CONVERTED' },
+        await tx.order.update({
+          where: { id: order.id },
+          data: { status: 'PAID', paidAt: new Date(), version: { increment: 1 } },
+        });
+        await tx.orderStatusHistory.create({
+          data: { orderId: order.id, fromStatus: order.status, toStatus: 'PAID' },
+        });
+        if (order.couponId) {
+          await tx.coupon.update({
+            where: { id: order.couponId },
+            data: { timesRedeemed: { increment: 1 } },
+          });
+        }
+        // The purchase is final: the originating cart is consumed.
+        await tx.cart.updateMany({
+          where: { reservations: { some: { orderId: order.id } }, status: 'ACTIVE' },
+          data: { status: 'CONVERTED' },
+        });
+      })
+      .catch(async (err) => {
+        if (err instanceof StockLostError) {
+          await this.handleStockLostAfterPayment(payment.id);
+          return;
+        }
+        throw err;
       });
-    }).catch(async (err) => {
-      if (err instanceof StockLostError) {
-        await this.handleStockLostAfterPayment(payment.id);
-        return;
-      }
-      throw err;
-    });
 
     if (stockSecured) {
       await this.queue.enqueue(QUEUE_NAMES.emails, JOB_NAMES.sendEmail, {
@@ -313,7 +317,11 @@ export class PaymentsService {
     // Give the customer their remaining reservation window to retry: holds
     // return to ACTIVE with the ORIGINAL expiry (never extended).
     await this.prisma.inventoryReservation.updateMany({
-      where: { orderId: payment.orderId, status: 'PAYMENT_PROCESSING', expiresAt: { gt: new Date() } },
+      where: {
+        orderId: payment.orderId,
+        status: 'PAYMENT_PROCESSING',
+        expiresAt: { gt: new Date() },
+      },
       data: { status: 'ACTIVE' },
     });
 
@@ -390,7 +398,12 @@ export class PaymentsService {
   // --- Refunds (admin + returns flow) --------------------------------------
 
   async createRefund(
-    input: { orderId: string; amountMinor: number; reason: string; returnRequestId?: string | null },
+    input: {
+      orderId: string;
+      amountMinor: number;
+      reason: string;
+      returnRequestId?: string | null;
+    },
     actor: { userId: string; email: string },
   ) {
     const order = await this.prisma.order.findUnique({

@@ -31,7 +31,8 @@ export async function processEmailJob(
       message = passwordResetEmail(payload.to, String(data.resetUrl));
       break;
     case 'order-confirmation': {
-      const items = (data.items as Array<{ name: string; quantity: number; totalMinor: number }>) ?? [];
+      const items =
+        (data.items as Array<{ name: string; quantity: number; totalMinor: number }>) ?? [];
       const currency = String(data.currencyCode ?? 'EUR');
       message = orderConfirmationEmail(payload.to, {
         orderNumber: String(data.orderNumber),

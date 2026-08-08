@@ -8,11 +8,7 @@ export const addressSchema = z.object({
   city: z.string().trim().min(1).max(100),
   region: z.string().trim().max(100).optional().nullable(),
   postalCode: z.string().trim().min(1).max(20),
-  countryCode: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .length(2, 'Use a 2-letter ISO country code'),
+  countryCode: z.string().trim().toUpperCase().length(2, 'Use a 2-letter ISO country code'),
   phone: z.string().trim().max(30).optional().nullable(),
 });
 export type AddressInput = z.infer<typeof addressSchema>;
