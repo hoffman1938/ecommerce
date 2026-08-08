@@ -154,11 +154,20 @@ export class ReservationsService {
    * Idempotently release a reservation (EXPIRED or CANCELLED) and return the
    * held stock. Safe to call multiple times and from multiple processes.
    */
+  /**
+   * Release a hold and return the stock.
+   *
+   * The cart line is deleted along with it, because a line with no reservation
+   * behind it is a lie the checkout would later have to catch. `keepCartItem`
+   * is the one exception: saving an item for later intentionally keeps the line
+   * while giving the stock back, and that line is excluded from checkout.
+   */
   async release(
     reservationId: string,
     toStatus: 'EXPIRED' | 'CANCELLED',
     reason: string,
     actor?: { userId?: string; email?: string; type?: 'ADMIN' | 'SYSTEM' | 'CUSTOMER' },
+    options?: { keepCartItem?: boolean },
   ): Promise<boolean> {
     const released = await this.prisma.$transaction(async (tx) => {
       // Guarded status flip — exactly one caller wins.
@@ -182,7 +191,7 @@ export class ReservationsService {
       `;
 
       // Remove the now-invalid cart line so carts self-heal.
-      if (reservation.cartItemId) {
+      if (reservation.cartItemId && !options?.keepCartItem) {
         await tx.cartItem.deleteMany({ where: { id: reservation.cartItemId } });
       }
       return true;
@@ -200,6 +209,20 @@ export class ReservationsService {
       });
     }
     return released;
+  }
+
+  /**
+   * Give back the stock held for one cart line but keep the line itself. Used
+   * when a customer saves an item for later.
+   */
+  async releaseForCartItem(cartItemId: string): Promise<void> {
+    const holding = await this.prisma.inventoryReservation.findMany({
+      where: { cartItemId, status: { in: [...HOLDING] } },
+      select: { id: true },
+    });
+    for (const { id } of holding) {
+      await this.release(id, 'CANCELLED', 'Saved for later', undefined, { keepCartItem: true });
+    }
   }
 
   /** Release every stock-holding reservation whose deadline has passed. */

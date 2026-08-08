@@ -1,6 +1,11 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { productQuerySchema, type ProductQueryInput } from '@outlet/validation';
+import {
+  productQuerySchema,
+  reviewQuerySchema,
+  type ProductQueryInput,
+  type ReviewQueryInput,
+} from '@outlet/validation';
 import { CatalogService } from './catalog.service';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe';
 
@@ -21,6 +26,27 @@ export class CatalogController {
     return this.catalog.listCategories();
   }
 
+  @Get('suggest')
+  @ApiOperation({ summary: 'Type-ahead suggestions for products, brands and categories' })
+  suggest(@Query('q') q?: string) {
+    return this.catalog.suggest((q ?? '').slice(0, 200));
+  }
+
+  @Get('recommended')
+  @ApiOperation({ summary: 'Recommendations from browsing signals' })
+  recommended(
+    @Query('recent') recent?: string,
+    @Query('wishlist') wishlist?: string,
+    @Query('cart') cart?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const slugs = (value?: string) => (value ? value.split(',').filter(Boolean).slice(0, 20) : []);
+    return this.catalog.recommended(
+      { recentSlugs: slugs(recent), wishlistSlugs: slugs(wishlist), cartSlugs: slugs(cart) },
+      Math.min(12, Math.max(1, Number(limit) || 4)),
+    );
+  }
+
   @Get('products')
   @ApiOperation({
     summary:
@@ -34,5 +60,20 @@ export class CatalogController {
   @ApiOperation({ summary: 'Product detail with variants and live availability' })
   getProduct(@Param('slug') slug: string) {
     return this.catalog.getProductBySlug(slug);
+  }
+
+  @Get('products/:slug/reviews')
+  @ApiOperation({ summary: 'Published reviews with the rating distribution' })
+  getProductReviews(
+    @Param('slug') slug: string,
+    @Query(new ZodValidationPipe(reviewQuerySchema)) query: ReviewQueryInput,
+  ) {
+    return this.catalog.getProductReviews(slug, query);
+  }
+
+  @Get('products/:slug/related')
+  @ApiOperation({ summary: 'Related products for a product page' })
+  getRelatedProducts(@Param('slug') slug: string, @Query('limit') limit?: string) {
+    return this.catalog.relatedProducts(slug, Math.min(12, Math.max(1, Number(limit) || 4)));
   }
 }

@@ -109,7 +109,9 @@ export class CheckoutService {
     }
 
     const cart = await this.carts.findActiveCart(identity);
-    if (!cart || cart.items.length === 0) throw new BadRequestException('Your cart is empty.');
+    if (!cart || cart.items.every((item) => item.savedForLater)) {
+      throw new BadRequestException('Your cart is empty.');
+    }
     await this.reservations.expireDueForCart(cart.id);
 
     const cartView = await this.carts.getCartView(identity);
@@ -126,6 +128,9 @@ export class CheckoutService {
       include: {
         coupon: true,
         items: {
+          // Items parked for later hold no reservation and must never become
+          // order lines.
+          where: { savedForLater: false },
           include: {
             variant: {
               include: {

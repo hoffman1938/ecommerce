@@ -8,6 +8,7 @@ import { Footer } from '@/components/footer';
 import { DemoBanner } from '@/components/demo-banner';
 import { ThemeScript } from '@/components/theme';
 import { Reveal } from '@/lib/use-reveal';
+import { organizationJsonLd, SITE_NAME, SITE_URL } from '@/lib/structured-data';
 
 /**
  * Self-hosted at build time by next/font, so there is no third-party request
@@ -19,13 +20,31 @@ const inter = Inter({
   variable: '--font-sans',
 });
 
+const DESCRIPTION =
+  'Limited-stock outlet deals on clothing, footwear, bags and accessories from Nike, Adidas, The North Face, Levi\u2019s and more.';
+
 export const metadata: Metadata = {
+  // Lets Next resolve the relative `canonical` paths pages declare into
+  // absolute URLs, and gives Open Graph images an origin to hang off.
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Outlet Marketplace — brand deals up to 60% off',
-    template: '%s | Outlet Marketplace',
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    'Limited-stock outlet deals from Adidas, Nike, Puma, Tommy Hilfiger, Calvin Klein and more.',
+  description: DESCRIPTION,
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    title: 'Outlet Marketplace — brand deals up to 60% off',
+    description: DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Outlet Marketplace — brand deals up to 60% off',
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -35,6 +54,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <ThemeScript />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+        />
       </head>
       <body className="flex min-h-screen flex-col bg-ink-25">
         <Providers>

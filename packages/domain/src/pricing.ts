@@ -121,6 +121,71 @@ export function computeCartTotals(input: CartTotalsInput): CartTotals {
   };
 }
 
+export interface FreeShippingProgress {
+  thresholdMinor: number;
+  remainingMinor: number;
+  qualified: boolean;
+}
+
+/**
+ * How far a cart is from free standard shipping. Computed here rather than in
+ * the UI so the figure the customer is nudged toward is the same one the
+ * shipping calculation uses — the two drifting apart is how "spend €5 more"
+ * ends up still charging for delivery.
+ *
+ * Returns `qualified` when the shop has no threshold configured, since in that
+ * case there is nothing left to unlock.
+ */
+export function freeShippingProgress(
+  rules: ShippingRules,
+  subtotalAfterDiscountMinor: number,
+): FreeShippingProgress {
+  const threshold = rules.freeShippingThresholdMinor;
+  if (threshold == null) {
+    return { thresholdMinor: 0, remainingMinor: 0, qualified: true };
+  }
+  const remaining = Math.max(0, threshold - subtotalAfterDiscountMinor);
+  return { thresholdMinor: threshold, remainingMinor: remaining, qualified: remaining === 0 };
+}
+
+export interface DeliveryEstimate {
+  earliest: string;
+  latest: string;
+}
+
+/** Working days a method takes, as [earliest, latest]. */
+const TRANSIT_DAYS: Record<'STANDARD' | 'EXPRESS', [number, number]> = {
+  STANDARD: [3, 5],
+  EXPRESS: [1, 2],
+};
+
+function addWorkingDays(from: Date, days: number): Date {
+  const date = new Date(from.getTime());
+  let remaining = days;
+  while (remaining > 0) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    const day = date.getUTCDay();
+    if (day !== 0 && day !== 6) remaining -= 1;
+  }
+  return date;
+}
+
+/**
+ * Delivery window for a shipping method, skipping weekends. Dates only (no
+ * time), because promising an hour the warehouse cannot honour is worse than
+ * promising a day.
+ */
+export function deliveryEstimate(
+  method: 'STANDARD' | 'EXPRESS',
+  now: Date = new Date(),
+): DeliveryEstimate {
+  const [min, max] = TRANSIT_DAYS[method];
+  return {
+    earliest: addWorkingDays(now, min).toISOString().slice(0, 10),
+    latest: addWorkingDays(now, max).toISOString().slice(0, 10),
+  };
+}
+
 /** Refundable remainder for an order given previous refunds. */
 export function maxRefundableMinor(orderTotalMinor: number, alreadyRefundedMinor: number): number {
   assertMinorUnits(orderTotalMinor);

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "storefront-demo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@outlet/storefront", "dev"],
+      "port": 3000
+    }
+  ]
+}

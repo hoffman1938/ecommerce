@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ProductListItemDto } from '@outlet/types';
-import { ImageIcon, Skeleton, cx, formatMoney } from '@outlet/ui';
+import { ImageIcon, Skeleton, StarRating, cx, formatMoney } from '@outlet/ui';
 
 /**
  * Product tile.
@@ -88,6 +88,18 @@ export function ProductCard({
             </span>
           ) : null}
         </div>
+
+        {/* Social proof sits under the price: it supports the decision the
+            price just prompted, and stays quiet when a product has no reviews
+            rather than showing an empty five-star rail. */}
+        {product.ratingAverage !== null && product.reviewCount > 0 ? (
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <StarRating value={product.ratingAverage} size="sm" />
+            <span data-numeric className="text-xs text-ink-500">
+              {product.ratingAverage.toFixed(1)} ({product.reviewCount})
+            </span>
+          </div>
+        ) : null}
 
         {lastFew ? (
           <p data-numeric className="mt-1 text-xs text-warning-600">

@@ -7,6 +7,8 @@ import { Alert, Button, HeartIcon, cx, formatMoney } from '@outlet/ui';
 import { useAddToCart, useCurrentUser } from '@/lib/hooks';
 import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { track } from '@/lib/analytics';
+import { SizeGuide } from '@/components/size-guide';
 
 const COLOR_HEX: Record<string, string> = {
   Black: '#1f2937',
@@ -61,6 +63,12 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
         quantity,
         campaignId: product.campaignId,
       });
+      track('add_to_cart', {
+        productId: product.id,
+        variantId: selectedVariant.id,
+        quantity,
+        priceMinor: selectedVariant.priceMinor,
+      });
       setFeedback({
         tone: 'success',
         text: 'Added to your bag — reserved for the next 20 minutes.',
@@ -84,6 +92,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
     }
     try {
       await api.post('/account/wishlist', { productId: product.id });
+      track('wishlist_add', { productId: product.id });
       setFeedback({ tone: 'success', text: 'Saved to your wishlist.' });
     } catch (err) {
       setFeedback({ tone: 'error', text: (err as Error).message });
@@ -161,7 +170,10 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
 
       {/* Size */}
       <fieldset className="mt-7">
-        <legend className="mb-2.5 text-sm font-semibold text-ink-950">Size</legend>
+        <legend className="mb-2.5 flex w-full items-baseline justify-between gap-4 text-sm">
+          <span className="font-semibold text-ink-950">Size</span>
+          <SizeGuide sizes={product.variants.map((v) => v.size)} />
+        </legend>
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
           {sizeVariants.map((variant) => {
             const disabled = variant.availableQuantity <= 0;
@@ -259,6 +271,31 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
         Items in your bag are reserved for 20 minutes. The timer does not restart when you refresh
         or sign in.
       </p>
+
+      {/* The three questions people ask before committing: when does it arrive,
+          what if it doesn't fit, and is paying here safe. Answering them here
+          rather than in the footer is the point. */}
+      <dl className="mt-6 divide-y divide-ink-100 border-t border-ink-200 text-sm">
+        <div className="flex gap-3 py-3">
+          <dt className="w-28 shrink-0 text-ink-500">Delivery</dt>
+          <dd className="min-w-0 text-ink-700">
+            Standard {formatMoney(495, product.currencyCode)}, 3–5 working days. Free over{' '}
+            {formatMoney(10000, product.currencyCode)}. Express 1–2 days at checkout.
+          </dd>
+        </div>
+        <div className="flex gap-3 py-3">
+          <dt className="w-28 shrink-0 text-ink-500">Returns</dt>
+          <dd className="min-w-0 text-ink-700">
+            Free returns within 30 days of delivery. Request one from your order page.
+          </dd>
+        </div>
+        <div className="flex gap-3 py-3">
+          <dt className="w-28 shrink-0 text-ink-500">Payment</dt>
+          <dd className="min-w-0 text-ink-700">
+            Card or cash on delivery. Card details are never stored by this shop.
+          </dd>
+        </div>
+      </dl>
     </div>
   );
 }

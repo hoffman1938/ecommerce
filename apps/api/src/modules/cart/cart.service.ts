@@ -3,7 +3,9 @@ import * as crypto from 'node:crypto';
 import type { Cart } from '@outlet/database';
 import {
   computeCartTotals,
+  deliveryEstimate,
   effectiveUnitPriceMinor,
+  freeShippingProgress,
   isCampaignRunning,
   secondsRemaining,
   validateCoupon,
@@ -334,6 +336,7 @@ export class CartService {
 
     const now = new Date();
     const items: CartItemDto[] = [];
+    const savedForLater: CartItemDto[] = [];
     for (const item of fresh.items) {
       const currentPrice = await this.currentUnitPrice(item.variantId, item.campaignId);
       if (currentPrice !== item.unitPriceMinor) {
@@ -353,7 +356,10 @@ export class CartService {
         orderBy: { createdAt: 'desc' },
       });
       const image = item.variant.product.images[0];
-      items.push({
+      // Saved items hold no reservation by design, so the "expired" wording the
+      // active lines use would be misleading on them.
+      const target = item.savedForLater ? savedForLater : items;
+      target.push({
         id: item.id,
         variantId: item.variantId,
         productId: item.variant.productId,
@@ -370,16 +376,17 @@ export class CartService {
         lineTotalMinor: item.unitPriceMinor * item.quantity,
         campaignId: item.campaignId,
         campaignTitle: item.campaign?.title ?? null,
-        reservation: reservation
-          ? {
-              id: reservation.id,
-              status: reservation.status,
-              expiresAt: reservation.expiresAt.toISOString(),
-              secondsRemaining: secondsRemaining(reservation.expiresAt, now),
-            }
-          : null,
-        isExpired: !reservation,
-        message: reservation ? null : 'Reservation expired',
+        reservation:
+          reservation && !item.savedForLater
+            ? {
+                id: reservation.id,
+                status: reservation.status,
+                expiresAt: reservation.expiresAt.toISOString(),
+                secondsRemaining: secondsRemaining(reservation.expiresAt, now),
+              }
+            : null,
+        isExpired: item.savedForLater ? false : !reservation,
+        message: item.savedForLater || reservation ? null : 'Reservation expired',
       });
     }
 
@@ -394,8 +401,11 @@ export class CartService {
     let eligibility: Set<string> | null = null;
 
     if (fresh.coupon) {
+      // Saved items are not being bought, so they must not help a coupon reach
+      // its minimum order value or count toward its restrictions.
+      const activeItems = fresh.items.filter((item) => !item.savedForLater);
       const stats = await this.customerCouponStats(identity.userId ?? null, fresh.coupon.id);
-      const lines = fresh.items.map((item) => ({
+      const lines = activeItems.map((item) => ({
         productId: item.variant.productId,
         brandId: item.variant.product.brandId,
         categoryId: item.variant.product.categoryId,
@@ -408,7 +418,7 @@ export class CartService {
         couponCode = fresh.coupon.code;
         couponForTotals = fresh.coupon;
         eligibility = new Set(
-          fresh.items
+          activeItems
             .filter((item) => {
               const hasRestrictions =
                 fresh.coupon!.brandIds.length > 0 ||
@@ -452,6 +462,7 @@ export class CartService {
     return {
       id: fresh.id,
       items,
+      savedForLater,
       currencyCode: fresh.currencyCode,
       subtotalMinor: totals.subtotalMinor,
       discountMinor: totals.couponDiscountMinor,
@@ -461,14 +472,84 @@ export class CartService {
       couponCode,
       couponDiscountMinor: totals.couponDiscountMinor,
       itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
+      freeShipping: freeShippingProgress(
+        {
+          standardShippingMinor: settings.standardShippingMinor,
+          expressShippingMinor: settings.expressShippingMinor,
+          freeShippingThresholdMinor: settings.freeShippingThresholdMinor,
+        },
+        totals.subtotalMinor - totals.couponDiscountMinor,
+      ),
+      deliveryEstimate:
+        items.length === 0
+          ? null
+          : { ...deliveryEstimate('STANDARD', now), method: 'STANDARD' as const },
       messages,
     };
+  }
+
+  /**
+   * Park a line. The reservation is released immediately — holding stock for an
+   * item the customer has explicitly set aside would starve buyers who want it
+   * now, which is the opposite of what the feature is for.
+   */
+  async saveForLater(identity: CartIdentity, itemId: string): Promise<void> {
+    const cart = await this.findActiveCart(identity);
+    if (!cart) throw new NotFoundException('Cart not found');
+
+    const item = await this.prisma.cartItem.findFirst({ where: { id: itemId, cartId: cart.id } });
+    if (!item) throw new NotFoundException('Cart item not found');
+    if (item.savedForLater) return;
+
+    await this.reservations.releaseForCartItem(item.id);
+    await this.prisma.cartItem.update({
+      where: { id: item.id },
+      data: { savedForLater: true },
+    });
+  }
+
+  /**
+   * Move a parked line back into the cart. Stock is re-checked and a new
+   * reservation taken, because nothing was held while it sat in saved items.
+   */
+  async moveToCart(identity: CartIdentity, itemId: string): Promise<void> {
+    const cart = await this.findActiveCart(identity);
+    if (!cart) throw new NotFoundException('Cart not found');
+
+    const item = await this.prisma.cartItem.findFirst({ where: { id: itemId, cartId: cart.id } });
+    if (!item) throw new NotFoundException('Saved item not found');
+    if (!item.savedForLater) return;
+
+    await this.prisma.cartItem.update({
+      where: { id: item.id },
+      data: { savedForLater: false },
+    });
+
+    try {
+      await this.reservations.reserve({
+        cartId: cart.id,
+        cartItemId: item.id,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        userId: identity.userId ?? null,
+        sessionToken: identity.cartToken ?? null,
+      });
+    } catch (error) {
+      // Could not re-reserve — park it again so the cart never contains a line
+      // with no hold behind it.
+      await this.prisma.cartItem.update({
+        where: { id: item.id },
+        data: { savedForLater: true },
+      });
+      throw error;
+    }
   }
 
   private emptyCart(): CartDto {
     return {
       id: '',
       items: [],
+      savedForLater: [],
       currencyCode: 'EUR',
       subtotalMinor: 0,
       discountMinor: 0,
@@ -478,6 +559,8 @@ export class CartService {
       couponCode: null,
       couponDiscountMinor: 0,
       itemCount: 0,
+      freeShipping: { thresholdMinor: 0, remainingMinor: 0, qualified: false },
+      deliveryEstimate: null,
       messages: [],
     };
   }
