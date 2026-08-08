@@ -1,0 +1,4 @@
+# This deployment is a demo of the storefront running on placeholder catalog
+# data that uses real brand names. Keep it out of search results.
+User-agent: *
+Disallow: /

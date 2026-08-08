@@ -1,13 +1,11 @@
 import Link from 'next/link';
-import type { BrandDto, CampaignDto, Paginated, ProductListItemDto } from '@outlet/types';
+import type { BrandDto, Paginated, ProductListItemDto } from '@outlet/types';
 import { serverGet } from '@/lib/server-api';
 import { ProductGrid } from '@/components/product-card';
-import { CampaignCard } from '@/components/campaign-card';
+import { CampaignSections } from '@/components/campaign-sections';
 
 export default async function HomePage() {
-  const [activeCampaigns, upcomingCampaigns, brands, newest, bestDiscounts] = await Promise.all([
-    serverGet<CampaignDto[]>('/campaigns?status=active'),
-    serverGet<CampaignDto[]>('/campaigns?status=upcoming'),
+  const [brands, newest, bestDiscounts] = await Promise.all([
     serverGet<BrandDto[]>('/catalog/brands'),
     serverGet<Paginated<ProductListItemDto>>('/catalog/products?sort=newest&pageSize=8'),
     serverGet<Paginated<ProductListItemDto>>('/catalog/products?sort=discount&pageSize=8'),
@@ -29,32 +27,8 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      {activeCampaigns && activeCampaigns.length > 0 ? (
-        <section>
-          <div className="mb-4 flex items-baseline justify-between">
-            <h2 className="text-xl font-bold">Active campaigns</h2>
-            <Link href="/campaigns" className="text-sm text-gray-500 hover:underline">
-              View all
-            </Link>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {activeCampaigns.slice(0, 3).map((c) => (
-              <CampaignCard key={c.id} campaign={c} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {upcomingCampaigns && upcomingCampaigns.length > 0 ? (
-        <section>
-          <h2 className="mb-4 text-xl font-bold">Coming soon</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {upcomingCampaigns.slice(0, 3).map((c) => (
-              <CampaignCard key={c.id} campaign={c} upcoming />
-            ))}
-          </div>
-        </section>
-      ) : null}
+      {/* Rendered on the client so campaign windows stay live in a static build. */}
+      <CampaignSections limit={3} />
 
       {brands && brands.length > 0 ? (
         <section>

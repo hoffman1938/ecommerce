@@ -1,14 +1,7 @@
-import { ProductListing, type ListingParams } from '@/components/product-listing';
+import { ProductListing } from '@/components/product-listing';
 
-export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Search' };
 
-export default function SearchPage({ searchParams }: { searchParams: ListingParams }) {
-  const q = typeof searchParams.q === 'string' ? searchParams.q : '';
-  return (
-    <ProductListing
-      title={q ? `Search results for “${q}”` : 'Search'}
-      searchParams={searchParams}
-      basePath="/search"
-    />
-  );
+export default function SearchPage() {
+  return <ProductListing title="Search" basePath="/search" titleFromQueryParam="q" />;
 }

@@ -1,9 +1,7 @@
-import { ProductListing, type ListingParams } from '@/components/product-listing';
+import { ProductListing } from '@/components/product-listing';
 
-export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Outlet catalog' };
 
-export default function ProductsPage({ searchParams }: { searchParams: ListingParams }) {
-  return (
-    <ProductListing title="Outlet catalog" searchParams={searchParams} basePath="/products" />
-  );
+export default function ProductsPage() {
+  return <ProductListing title="Outlet catalog" basePath="/products" />;
 }

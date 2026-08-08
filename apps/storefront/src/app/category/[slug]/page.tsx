@@ -1,19 +1,25 @@
-import { ProductListing, type ListingParams } from '@/components/product-listing';
+import { ProductListing } from '@/components/product-listing';
+import { CATEGORIES } from '@/lib/demo/data';
 
-export const dynamic = 'force-dynamic';
+/** Pre-render every catalog category so the app can be exported statically. */
+export function generateStaticParams() {
+  return CATEGORIES.map((category) => ({ slug: category.slug }));
+}
 
-export default function CategoryPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string };
-  searchParams: ListingParams;
-}) {
-  const title = params.slug.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+function titleFor(slug: string): string {
+  const known = CATEGORIES.find((category) => category.slug === slug);
+  if (known) return known.name;
+  return slug.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+}
+
+export function generateMetadata({ params }: { params: { slug: string } }) {
+  return { title: titleFor(params.slug) };
+}
+
+export default function CategoryPage({ params }: { params: { slug: string } }) {
   return (
     <ProductListing
-      title={title}
-      searchParams={searchParams}
+      title={titleFor(params.slug)}
       fixedFilters={{ category: params.slug }}
       basePath={`/category/${params.slug}`}
     />

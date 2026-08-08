@@ -2,10 +2,14 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { ProductDetailDto } from '@outlet/types';
 import { serverGet } from '@/lib/server-api';
+import { productSlugs } from '@/lib/demo/queries';
 import { ProductPurchasePanel } from '@/components/product-purchase-panel';
 import { RecentlyViewed, TrackProductView } from '@/components/recently-viewed';
 
-export const dynamic = 'force-dynamic';
+/** Pre-render every catalog product so the app can be exported statically. */
+export function generateStaticParams() {
+  return productSlugs().map((slug) => ({ slug }));
+}
 
 export async function generateMetadata({
   params,

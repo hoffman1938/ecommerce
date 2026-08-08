@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
+import { DemoBanner } from '@/components/demo-banner';
 
 export const metadata: Metadata = {
   title: {
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <Providers>
+          <DemoBanner />
           <Header />
           <main className="mx-auto min-h-[60vh] max-w-6xl px-4 py-6">{children}</main>
           <Footer />

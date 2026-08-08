@@ -1,0 +1,12 @@
+# Cloudflare Pages headers. Files in public/ are copied verbatim into the
+# static export output, so this ships with the build.
+
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Hashed build assets are immutable.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable

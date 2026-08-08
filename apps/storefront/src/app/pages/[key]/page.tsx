@@ -1,7 +1,11 @@
 import { notFound } from 'next/navigation';
 import { serverGet } from '@/lib/server-api';
+import { contentPageKeys } from '@/lib/demo/queries';
 
-export const dynamic = 'force-dynamic';
+/** Pre-render every content page so the app can be exported statically. */
+export function generateStaticParams() {
+  return contentPageKeys().map((key) => ({ key }));
+}
 
 const KNOWN_KEYS = new Set([
   'privacy_policy',

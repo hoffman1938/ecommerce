@@ -17,6 +17,7 @@
     "db:generate": "pnpm --filter @outlet/database generate",
     "db:seed": "pnpm --filter @outlet/database build && pnpm --filter @outlet/database seed",
     "build": "pnpm -r --filter \"./packages/**\" build && pnpm -r --filter \"./apps/**\" build",
+    "build:cloudflare": "pnpm --filter @outlet/types build && pnpm --filter @outlet/validation build && pnpm --filter @outlet/ui build && NEXT_PUBLIC_DEMO_MODE=true pnpm --filter @outlet/storefront build",
     "dev:api": "pnpm --filter @outlet/api dev",
     "dev:worker": "pnpm --filter @outlet/worker dev",
     "dev:storefront": "pnpm --filter @outlet/storefront dev",
