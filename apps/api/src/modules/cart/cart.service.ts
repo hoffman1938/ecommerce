@@ -75,7 +75,7 @@ export class CartService {
       const cart = await this.prisma.cart.create({ data: { userId: identity.userId } });
       return { cart };
     }
-    const token = crypto.randomBytes(24).toString('base64url');
+    const token = identity.cartToken ?? crypto.randomBytes(24).toString('base64url');
     const cart = await this.prisma.cart.create({ data: { anonymousToken: token } });
     return { cart, createdToken: token };
   }
