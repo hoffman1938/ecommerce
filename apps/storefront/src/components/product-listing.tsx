@@ -14,7 +14,13 @@ const ALLOWED_FILTERS = [
   'minPrice', 'maxPrice', 'minDiscount', 'inStock', 'sort', 'page',
 ];
 
-function toQueryString(params: URLSearchParams, fixed: Record<string, string>): string {
+/**
+ * Structural param type: `useSearchParams()` returns ReadonlyURLSearchParams,
+ * which is deliberately not assignable to URLSearchParams.
+ */
+type ReadableParams = { get(key: string): string | null };
+
+function toQueryString(params: ReadableParams, fixed: Record<string, string>): string {
   const query = new URLSearchParams();
   for (const key of ALLOWED_FILTERS) {
     const value = params.get(key);
