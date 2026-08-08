@@ -38,9 +38,7 @@ export default async function HomePage() {
           </div>
 
           <div className="lg:col-span-4 lg:pb-2">
-            <p className="max-w-sm text-lg text-ink-600">
-              {t('home.description')}
-            </p>
+            <p className="max-w-sm text-lg text-ink-600">{t('home.description')}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/campaigns"
@@ -115,9 +113,7 @@ export default async function HomePage() {
                 <h2 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
                   {t('home.theBrands')}
                 </h2>
-                <p className="mt-2 max-w-xs text-sm text-ink-600">
-                  {t('home.brandsDesc')}
-                </p>
+                <p className="mt-2 max-w-xs text-sm text-ink-600">{t('home.brandsDesc')}</p>
               </div>
               <ul className="lg:col-span-8">
                 {featured.map((brand) => (

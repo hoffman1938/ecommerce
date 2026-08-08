@@ -37,7 +37,13 @@ const Ctx = createContext<I18nContext>({
   t: (key) => key,
 });
 
-export function I18nProvider({ children, initialLocale = 'en' }: { children: ReactNode; initialLocale?: Locale }) {
+export function I18nProvider({
+  children,
+  initialLocale = 'en',
+}: {
+  children: ReactNode;
+  initialLocale?: Locale;
+}) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   useEffect(() => {
