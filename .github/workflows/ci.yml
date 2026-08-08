@@ -1,5 +1,13 @@
 name: CI
 
+# NOTE: no pnpm-lock.yaml is committed, so `actions/setup-node` cannot use
+# `cache: pnpm` — it fails the job outright when the lockfile is missing, which
+# is what broke every job here. Dependency caching is therefore off.
+#
+# The real fix is to commit a lockfile: run `pnpm install` once and commit the
+# generated pnpm-lock.yaml, then restore `cache: pnpm` to each setup-node step
+# and switch the installs back to `--frozen-lockfile` for reproducible builds.
+
 on:
   push:
     branches: [main, master]
@@ -26,7 +34,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm db:generate
       - name: Build shared packages
@@ -65,7 +72,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
@@ -85,7 +91,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
@@ -102,7 +107,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
@@ -119,7 +123,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
@@ -140,7 +143,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
