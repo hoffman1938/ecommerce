@@ -13,6 +13,7 @@
  * built around cannot be demonstrated here.
  */
 
+import { deliveryEstimate, freeShippingProgress } from '@outlet/domain';
 import type { CartDto, CartItemDto } from '@outlet/types';
 import { CURRENCY_CODE, SETTINGS, brandBySlug, productBySlug, type DemoProduct } from './data';
 import { availableFor, getProduct } from './queries';
@@ -22,6 +23,12 @@ export { DemoApiError };
 
 const CART_KEY = 'outlet_demo_cart';
 const RESERVATION_MS = SETTINGS.reservationDurationMinutes * 60 * 1000;
+
+const SHIPPING_RULES = {
+  standardShippingMinor: SETTINGS.standardShippingMinor,
+  expressShippingMinor: SETTINGS.expressShippingMinor,
+  freeShippingThresholdMinor: SETTINGS.freeShippingThresholdMinor,
+};
 
 interface StoredLine {
   id: string;
@@ -36,11 +43,13 @@ interface StoredLine {
 interface StoredCart {
   id: string;
   lines: StoredLine[];
+  /** Parked lines. They hold no reservation, so stock is not held for them. */
+  saved: StoredLine[];
   couponCode: string | null;
 }
 
 function emptyCart(): StoredCart {
-  return { id: 'cart_demo', lines: [], couponCode: null };
+  return { id: 'cart_demo', lines: [], saved: [], couponCode: null };
 }
 
 function read(): StoredCart {
@@ -50,6 +59,8 @@ function read(): StoredCart {
     if (!raw) return emptyCart();
     const parsed = JSON.parse(raw) as StoredCart;
     if (!parsed || !Array.isArray(parsed.lines)) return emptyCart();
+    // Carts stored before save-for-later existed have no `saved` array.
+    if (!Array.isArray(parsed.saved)) parsed.saved = [];
     return parsed;
   } catch {
     return emptyCart();
@@ -144,9 +155,17 @@ function toDto(cart: StoredCart, now: number): CartDto {
     messages.push('Some reservations expired and were released. Re-add those items to continue.');
   }
 
+  // Saved items are rendered like cart lines but hold no reservation, so their
+  // countdown fields are cleared rather than showing a stale hold.
+  const savedForLater = cart.saved
+    .map((line) => buildItem(line, now))
+    .filter((item): item is CartItemDto => item !== null)
+    .map((item) => ({ ...item, reservation: null, isExpired: false, message: null }));
+
   return {
     id: cart.id,
     items,
+    savedForLater,
     currencyCode: CURRENCY_CODE,
     subtotalMinor,
     discountMinor,
@@ -156,6 +175,11 @@ function toDto(cart: StoredCart, now: number): CartDto {
     couponCode: cart.couponCode,
     couponDiscountMinor,
     itemCount: live.reduce((sum, item) => sum + item.quantity, 0),
+    freeShipping: freeShippingProgress(SHIPPING_RULES, afterDiscount),
+    deliveryEstimate:
+      live.length === 0
+        ? null
+        : { ...deliveryEstimate('STANDARD', new Date(now)), method: 'STANDARD' },
     messages,
   };
 }
@@ -240,6 +264,66 @@ export function applyCoupon(code: string | null, now = Date.now()): CartDto {
     throw new DemoApiError(400, 'That coupon code is not valid.');
   }
   cart.couponCode = normalised;
+  write(cart);
+  return toDto(cart, now);
+}
+
+/** Park a cart line: releases its reservation, keeps the choice. */
+export function saveForLater(lineId: string, now = Date.now()): CartDto {
+  const cart = read();
+  const index = cart.lines.findIndex((l) => l.id === lineId);
+  if (index === -1) throw new DemoApiError(404, 'That cart line no longer exists.');
+
+  const [line] = cart.lines.splice(index, 1);
+  // The same variant can already be parked — add the quantities rather than
+  // dropping the line, which would silently lose what the customer chose.
+  const alreadySaved = cart.saved.find((l) => l.variantId === line.variantId);
+  if (alreadySaved) {
+    alreadySaved.quantity += line.quantity;
+  } else {
+    cart.saved.push(line);
+  }
+  write(cart);
+  return toDto(cart, now);
+}
+
+/** Move a parked line back into the cart, re-checking stock and re-reserving. */
+export function moveToCart(lineId: string, now = Date.now()): CartDto {
+  const cart = read();
+  const index = cart.saved.findIndex((l) => l.id === lineId);
+  if (index === -1) throw new DemoApiError(404, 'That saved item no longer exists.');
+
+  const line = cart.saved[index];
+  const product = productBySlug.get(line.productSlug);
+  const variant = product?.variants.find((v) => v.id === line.variantId);
+  if (!product || !variant) throw new DemoApiError(404, 'That product is no longer available.');
+
+  const existing = cart.lines.find((l) => l.variantId === line.variantId);
+  const desired = (existing?.quantity ?? 0) + line.quantity;
+  const available = availableFor(variant);
+  if (desired > available) {
+    throw new DemoApiError(
+      409,
+      available === 0
+        ? 'This size sold out while it was saved.'
+        : `Only ${available} left in this size.`,
+    );
+  }
+
+  cart.saved.splice(index, 1);
+  if (existing) {
+    existing.quantity = desired;
+    existing.reservedAt = now;
+  } else {
+    cart.lines.push({ ...line, reservedAt: now });
+  }
+  write(cart);
+  return toDto(cart, now);
+}
+
+export function removeSaved(lineId: string, now = Date.now()): CartDto {
+  const cart = read();
+  cart.saved = cart.saved.filter((l) => l.id !== lineId);
   write(cart);
   return toDto(cart, now);
 }

@@ -438,6 +438,9 @@ export const UserIcon = icon(
   </>,
 );
 export const CheckIcon = icon(<path d="m4.5 10.5 3.5 3.5 7.5-8" />);
+export const StarIcon = icon(
+  <path d="M10 3.2l2.1 4.2 4.7.7-3.4 3.3.8 4.6-4.2-2.2-4.2 2.2.8-4.6L3.2 8.1l4.7-.7L10 3.2Z" />,
+);
 export const ImageIcon = icon(
   <>
     <rect x="3" y="3" width="14" height="14" rx="2" />
@@ -445,3 +448,66 @@ export const ImageIcon = icon(
     <path d="m3 13 4-4 3 3 2-2 5 5" />
   </>,
 );
+
+// --- Rating ----------------------------------------------------------------
+
+const STAR_PATH =
+  'M10 3.2l2.1 4.2 4.7.7-3.4 3.3.8 4.6-4.2-2.2-4.2 2.2.8-4.6L3.2 8.1l4.7-.7L10 3.2Z';
+
+const RATING_SIZES = { sm: 'h-3 w-3', md: 'h-3.5 w-3.5', lg: 'h-5 w-5' } as const;
+
+/**
+ * Five stars filled to a fractional rating via a clip, so 4.3 reads as 4.3
+ * rather than being rounded to a whole star. The numeric value is exposed to
+ * assistive tech through `aria-label`; the stars themselves are decorative.
+ */
+export function StarRating({
+  value,
+  size = 'md',
+  className,
+}: {
+  /** 0–5. */
+  value: number;
+  size?: keyof typeof RATING_SIZES;
+  className?: string;
+}) {
+  const clamped = Math.max(0, Math.min(5, value));
+  // Unique per instance so multiple ratings on one page do not share a clip id.
+  const clipId = `star-clip-${Math.round(clamped * 100)}-${size}`;
+
+  return (
+    <span
+      className={cx('inline-flex items-center gap-px align-middle', className)}
+      role="img"
+      aria-label={`${clamped.toFixed(1)} out of 5 stars`}
+    >
+      {[0, 1, 2, 3, 4].map((index) => {
+        const fill = Math.max(0, Math.min(1, clamped - index));
+        return (
+          <svg
+            key={index}
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+            className={cx(RATING_SIZES[size], 'shrink-0')}
+          >
+            <path d={STAR_PATH} className="fill-ink-200" />
+            {fill > 0 ? (
+              <>
+                <defs>
+                  <clipPath id={`${clipId}-${index}`}>
+                    <rect x="0" y="0" width={20 * fill} height="20" />
+                  </clipPath>
+                </defs>
+                <path
+                  d={STAR_PATH}
+                  className="fill-warning-600"
+                  clipPath={`url(#${clipId}-${index})`}
+                />
+              </>
+            ) : null}
+          </svg>
+        );
+      })}
+    </span>
+  );
+}

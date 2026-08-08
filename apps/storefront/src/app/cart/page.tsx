@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { CartItemDto } from '@outlet/types';
+import type { CartItemDto, FreeShippingProgressDto } from '@outlet/types';
 import { Alert, Button, EmptyState, Skeleton, cx, formatMoney } from '@outlet/ui';
 import { useCart } from '@/lib/hooks';
 import { api, ApiError } from '@/lib/api';
+import { track } from '@/lib/analytics';
 import { Countdown } from '@/components/countdown';
+import { Recommendations } from '@/components/recommendations';
 import { PageHeader } from '@/components/section';
 
 export default function CartPage() {
@@ -70,6 +72,20 @@ export default function CartPage() {
             </Link>
           }
         />
+
+        {/* An empty bag is a dead end otherwise. Saved items come first — the
+            customer already chose those. */}
+        {cart && cart.savedForLater.length > 0 ? (
+          <SavedForLater
+            items={cart.savedForLater}
+            currency={cart.currencyCode}
+            busyId={busyId}
+            onRestore={(id) => mutate(() => api.post(`/cart/saved/${id}/restore`), id)}
+            onDiscard={(id) => mutate(() => api.delete(`/cart/saved/${id}`), id)}
+          />
+        ) : null}
+
+        <Recommendations title="Popular in the outlet" />
       </div>
     );
   }
@@ -98,6 +114,12 @@ export default function CartPage() {
         </div>
       ) : null}
 
+      <FreeShippingProgress
+        progress={cart.freeShipping}
+        currency={cart.currencyCode}
+        subtotalAfterDiscount={Math.max(0, cart.subtotalMinor - cart.discountMinor)}
+      />
+
       <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
         <ul className="divide-y divide-ink-200 border-b border-t border-ink-200">
           {cart.items.map((item) => (
@@ -109,7 +131,21 @@ export default function CartPage() {
               onQuantity={(quantity) =>
                 mutate(() => api.patch(`/cart/items/${item.id}`, { quantity }), item.id)
               }
-              onRemove={() => mutate(() => api.delete(`/cart/items/${item.id}`), item.id)}
+              onRemove={() => {
+                track('remove_from_cart', {
+                  productId: item.productId,
+                  variantId: item.variantId,
+                  quantity: item.quantity,
+                });
+                mutate(() => api.delete(`/cart/items/${item.id}`), item.id);
+              }}
+              onSave={() => {
+                track('save_for_later', {
+                  productId: item.productId,
+                  variantId: item.variantId,
+                });
+                mutate(() => api.post(`/cart/items/${item.id}/save`), item.id);
+              }}
               onExpired={() => refetch()}
             />
           ))}
@@ -150,6 +186,16 @@ export default function CartPage() {
             </p>
           </dl>
 
+          {cart.deliveryEstimate ? (
+            <p className="mt-3 text-xs text-ink-600">
+              Estimated delivery{' '}
+              <span data-numeric className="font-medium text-ink-900">
+                {formatDeliveryWindow(cart.deliveryEstimate.earliest, cart.deliveryEstimate.latest)}
+              </span>{' '}
+              with standard shipping.
+            </p>
+          ) : null}
+
           <div className="mt-5 border-t border-ink-200 pt-5">
             {cart.couponCode ? (
               <div className="flex items-center justify-between text-sm">
@@ -169,7 +215,25 @@ export default function CartPage() {
                 className="flex gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (couponCode) mutate(() => api.post('/cart/coupon', { code: couponCode }));
+                  if (!couponCode) return;
+                  mutate(async () => {
+                    try {
+                      const result = await api.post<typeof cart>('/cart/coupon', {
+                        code: couponCode,
+                      });
+                      track('promo_applied', {
+                        code: couponCode,
+                        discountMinor: result?.discountMinor ?? 0,
+                      });
+                      return result;
+                    } catch (err) {
+                      track('promo_rejected', {
+                        code: couponCode,
+                        reason: err instanceof ApiError ? (err.body.code ?? 'INVALID') : 'INVALID',
+                      });
+                      throw err;
+                    }
+                  });
                 }}
               >
                 <label htmlFor="coupon" className="sr-only">
@@ -205,6 +269,16 @@ export default function CartPage() {
         </aside>
       </div>
 
+      {cart.savedForLater.length > 0 ? (
+        <SavedForLater
+          items={cart.savedForLater}
+          currency={cart.currencyCode}
+          busyId={busyId}
+          onRestore={(id) => mutate(() => api.post(`/cart/saved/${id}/restore`), id)}
+          onDiscard={(id) => mutate(() => api.delete(`/cart/saved/${id}`), id)}
+        />
+      ) : null}
+
       {/* Mobile: keep checkout reachable without scrolling past every item. */}
       <div className="sticky bottom-0 -mx-4 mt-8 border-t border-ink-200 bg-ink-25/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
         <div className="flex items-center justify-between gap-4">
@@ -229,12 +303,171 @@ export default function CartPage() {
   );
 }
 
+/**
+ * Free-shipping nudge. Only shown when the threshold is actually reachable and
+ * the numbers come from the server, so the bar can never promise a discount the
+ * totals will not honour.
+ */
+function FreeShippingProgress({
+  progress,
+  currency,
+  subtotalAfterDiscount,
+}: {
+  progress: FreeShippingProgressDto;
+  currency: string;
+  subtotalAfterDiscount: number;
+}) {
+  if (progress.thresholdMinor <= 0) return null;
+
+  const percent = Math.min(
+    100,
+    Math.round((subtotalAfterDiscount / progress.thresholdMinor) * 100),
+  );
+
+  return (
+    <div className="mt-6 border-y border-ink-200 py-4">
+      <p className="text-sm text-ink-700">
+        {progress.qualified ? (
+          <>
+            <span className="font-semibold text-success-700">Free standard shipping unlocked.</span>{' '}
+            Your order ships at no extra cost.
+          </>
+        ) : (
+          <>
+            Add{' '}
+            <span data-numeric className="font-semibold text-ink-950">
+              {formatMoney(progress.remainingMinor, currency)}
+            </span>{' '}
+            more to unlock free standard shipping.
+          </>
+        )}
+      </p>
+      <div
+        className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-ink-100"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Progress toward free shipping"
+      >
+        <div
+          className={cx(
+            'h-full rounded-full transition-[width] duration-500 ease-out',
+            progress.qualified ? 'bg-success-700' : 'bg-ink-950',
+          )}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** e.g. "Tue 10 – Thu 12 Feb". */
+function formatDeliveryWindow(earliest: string, latest: string): string {
+  const from = new Date(`${earliest}T00:00:00Z`);
+  const to = new Date(`${latest}T00:00:00Z`);
+  const day = (date: Date) =>
+    date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
+  const month = to.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' });
+  return `${day(from)} – ${day(to)} ${month}`;
+}
+
+/**
+ * Parked items. They hold no reservation, which the copy says plainly — a
+ * customer who assumes their size is being held would rightly be annoyed to
+ * find it gone.
+ */
+function SavedForLater({
+  items,
+  currency,
+  busyId,
+  onRestore,
+  onDiscard,
+}: {
+  items: CartItemDto[];
+  currency: string;
+  busyId: string | null;
+  onRestore: (id: string) => void;
+  onDiscard: (id: string) => void;
+}) {
+  return (
+    <section className="mt-12 border-t border-ink-200 pt-8">
+      <h2 className="text-lg font-bold tracking-[-0.02em] text-ink-950">
+        Saved for later{' '}
+        <span data-numeric className="font-normal text-ink-500">
+          ({items.length})
+        </span>
+      </h2>
+      <p className="mt-1 text-sm text-ink-500">
+        These are not reserved — stock is released back to other customers until you move them into
+        your bag.
+      </p>
+
+      <ul className="mt-5 divide-y divide-ink-100 border-t border-ink-200">
+        {items.map((item) => (
+          <li
+            key={item.id}
+            className={cx('flex gap-4 py-4 transition-opacity', busyId === item.id && 'opacity-50')}
+          >
+            <Link
+              href={`/products/${item.productSlug}`}
+              className="relative h-20 w-16 shrink-0 overflow-hidden rounded bg-ink-50"
+            >
+              {item.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
+              ) : null}
+            </Link>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              <div className="min-w-0">
+                <p className="text-2xs font-semibold uppercase tracking-[0.07em] text-ink-500">
+                  {item.brandName}
+                </p>
+                <h3 className="mt-0.5 text-sm font-medium text-ink-950">
+                  <Link href={`/products/${item.productSlug}`} className="hover:underline">
+                    {item.productName}
+                  </Link>
+                </h3>
+                <p className="mt-0.5 text-sm text-ink-500">
+                  {[item.size ? `Size ${item.size}` : null, item.color].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <p data-numeric className="text-sm font-semibold text-ink-950">
+                  {formatMoney(item.unitPriceMinor, currency)}
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onRestore(item.id)}
+                  disabled={busyId === item.id}
+                >
+                  Move to bag
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => onDiscard(item.id)}
+                  disabled={busyId === item.id}
+                  className="text-sm text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function CartRow({
   item,
   currency,
   busy,
   onQuantity,
   onRemove,
+  onSave,
   onExpired,
 }: {
   item: CartItemDto;
@@ -242,6 +475,7 @@ function CartRow({
   busy: boolean;
   onQuantity: (quantity: number) => void;
   onRemove: () => void;
+  onSave: () => void;
   onExpired: () => void;
 }) {
   return (
@@ -308,6 +542,14 @@ function CartRow({
                 +
               </button>
             </div>
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={busy}
+              className="text-sm text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
+            >
+              Save for later
+            </button>
             <button
               type="button"
               onClick={onRemove}

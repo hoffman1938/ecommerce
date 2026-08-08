@@ -9,6 +9,7 @@ import { addressSchema } from '@outlet/validation';
 import type { CheckoutQuoteDto, PaymentSessionDto } from '@outlet/types';
 import { formatMoney } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { track } from '@/lib/analytics';
 import { useCurrentUser } from '@/lib/hooks';
 import { Countdown } from '@/components/countdown';
 
@@ -81,6 +82,10 @@ export default function CheckoutPage() {
     if (!quote || !totals) return;
     setSubmitting(true);
     setError(null);
+    track('checkout_started', {
+      itemCount: quote.cart.itemCount,
+      totalMinor: totals.total,
+    });
     try {
       const session = await api.post<PaymentSessionDto>('/checkout/submit', {
         email: values.email,
@@ -108,6 +113,9 @@ export default function CheckoutPage() {
       } else {
         setError((err as Error).message);
       }
+      track('payment_failed', {
+        reason: err instanceof ApiError ? (err.body.code ?? 'UNKNOWN') : 'UNKNOWN',
+      });
       setSubmitting(false);
     }
   };

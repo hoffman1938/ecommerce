@@ -4,6 +4,8 @@ import {
   computeCartTotals,
   shippingCostMinor,
   maxRefundableMinor,
+  freeShippingProgress,
+  deliveryEstimate,
 } from './pricing';
 import { discountPercent, includedTaxMinor, formatMinor } from './money';
 
@@ -167,5 +169,70 @@ describe('maxRefundableMinor', () => {
     expect(maxRefundableMinor(10000, 4000)).toBe(6000);
     expect(maxRefundableMinor(10000, 10000)).toBe(0);
     expect(maxRefundableMinor(10000, 12000)).toBe(0);
+  });
+});
+
+describe('freeShippingProgress', () => {
+  it('reports what is still needed to unlock free shipping', () => {
+    expect(freeShippingProgress(shippingRules, 7500)).toEqual({
+      thresholdMinor: 10000,
+      remainingMinor: 2500,
+      qualified: false,
+    });
+  });
+
+  it('qualifies exactly at the threshold', () => {
+    expect(freeShippingProgress(shippingRules, 10000)).toEqual({
+      thresholdMinor: 10000,
+      remainingMinor: 0,
+      qualified: true,
+    });
+  });
+
+  it('never reports a negative remainder', () => {
+    expect(freeShippingProgress(shippingRules, 25000).remainingMinor).toBe(0);
+  });
+
+  it('treats "no threshold configured" as already qualified', () => {
+    expect(
+      freeShippingProgress({ ...shippingRules, freeShippingThresholdMinor: null }, 0).qualified,
+    ).toBe(true);
+  });
+
+  it('agrees with shippingCostMinor at the boundary', () => {
+    for (const subtotal of [0, 9999, 10000, 10001, 50000]) {
+      const free = shippingCostMinor(shippingRules, 'STANDARD', subtotal) === 0;
+      expect(freeShippingProgress(shippingRules, subtotal).qualified).toBe(free);
+    }
+  });
+});
+
+describe('deliveryEstimate', () => {
+  it('skips weekends', () => {
+    // 2026-01-01 is a Thursday; +3 working days lands on Tuesday the 6th.
+    const estimate = deliveryEstimate('STANDARD', new Date('2026-01-01T09:00:00Z'));
+    expect(estimate.earliest).toBe('2026-01-06');
+    expect(estimate.latest).toBe('2026-01-08');
+  });
+
+  it('is faster for express than standard', () => {
+    const now = new Date('2026-03-02T09:00:00Z');
+    expect(
+      deliveryEstimate('EXPRESS', now).earliest < deliveryEstimate('STANDARD', now).earliest,
+    ).toBe(true);
+  });
+
+  it('never lands on a weekend', () => {
+    for (let offset = 0; offset < 14; offset += 1) {
+      const now = new Date(Date.UTC(2026, 4, 1 + offset));
+      for (const method of ['STANDARD', 'EXPRESS'] as const) {
+        const { earliest, latest } = deliveryEstimate(method, now);
+        for (const date of [earliest, latest]) {
+          const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+          expect(day).not.toBe(0);
+          expect(day).not.toBe(6);
+        }
+      }
+    }
   });
 });

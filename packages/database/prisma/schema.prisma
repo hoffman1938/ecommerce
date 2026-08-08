@@ -161,6 +161,12 @@ enum JobStatus {
   FAILED
 }
 
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
 // ---------------------------------------------------------------------------
 // Users, auth, RBAC
 // ---------------------------------------------------------------------------
@@ -200,6 +206,7 @@ model User {
   reservations   InventoryReservation[]
   returnRequests ReturnRequest[]
   notifications  Notification[]
+  reviews        ProductReview[]
   supportNotes   CustomerSupportNote[] @relation("noteSubject")
   authoredNotes  CustomerSupportNote[] @relation("noteAuthor")
 
@@ -370,6 +377,12 @@ model Product {
   searchKeywords   String?
   archivedAt       DateTime?
   version          Int           @default(0)
+
+  /// Denormalised review aggregates, recomputed whenever a review is written.
+  /// Kept on the row so listing and "best rated" sorting stay single-query.
+  ratingSum        Int           @default(0)
+  reviewCount      Int           @default(0)
+
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
@@ -381,6 +394,7 @@ model Product {
   attributeValues ProductAttributeValue[]
   campaigns       CampaignProduct[]
   wishlistItems   WishlistItem[]
+  reviews         ProductReview[]
 
   @@index([brandId])
   @@index([categoryId])
@@ -388,6 +402,7 @@ model Product {
   @@index([targetGroup])
   @@index([outletPriceMinor])
   @@index([createdAt])
+  @@index([reviewCount])
   @@map("products")
 }
 
@@ -623,6 +638,9 @@ model CartItem {
   campaignId     String?
   quantity       Int
   unitPriceMinor Int
+  /// Parked by the customer: shown under the cart, excluded from totals, and
+  /// holding no inventory reservation.
+  savedForLater  Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -632,6 +650,7 @@ model CartItem {
 
   @@unique([cartId, variantId])
   @@index([variantId])
+  @@index([cartId, savedForLater])
   @@map("cart_items")
 }
 
@@ -939,6 +958,34 @@ model Notification {
 
   @@index([userId])
   @@map("notifications")
+}
+
+/// A customer review. `isVerifiedPurchase` is set at write time from the
+/// reviewer's delivered orders, so the badge cannot be forged by the client.
+model ProductReview {
+  id                 String       @id @default(cuid())
+  productId          String
+  userId             String?
+  orderItemId        String?
+  authorName         String
+  rating             Int
+  title              String?
+  body               String
+  isVerifiedPurchase Boolean      @default(false)
+  status             ReviewStatus @default(PUBLISHED)
+  helpfulCount       Int          @default(0)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // One review per customer per product; anonymous rows are unconstrained.
+  @@unique([productId, userId])
+  @@index([productId, status])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("product_reviews")
 }
 
 model NewsletterSubscription {

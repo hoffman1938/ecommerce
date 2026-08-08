@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@outlet/catalog": "workspace:*",
+    "@outlet/domain": "workspace:*",
     "@outlet/types": "workspace:*",
     "@outlet/ui": "workspace:*",
     "@outlet/validation": "workspace:*",

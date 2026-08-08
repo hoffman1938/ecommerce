@@ -1,12 +1,13 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
 import { formatMoney } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { track } from '@/lib/analytics';
 import { useCurrentUser } from '@/lib/hooks';
 
 interface OrderStatusView {
@@ -14,6 +15,7 @@ interface OrderStatusView {
   orderNumber: string;
   totalMinor?: number;
   currencyCode?: string;
+  itemCount?: number;
 }
 
 function ResultInner() {
@@ -39,6 +41,7 @@ function ResultInner() {
               orderNumber: data.orderNumber,
               totalMinor: data.totalMinor,
               currencyCode: data.currencyCode,
+              itemCount: data.items.reduce((sum, item) => sum + item.quantity, 0),
             });
           }
         } else {
@@ -70,6 +73,22 @@ function ResultInner() {
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['cart'] });
   }, [order?.status, queryClient]);
+
+  // Fire `purchase` exactly once, when the polled status first reaches a paid
+  // state — the poller re-runs, and a duplicate purchase event would corrupt
+  // whatever the sink is feeding.
+  const purchaseReported = useRef(false);
+  useEffect(() => {
+    if (purchaseReported.current || !order) return;
+    if (!['PAID', 'PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED'].includes(order.status)) return;
+    purchaseReported.current = true;
+    track('purchase', {
+      orderNumber: order.orderNumber,
+      totalMinor: order.totalMinor ?? 0,
+      currency: order.currencyCode ?? 'EUR',
+      itemCount: order.itemCount ?? 0,
+    });
+  }, [order]);
 
   if (!orderId) return <p className="py-10 text-center text-ink-500">Missing order reference.</p>;
 

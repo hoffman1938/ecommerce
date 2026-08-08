@@ -1,12 +1,17 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import type { ProductDetailDto } from '@outlet/types';
+import type { ProductDetailDto, ProductListItemDto } from '@outlet/types';
+import { StarRating } from '@outlet/ui';
 import { serverGet } from '@/lib/server-api';
 import { productSlugs } from '@/lib/demo/queries';
 import { ProductPurchasePanel } from '@/components/product-purchase-panel';
 import { ProductGallery } from '@/components/product-gallery';
+import { ProductReviews } from '@/components/product-reviews';
+import { ProductGrid } from '@/components/product-card';
+import { Section, SectionHeader } from '@/components/section';
 import { RecentlyViewed, TrackProductView } from '@/components/recently-viewed';
+import { breadcrumbJsonLd, productJsonLd, SITE_URL } from '@/lib/structured-data';
 
 /** Pre-render every catalog product so the app can be exported statically. */
 export function generateStaticParams() {
@@ -20,9 +25,23 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const product = await serverGet<ProductDetailDto>(`/catalog/products/${params.slug}`);
   if (!product) return { title: 'Product not found' };
+
+  const title = product.seoTitle ?? product.name;
+  const description = product.seoDescription ?? product.shortDescription ?? undefined;
+  const path = `/products/${product.slug}`;
+
   return {
-    title: product.seoTitle ?? product.name,
-    description: product.seoDescription ?? product.shortDescription ?? undefined,
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      type: 'website',
+      title,
+      description,
+      url: `${SITE_URL}${path}`,
+      siteName: 'Outlet Marketplace',
+    },
+    twitter: { card: 'summary_large_image', title, description },
   };
 }
 
@@ -38,14 +57,40 @@ function specs(product: ProductDetailDto): Array<[string, string]> {
 }
 
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
-  const product = await serverGet<ProductDetailDto>(`/catalog/products/${params.slug}`);
+  const [product, related] = await Promise.all([
+    serverGet<ProductDetailDto>(`/catalog/products/${params.slug}`),
+    serverGet<ProductListItemDto[]>(`/catalog/products/${params.slug}/related?limit=4`),
+  ]);
   if (!product) notFound();
 
   const rows = specs(product);
+  const trail = [
+    { name: 'All products', path: '/products' },
+    { name: product.brand.name, path: `/brand/${product.brand.slug}` },
+    ...(product.category
+      ? [{ name: product.category.name, path: `/category/${product.category.slug}` }]
+      : []),
+    { name: product.name, path: `/products/${product.slug}` },
+  ];
 
   return (
     <div className="container-page py-5 lg:py-8">
-      <TrackProductView slug={product.slug} />
+      <TrackProductView
+        slug={product.slug}
+        productId={product.id}
+        brand={product.brand.name}
+        priceMinor={product.currentPriceMinor}
+      />
+
+      <script
+        type="application/ld+json"
+        // Server-rendered from our own DTOs, so there is no untrusted input here.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(product)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(trail)) }}
+      />
 
       <nav aria-label="Breadcrumb" className="mb-6 text-xs text-ink-500">
         <ol className="flex flex-wrap items-center gap-1.5">
@@ -94,6 +139,24 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
           <h1 className="mt-2.5 text-3xl font-extrabold leading-[1.02] tracking-[-0.032em] text-ink-950 lg:text-4xl">
             {product.name}
           </h1>
+
+          {/* Jumps to the reviews rather than repeating them — the rating here
+              is a credibility signal, not the content. */}
+          {product.ratingAverage !== null && product.reviewCount > 0 ? (
+            <a href="#reviews" className="group mt-3 inline-flex items-center gap-2">
+              <StarRating value={product.ratingAverage} size="md" />
+              <span data-numeric className="text-sm text-ink-600 group-hover:text-ink-950">
+                {product.ratingAverage.toFixed(1)}
+              </span>
+              <span
+                data-numeric
+                className="text-sm text-ink-500 underline underline-offset-2 group-hover:text-ink-950"
+              >
+                ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
+              </span>
+            </a>
+          ) : null}
+
           {product.shortDescription ? (
             <p className="mt-3.5 max-w-md text-lg text-ink-600">{product.shortDescription}</p>
           ) : null}
@@ -126,6 +189,22 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
           ) : null}
         </div>
       </div>
+
+      <ProductReviews
+        slug={product.slug}
+        ratingAverage={product.ratingAverage}
+        reviewCount={product.reviewCount}
+      />
+
+      {related && related.length > 0 ? (
+        <Section className="reveal">
+          <SectionHeader
+            title="You may also like"
+            description="Similar pieces from the same category and brands."
+          />
+          <ProductGrid products={related} />
+        </Section>
+      ) : null}
 
       <RecentlyViewed excludeSlug={product.slug} />
     </div>

@@ -1,14 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@outlet/database';
-import { discountPercent, isCampaignRunning } from '@outlet/domain';
+import { discountPercent, isCampaignRunning, ratingAverageFrom } from '@outlet/domain';
 import type {
   BrandDto,
   CategoryDto,
   Paginated,
   ProductDetailDto,
   ProductListItemDto,
+  ProductReviewsDto,
+  ReviewDto,
+  SearchSuggestionsDto,
 } from '@outlet/types';
-import type { ProductQueryInput } from '@outlet/validation';
+import type { ProductQueryInput, ReviewQueryInput } from '@outlet/validation';
 import { PrismaService } from '../../common/prisma.service';
 
 /**
@@ -105,6 +108,11 @@ export class CatalogService {
         Prisma.sql`(p."originalPriceMinor" - p."outletPriceMinor") * 100 >= ${query.minDiscount} * p."originalPriceMinor"`,
       );
     }
+    if (query.minRating != null) {
+      conditions.push(
+        Prisma.sql`p."reviewCount" > 0 AND p."ratingSum"::float / p."reviewCount" >= ${query.minRating}`,
+      );
+    }
     if (query.q) {
       const like = `%${query.q}%`;
       conditions.push(
@@ -149,7 +157,11 @@ export class CatalogService {
         orderBy = Prisma.sql`(CASE WHEN p."originalPriceMinor" > 0 THEN (p."originalPriceMinor" - p."outletPriceMinor")::float / p."originalPriceMinor" ELSE 0 END) DESC`;
         break;
       case 'popularity':
-        orderBy = Prisma.sql`(SELECT COALESCE(SUM(ib."soldQuantity"), 0) FROM "product_variants" v JOIN "inventory_balances" ib ON ib."variantId" = v."id" WHERE v."productId" = p."id") DESC`;
+        orderBy = Prisma.sql`(SELECT COALESCE(SUM(ib."soldQuantity"), 0) FROM "product_variants" v JOIN "inventory_balances" ib ON ib."variantId" = v."id" WHERE v."productId" = p."id") DESC, p."reviewCount" DESC`;
+        break;
+      case 'rating':
+        // Unreviewed products sort last instead of tying with 1-star ones.
+        orderBy = Prisma.sql`(CASE WHEN p."reviewCount" > 0 THEN p."ratingSum"::float / p."reviewCount" ELSE -1 END) DESC, p."reviewCount" DESC`;
         break;
       case 'recommended':
       default:
@@ -229,6 +241,8 @@ export class CatalogService {
           campaignId: running?.campaignId ?? null,
           campaignSlug: running ? running.campaign.slug : null,
           totalAvailable,
+          ratingAverage: ratingAverageFrom(p.ratingSum, p.reviewCount),
+          reviewCount: p.reviewCount,
           createdAt: p.createdAt.toISOString(),
         };
       });
@@ -287,6 +301,8 @@ export class CatalogService {
           Math.max(0, (v.inventory?.onHandQuantity ?? 0) - (v.inventory?.reservedQuantity ?? 0)),
         0,
       ),
+      ratingAverage: ratingAverageFrom(p.ratingSum, p.reviewCount),
+      reviewCount: p.reviewCount,
       createdAt: p.createdAt.toISOString(),
       shortDescription: p.shortDescription,
       description: p.description,
@@ -326,5 +342,231 @@ export class CatalogService {
         };
       }),
     };
+  }
+
+  /**
+   * Published reviews for a product, plus the aggregate the product page's
+   * histogram needs. Counts come from the denormalised columns on the product
+   * rather than from the returned rows: most ratings have no written body and
+   * so are never stored as rows at all.
+   */
+  async getProductReviews(slug: string, query: ReviewQueryInput): Promise<ProductReviewsDto> {
+    const product = await this.prisma.product.findUnique({
+      where: { slug },
+      select: { id: true, ratingSum: true, reviewCount: true },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+
+    // Every rating is a row; only the ones with text are shown as reviews. The
+    // histogram and verified count still span all of them.
+    const where = { productId: product.id, status: 'PUBLISHED' as const };
+    const writtenWhere = { ...where, NOT: { body: '' } };
+    const orderBy =
+      query.sort === 'highest'
+        ? ({ rating: 'desc' } as const)
+        : query.sort === 'lowest'
+          ? ({ rating: 'asc' } as const)
+          : query.sort === 'helpful'
+            ? ({ helpfulCount: 'desc' } as const)
+            : ({ createdAt: 'desc' } as const);
+
+    const [rows, total, grouped, verifiedCount] = await Promise.all([
+      this.prisma.productReview.findMany({
+        where: writtenWhere,
+        orderBy,
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+      }),
+      this.prisma.productReview.count({ where: writtenWhere }),
+      this.prisma.productReview.groupBy({ by: ['rating'], where, _count: { rating: true } }),
+      this.prisma.productReview.count({ where: { ...where, isVerifiedPurchase: true } }),
+    ]);
+
+    const distribution: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
+    for (const group of grouped) {
+      distribution[String(group.rating)] = group._count.rating;
+    }
+
+    const items: ReviewDto[] = rows.map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      title: r.title,
+      body: r.body,
+      authorName: r.authorName,
+      isVerifiedPurchase: r.isVerifiedPurchase,
+      helpfulCount: r.helpfulCount,
+      createdAt: r.createdAt.toISOString(),
+    }));
+
+    return {
+      items,
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalPages: Math.max(1, Math.ceil(total / query.pageSize)),
+      ratingAverage: ratingAverageFrom(product.ratingSum, product.reviewCount),
+      reviewCount: product.reviewCount,
+      distribution,
+      verifiedCount,
+    };
+  }
+
+  /**
+   * Type-ahead suggestions. Prefix matches outrank substring matches so that
+   * typing "nik" surfaces Nike products before something that merely mentions
+   * Nike in its keywords.
+   */
+  async suggest(query: string): Promise<SearchSuggestionsDto> {
+    const needle = query.trim();
+    if (needle.length < 2) return { products: [], brands: [], categories: [] };
+
+    const like = `%${needle}%`;
+    const prefix = `${needle}%`;
+
+    const [productRows, brands, categories] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ id: string }>>(
+        Prisma.sql`
+          SELECT p."id"
+          FROM "products" p
+          JOIN "brands" b ON b."id" = p."brandId"
+          WHERE p."status" = 'ACTIVE'
+            AND (p."publishedFrom" IS NULL OR p."publishedFrom" <= NOW())
+            AND (p."publishedUntil" IS NULL OR p."publishedUntil" > NOW())
+            AND (
+              p."name" ILIKE ${like}
+              OR b."name" ILIKE ${like}
+              OR p."searchKeywords" ILIKE ${like}
+              OR EXISTS (
+                SELECT 1 FROM "product_variants" v
+                WHERE v."productId" = p."id" AND v."sku" ILIKE ${like}
+              )
+            )
+          ORDER BY
+            (CASE WHEN p."name" ILIKE ${prefix} THEN 0 ELSE 1 END),
+            p."reviewCount" DESC,
+            p."name" ASC
+          LIMIT 6`,
+      ),
+      this.prisma.brand.findMany({
+        where: { isActive: true, name: { contains: needle, mode: 'insensitive' } },
+        select: { name: true, slug: true },
+        orderBy: { name: 'asc' },
+        take: 3,
+      }),
+      this.prisma.category.findMany({
+        where: { isActive: true, name: { contains: needle, mode: 'insensitive' } },
+        select: { name: true, slug: true },
+        orderBy: { position: 'asc' },
+        take: 3,
+      }),
+    ]);
+
+    const products = await this.hydrateListItems(productRows.map((r) => r.id));
+
+    return {
+      products: products.map((p) => ({
+        name: p.name,
+        slug: p.slug,
+        imageUrl: p.imageUrl,
+        currentPriceMinor: p.currentPriceMinor,
+      })),
+      brands,
+      categories,
+    };
+  }
+
+  /**
+   * Recommendations from browsing signals passed by the client. Falls back to
+   * best-rated in-stock products for a visitor with no history.
+   */
+  async recommended(
+    signals: { recentSlugs?: string[]; wishlistSlugs?: string[]; cartSlugs?: string[] },
+    limit = 4,
+  ): Promise<ProductListItemDto[]> {
+    const seen = [
+      ...new Set([
+        ...(signals.recentSlugs ?? []),
+        ...(signals.wishlistSlugs ?? []),
+        ...(signals.cartSlugs ?? []),
+      ]),
+    ].slice(0, 20);
+
+    const sources =
+      seen.length === 0
+        ? []
+        : await this.prisma.product.findMany({
+            where: { slug: { in: seen } },
+            select: { id: true, brandId: true, categoryId: true },
+          });
+
+    const brandIds = [...new Set(sources.map((p) => p.brandId))];
+    const categoryIds = [...new Set(sources.map((p) => p.categoryId).filter(Boolean))] as string[];
+    const excludeIds = sources.map((p) => p.id);
+
+    const rows = await this.prisma.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT p."id"
+        FROM "products" p
+        WHERE p."status" = 'ACTIVE'
+          AND (p."publishedFrom" IS NULL OR p."publishedFrom" <= NOW())
+          AND (p."publishedUntil" IS NULL OR p."publishedUntil" > NOW())
+          ${
+            excludeIds.length > 0
+              ? Prisma.sql`AND p."id" NOT IN (${Prisma.join(excludeIds)})`
+              : Prisma.empty
+          }
+          AND EXISTS (
+            SELECT 1 FROM "product_variants" v
+            JOIN "inventory_balances" ib ON ib."variantId" = v."id"
+            WHERE v."productId" = p."id" AND ib."onHandQuantity" > ib."reservedQuantity"
+          )
+        ORDER BY
+          (
+            ${
+              categoryIds.length > 0
+                ? Prisma.sql`CASE WHEN p."categoryId" IN (${Prisma.join(categoryIds)}) THEN 80 ELSE 0 END`
+                : Prisma.sql`0`
+            }
+            + ${
+              brandIds.length > 0
+                ? Prisma.sql`CASE WHEN p."brandId" IN (${Prisma.join(brandIds)}) THEN 50 ELSE 0 END`
+                : Prisma.sql`0`
+            }
+            + CASE WHEN p."reviewCount" > 0 THEN p."ratingSum"::float / p."reviewCount" * 4 ELSE 0 END
+          ) DESC,
+          p."name" ASC
+        LIMIT ${limit}`,
+    );
+    return this.hydrateListItems(rows.map((r) => r.id));
+  }
+
+  /**
+   * "You may also like" — same category first, then same brand, ranked by
+   * rating. Deterministic, and cheap enough to run per product page.
+   */
+  async relatedProducts(slug: string, limit = 4): Promise<ProductListItemDto[]> {
+    const product = await this.prisma.product.findUnique({
+      where: { slug },
+      select: { id: true, brandId: true, categoryId: true },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+
+    const rows = await this.prisma.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT p."id"
+        FROM "products" p
+        WHERE p."status" = 'ACTIVE'
+          AND p."id" <> ${product.id}
+          AND (p."publishedFrom" IS NULL OR p."publishedFrom" <= NOW())
+          AND (p."publishedUntil" IS NULL OR p."publishedUntil" > NOW())
+        ORDER BY
+          (CASE WHEN p."categoryId" = ${product.categoryId} THEN 100 ELSE 0 END
+           + CASE WHEN p."brandId" = ${product.brandId} THEN 60 ELSE 0 END
+           + CASE WHEN p."reviewCount" > 0 THEN p."ratingSum"::float / p."reviewCount" * 2 ELSE 0 END
+          ) DESC,
+          p."name" ASC
+        LIMIT ${limit}`,
+    );
+    return this.hydrateListItems(rows.map((r) => r.id));
   }
 }

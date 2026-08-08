@@ -15,6 +15,9 @@ import type {
   Paginated,
   ProductDetailDto,
   ProductListItemDto,
+  ProductReviewsDto,
+  ReviewDto,
+  SearchSuggestionsDto,
 } from '@outlet/types';
 import {
   BRANDS,
@@ -110,6 +113,8 @@ function toListItem(product: DemoProduct, now: number): ProductListItemDto {
     campaignId: pricing.campaignId,
     campaignSlug: pricing.campaignSlug,
     totalAvailable: totalAvailableFor(product),
+    ratingAverage: product.ratingAverage,
+    reviewCount: product.reviewCount,
     createdAt: product.createdAt,
   };
 }
@@ -165,6 +170,7 @@ export interface ListProductsParams {
   minPrice?: string;
   maxPrice?: string;
   minDiscount?: string;
+  minRating?: string;
   inStock?: string;
   sort?: string;
   page?: string;
@@ -231,6 +237,10 @@ export function listProducts(
   if (Number.isFinite(minDiscount)) {
     items = items.filter(({ dto }) => dto.discountPercent >= minDiscount);
   }
+  const minRating = Number(params.minRating);
+  if (Number.isFinite(minRating)) {
+    items = items.filter(({ dto }) => (dto.ratingAverage ?? 0) >= minRating);
+  }
 
   if (params.inStock === 'true') {
     items = items.filter(({ dto }) => dto.totalAvailable > 0);
@@ -247,9 +257,16 @@ export function listProducts(
         return b.dto.currentPriceMinor - a.dto.currentPriceMinor;
       case 'discount':
         return b.dto.discountPercent - a.dto.discountPercent;
+      case 'rating': {
+        // Unreviewed products sort last rather than tying with 1-star ones.
+        const ratingDelta = (b.dto.ratingAverage ?? -1) - (a.dto.ratingAverage ?? -1);
+        if (ratingDelta !== 0) return ratingDelta;
+        return b.dto.reviewCount - a.dto.reviewCount;
+      }
       case 'popularity':
-        // No order history in the demo build; approximate with stock depth.
-        return b.dto.totalAvailable - a.dto.totalAvailable;
+        // No order history in the demo build; review volume is the closest
+        // honest proxy for how much attention a product has had.
+        return b.dto.reviewCount - a.dto.reviewCount;
       case 'recommended':
       default:
         // In-stock and discounted first, then alphabetical for stability.
@@ -318,6 +335,195 @@ export function getProduct(slug: string, now = Date.now()): ProductDetailDto | n
 
 export function productSlugs(): string[] {
   return PRODUCT_LIST.map((p) => p.slug);
+}
+
+// --- Reviews ---------------------------------------------------------------
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Published reviews for a product. Only written reviews are returned; the
+ * ratings-only remainder is reflected in `reviewCount` and the distribution,
+ * which is exactly how the API behaves.
+ */
+export function getProductReviews(
+  slug: string,
+  params: { sort?: string; page?: string; pageSize?: string } = {},
+  now = Date.now(),
+): ProductReviewsDto | null {
+  const product = productBySlug.get(slug);
+  if (!product) return null;
+
+  const items: ReviewDto[] = product.reviews.map((review) => ({
+    id: review.id,
+    rating: review.rating,
+    title: review.title,
+    body: review.body,
+    authorName: review.authorName,
+    isVerifiedPurchase: review.isVerifiedPurchase,
+    helpfulCount: review.helpfulCount,
+    createdAt: new Date(now - review.daysAgo * DAY_IN_MS).toISOString(),
+  }));
+
+  switch (params.sort) {
+    case 'highest':
+      items.sort((a, b) => b.rating - a.rating);
+      break;
+    case 'lowest':
+      items.sort((a, b) => a.rating - b.rating);
+      break;
+    case 'helpful':
+      items.sort((a, b) => b.helpfulCount - a.helpfulCount);
+      break;
+    case 'recent':
+    default:
+      items.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+      break;
+  }
+
+  const pageSize = Math.max(1, Math.min(50, Number(params.pageSize) || 5));
+  const total = items.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const page = Math.max(1, Math.min(totalPages || 1, Number(params.page) || 1));
+  const start = (page - 1) * pageSize;
+
+  return {
+    items: items.slice(start, start + pageSize),
+    total,
+    page,
+    pageSize,
+    totalPages,
+    ratingAverage: product.ratingAverage,
+    reviewCount: product.reviewCount,
+    distribution: product.ratingDistribution,
+    verifiedCount: product.verifiedReviewCount,
+  };
+}
+
+// --- Recommendations -------------------------------------------------------
+
+/**
+ * Deterministic "you may also like" — same category first, then same brand,
+ * then whatever else is in stock, scored so closer matches win. No ML, no
+ * randomness: the same product always recommends the same neighbours.
+ */
+export function relatedProducts(slug: string, limit = 4, now = Date.now()): ProductListItemDto[] {
+  const source = productBySlug.get(slug);
+  if (!source) return [];
+
+  const sourcePrice = source.outletPriceMinor;
+  return PRODUCT_LIST.filter((candidate) => candidate.slug !== slug)
+    .map((candidate) => {
+      let score = 0;
+      if (candidate.categorySlug === source.categorySlug) score += 100;
+      if (candidate.brandSlug === source.brandSlug) score += 60;
+      if (candidate.targetGroup === source.targetGroup) score += 20;
+      // Prefer a comparable price point — within 40% either way.
+      const ratio = candidate.outletPriceMinor / sourcePrice;
+      if (ratio >= 0.6 && ratio <= 1.4) score += 25;
+      if (totalAvailableFor(candidate) > 0) score += 15;
+      score += Math.round((candidate.ratingAverage ?? 0) * 2);
+      return { candidate, score };
+    })
+    .sort((a, b) => b.score - a.score || a.candidate.name.localeCompare(b.candidate.name))
+    .slice(0, limit)
+    .map(({ candidate }) => toListItem(candidate, now));
+}
+
+/**
+ * Recommendations from browsing signals. Used for "Picked for you" and for the
+ * empty-cart and no-results states, where showing something beats showing
+ * nothing. Falls back to best-rated in-stock products for a cold visitor.
+ */
+export function recommendedProducts(
+  signals: { recentSlugs?: string[]; wishlistSlugs?: string[]; cartSlugs?: string[] } = {},
+  limit = 4,
+  now = Date.now(),
+): ProductListItemDto[] {
+  const seen = new Set([
+    ...(signals.recentSlugs ?? []),
+    ...(signals.wishlistSlugs ?? []),
+    ...(signals.cartSlugs ?? []),
+  ]);
+
+  const sources = [...seen]
+    .map((s) => productBySlug.get(s))
+    .filter((p): p is DemoProduct => Boolean(p));
+
+  if (sources.length === 0) {
+    return PRODUCT_LIST.filter((p) => totalAvailableFor(p) > 0)
+      .map((product) => ({ product, dto: toListItem(product, now) }))
+      .sort(
+        (a, b) =>
+          (b.dto.ratingAverage ?? 0) - (a.dto.ratingAverage ?? 0) ||
+          b.dto.discountPercent - a.dto.discountPercent,
+      )
+      .slice(0, limit)
+      .map(({ dto }) => dto);
+  }
+
+  const categories = new Set(sources.map((p) => p.categorySlug));
+  const brands = new Set(sources.map((p) => p.brandSlug));
+  const averagePrice =
+    sources.reduce((sum, p) => sum + p.outletPriceMinor, 0) / Math.max(1, sources.length);
+
+  return PRODUCT_LIST.filter((p) => !seen.has(p.slug) && totalAvailableFor(p) > 0)
+    .map((candidate) => {
+      let score = 0;
+      if (categories.has(candidate.categorySlug)) score += 80;
+      if (brands.has(candidate.brandSlug)) score += 50;
+      const ratio = candidate.outletPriceMinor / averagePrice;
+      if (ratio >= 0.6 && ratio <= 1.4) score += 30;
+      score += Math.round((candidate.ratingAverage ?? 0) * 4);
+      return { candidate, score };
+    })
+    .sort((a, b) => b.score - a.score || a.candidate.name.localeCompare(b.candidate.name))
+    .slice(0, limit)
+    .map(({ candidate }) => toListItem(candidate, now));
+}
+
+// --- Search suggestions ----------------------------------------------------
+
+/** Prefix-and-substring matching over names, brands, categories and SKUs. */
+export function searchSuggestions(query: string, now = Date.now()): SearchSuggestionsDto {
+  const needle = query.trim().toLowerCase();
+  if (needle.length < 2) return { products: [], brands: [], categories: [] };
+
+  const scored = PRODUCT_LIST.map((product) => {
+    const brand = brandBySlug.get(product.brandSlug)!;
+    const name = product.name.toLowerCase();
+    let score = 0;
+    if (name.startsWith(needle)) score = 100;
+    else if (name.includes(needle)) score = 70;
+    else if (brand.name.toLowerCase().includes(needle)) score = 50;
+    else if (product.categorySlug.includes(needle)) score = 40;
+    else if (product.searchKeywords.toLowerCase().includes(needle)) score = 30;
+    else if (product.variants.some((v) => v.sku.toLowerCase().includes(needle))) score = 90;
+    return { product, score };
+  })
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score || a.product.name.localeCompare(b.product.name))
+    .slice(0, 6);
+
+  return {
+    products: scored.map(({ product }) => {
+      const dto = toListItem(product, now);
+      return {
+        name: dto.name,
+        slug: dto.slug,
+        imageUrl: dto.imageUrl,
+        currentPriceMinor: dto.currentPriceMinor,
+      };
+    }),
+    brands: BRANDS.filter((b) => b.name.toLowerCase().includes(needle))
+      .slice(0, 3)
+      .map((b) => ({ name: b.name, slug: b.slug })),
+    categories: CATEGORIES.filter(
+      (c) => c.name.toLowerCase().includes(needle) || c.slug.includes(needle),
+    )
+      .slice(0, 3)
+      .map((c) => ({ name: c.name, slug: c.slug })),
+  };
 }
 
 // --- Campaigns -------------------------------------------------------------

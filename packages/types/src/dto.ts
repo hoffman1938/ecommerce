@@ -87,6 +87,9 @@ export interface ProductListItemDto {
   campaignId: string | null;
   campaignSlug: string | null;
   totalAvailable: number;
+  /** Mean of published review ratings, rounded to 1dp. Null when unreviewed. */
+  ratingAverage: number | null;
+  reviewCount: number;
   createdAt: string;
 }
 
@@ -102,6 +105,46 @@ export interface ProductDetailDto extends ProductListItemDto {
   seoDescription: string | null;
   images: ProductImageDto[];
   variants: VariantDto[];
+}
+
+/** Type-ahead results for the header search box. */
+export interface SearchSuggestionsDto {
+  products: Array<{
+    name: string;
+    slug: string;
+    imageUrl: string | null;
+    currentPriceMinor: number;
+  }>;
+  brands: Array<{ name: string; slug: string }>;
+  categories: Array<{ name: string; slug: string }>;
+}
+
+export interface ReviewDto {
+  id: string;
+  rating: number;
+  title: string | null;
+  body: string;
+  authorName: string;
+  isVerifiedPurchase: boolean;
+  helpfulCount: number;
+  createdAt: string;
+}
+
+/** Rating breakdown for the histogram on a product page. */
+export interface ReviewSummaryDto {
+  ratingAverage: number | null;
+  reviewCount: number;
+  /** Count of published reviews per star value, keyed "1".."5". */
+  distribution: Record<string, number>;
+  verifiedCount: number;
+}
+
+export interface ProductReviewsDto extends ReviewSummaryDto {
+  items: ReviewDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface CampaignDto {
@@ -151,9 +194,27 @@ export interface CartItemDto {
   message: string | null;
 }
 
+/** Progress toward the free-shipping threshold, computed server-side. */
+export interface FreeShippingProgressDto {
+  thresholdMinor: number;
+  /** 0 once the threshold is met. */
+  remainingMinor: number;
+  qualified: boolean;
+}
+
+export interface DeliveryEstimateDto {
+  /** Earliest expected delivery date, ISO 8601 (date only). */
+  earliest: string;
+  latest: string;
+  /** Shipping method the estimate assumes. */
+  method: ShippingMethod;
+}
+
 export interface CartDto {
   id: string;
   items: CartItemDto[];
+  /** Items the customer parked; they hold no stock reservation. */
+  savedForLater: CartItemDto[];
   currencyCode: string;
   subtotalMinor: number;
   discountMinor: number;
@@ -163,6 +224,9 @@ export interface CartDto {
   couponCode: string | null;
   couponDiscountMinor: number;
   itemCount: number;
+  freeShipping: FreeShippingProgressDto;
+  /** Null when the cart is empty. */
+  deliveryEstimate: DeliveryEstimateDto | null;
   messages: string[];
 }
 

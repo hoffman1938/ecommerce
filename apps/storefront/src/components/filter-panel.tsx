@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 import { CheckIcon, CloseIcon, cx } from '@outlet/ui';
+import { track } from '@/lib/analytics';
 
 export const SORTS = [
   ['recommended', 'Recommended'],
@@ -10,10 +11,11 @@ export const SORTS = [
   ['price_asc', 'Price: low to high'],
   ['price_desc', 'Price: high to low'],
   ['discount', 'Highest discount'],
+  ['rating', 'Best rated'],
   ['popularity', 'Popularity'],
 ] as const;
 
-const SIZES = ['S', 'M', 'L', 'XL', '40', '41', '42', '43', '44'];
+const SIZES = ['S', 'M', 'L', 'XL', '30', '32', '34', '36', '40', '41', '42', '43', '44'];
 const GROUPS = [
   ['MEN', 'Men'],
   ['WOMEN', 'Women'],
@@ -41,7 +43,19 @@ const COLORS: Array<[string, string]> = [
   ['Orange', '#ea580c'],
 ];
 
-const FILTER_KEYS = ['size', 'color', 'targetGroup', 'minDiscount', 'inStock'] as const;
+const RATINGS = [
+  ['4', '4 stars & up'],
+  ['3', '3 stars & up'],
+] as const;
+
+const FILTER_KEYS = [
+  'size',
+  'color',
+  'targetGroup',
+  'minDiscount',
+  'minRating',
+  'inStock',
+] as const;
 
 /** Reads and writes the filter query string, resetting pagination on change. */
 export function useFilters() {
@@ -56,6 +70,7 @@ export function useFilters() {
       else next.delete(key);
       // Any facet change invalidates the current page number.
       if (key !== 'page') next.delete('page');
+      if (value) track('filter_used', { filter: key, value });
       const query = next.toString();
       router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
     },
@@ -201,6 +216,19 @@ export function FilterPanel() {
         </ul>
       </Group>
 
+      <Group title="Customer rating">
+        <ul className="space-y-0.5">
+          {RATINGS.map(([value, label]) => (
+            <OptionRow
+              key={value}
+              label={label}
+              selected={current('minRating') === value}
+              onSelect={() => toggle('minRating', value)}
+            />
+          ))}
+        </ul>
+      </Group>
+
       <Group title="Audience">
         <ul className="space-y-0.5">
           {GROUPS.map(([value, label]) => (
@@ -236,6 +264,8 @@ export function ActiveFilters() {
   }
   const discount = params.get('minDiscount');
   if (discount) chips.push({ key: 'minDiscount', label: `${discount}%+ off` });
+  const rating = params.get('minRating');
+  if (rating) chips.push({ key: 'minRating', label: `${rating}★ & up` });
   if (params.get('inStock') === 'true') chips.push({ key: 'inStock', label: 'In stock' });
 
   return (

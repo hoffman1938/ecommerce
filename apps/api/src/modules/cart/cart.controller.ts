@@ -87,6 +87,31 @@ export class CartController {
     return this.carts.getCartView(this.identity(req));
   }
 
+  @Post('items/:itemId/save')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Park an item for later and release its reservation' })
+  async saveForLater(@Param('itemId') itemId: string, @Req() req: AuthedRequest) {
+    await this.carts.saveForLater(this.identity(req), itemId);
+    return this.carts.getCartView(this.identity(req));
+  }
+
+  @Post('saved/:itemId/restore')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Move a saved item back into the cart, re-reserving stock' })
+  async moveToCart(@Param('itemId') itemId: string, @Req() req: AuthedRequest) {
+    await this.carts.moveToCart(this.identity(req), itemId);
+    return this.carts.getCartView(this.identity(req));
+  }
+
+  @Delete('saved/:itemId')
+  @ApiOperation({ summary: 'Discard a saved item' })
+  async removeSaved(@Param('itemId') itemId: string, @Req() req: AuthedRequest) {
+    const cart = await this.carts.findActiveCart(this.identity(req));
+    if (!cart) throw new NotFoundException('Cart not found.');
+    await this.carts.removeItem(cart.id, itemId);
+    return this.carts.getCartView(this.identity(req));
+  }
+
   @Post('coupon')
   @HttpCode(200)
   @ApiOperation({ summary: 'Apply a coupon code' })

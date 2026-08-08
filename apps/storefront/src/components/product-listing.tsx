@@ -7,7 +7,9 @@ import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, Button, CloseIcon, EmptyState, cx } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { track } from '@/lib/analytics';
 import { ProductGrid, ProductGridSkeleton } from './product-card';
+import { Recommendations } from './recommendations';
 import { ActiveFilters, FilterPanel, SortSelect, useFilters } from './filter-panel';
 
 const ALLOWED_FILTERS = [
@@ -21,6 +23,7 @@ const ALLOWED_FILTERS = [
   'minPrice',
   'maxPrice',
   'minDiscount',
+  'minRating',
   'inStock',
   'sort',
   'page',
@@ -79,6 +82,12 @@ function ProductListingInner({
     queryKey: ['products', queryString],
     queryFn: () => api.get<Paginated<ProductListItemDto>>(`/catalog/products?${queryString}`),
   });
+
+  // One search event per resolved result set, not per keystroke.
+  useEffect(() => {
+    if (!term || !result) return;
+    track('search', { term, resultCount: result.total });
+  }, [term, result]);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -194,11 +203,7 @@ function ProductListingInner({
               ) : null}
             </>
           ) : (
-            <EmptyState
-              title="No products match those filters"
-              description="Try removing a filter or widening the discount range."
-              action={<ClearFiltersButton />}
-            />
+            <NoResults />
           )}
         </div>
       </div>
@@ -209,6 +214,60 @@ function ProductListingInner({
     </div>
   );
 }
+
+/**
+ * A search that finds nothing is where customers leave. So this offers three
+ * ways back in — drop the filters, jump to a category, or take a
+ * recommendation — instead of just reporting the empty result.
+ */
+function NoResults() {
+  const { params, activeCount } = useFilters();
+  const term = params.get('q');
+
+  return (
+    <div>
+      <EmptyState
+        title={term ? `We couldn’t find anything for “${term}”` : 'No products match those filters'}
+        description={
+          activeCount > 0
+            ? 'Try removing a filter, widening the price range, or checking the spelling.'
+            : 'Try a different search term, or browse a category below.'
+        }
+        action={<ClearFiltersButton />}
+      />
+
+      <div className="mt-8 border-t border-ink-200 pt-6">
+        <p className="text-2xs font-semibold uppercase tracking-[0.07em] text-ink-500">
+          Browse categories
+        </p>
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {SUGGESTED_CATEGORIES.map((category) => (
+            <li key={category.slug}>
+              <Link
+                href={`/category/${category.slug}`}
+                className="inline-flex h-9 items-center rounded px-3 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors hover:bg-ink-25 hover:ring-ink-950"
+              >
+                {category.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <Recommendations title="You might like these instead" limit={4} />
+    </div>
+  );
+}
+
+const SUGGESTED_CATEGORIES = [
+  { name: 'T-Shirts', slug: 't-shirts' },
+  { name: 'Shoes', slug: 'shoes' },
+  { name: 'Hoodies & Sweatshirts', slug: 'hoodies' },
+  { name: 'Jackets', slug: 'jackets' },
+  { name: 'Pants', slug: 'pants' },
+  { name: 'Bags', slug: 'bags' },
+  { name: 'Accessories', slug: 'accessories' },
+];
 
 function ClearFiltersButton() {
   const { clearAll, activeCount } = useFilters();

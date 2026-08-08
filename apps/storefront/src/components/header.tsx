@@ -4,13 +4,26 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactElement,
   type ReactNode,
   type RefObject,
 } from 'react';
-import { BagIcon, CloseIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon, cx } from '@outlet/ui';
+import { useQuery } from '@tanstack/react-query';
+import {
+  BagIcon,
+  CloseIcon,
+  HeartIcon,
+  MenuIcon,
+  SearchIcon,
+  UserIcon,
+  cx,
+  formatMoney,
+} from '@outlet/ui';
+import { api } from '@/lib/api';
+import type { SearchSuggestionsDto } from '@outlet/types';
 import { useCart, useCurrentUser, useLogout } from '@/lib/hooks';
 import { useI18n } from '@/lib/i18n';
 import { LocaleSwitcher } from './locale-switcher';
@@ -40,6 +53,14 @@ function Wordmark({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Header search with suggestions.
+ *
+ * Suggestions are debounced and only requested from two characters up, so
+ * typing does not fire a request per keystroke. The listbox follows the
+ * combobox pattern: arrow keys move a highlighted option, Enter opens it, and
+ * Escape closes the panel without clearing what was typed.
+ */
 function SearchForm({
   onSubmitted,
   autoFocus,
@@ -52,29 +73,245 @@ function SearchForm({
   const router = useRouter();
   const { t } = useI18n();
   const [term, setTerm] = useState('');
+  const [debounced, setDebounced] = useState('');
+  const [open, setOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebounced(term.trim()), 180);
+    return () => window.clearTimeout(id);
+  }, [term]);
+
+  const { data } = useQuery({
+    queryKey: ['suggest', debounced],
+    queryFn: () =>
+      api.get<SearchSuggestionsDto>(`/catalog/suggest?q=${encodeURIComponent(debounced)}`),
+    enabled: debounced.length >= 2,
+    staleTime: 60_000,
+  });
+
+  // One flat list so keyboard navigation crosses the group boundaries.
+  const options = useMemo(() => {
+    if (!data) return [];
+    return [
+      ...data.products.map((p) => ({
+        key: `p:${p.slug}`,
+        href: `/products/${p.slug}`,
+        label: p.name,
+      })),
+      ...data.brands.map((b) => ({ key: `b:${b.slug}`, href: `/brand/${b.slug}`, label: b.name })),
+      ...data.categories.map((c) => ({
+        key: `c:${c.slug}`,
+        href: `/category/${c.slug}`,
+        label: c.name,
+      })),
+    ];
+  }, [data]);
+
+  const showPanel = open && debounced.length >= 2;
+
+  // A click outside should dismiss the panel; blur alone would fire before the
+  // click on a suggestion registers.
+  useEffect(() => {
+    if (!showPanel) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [showPanel]);
+
+  const go = (href: string) => {
+    setOpen(false);
+    setHighlighted(-1);
+    router.push(href);
+    onSubmitted?.();
+  };
+
+  const submit = () => {
+    if (highlighted >= 0 && options[highlighted]) {
+      go(options[highlighted].href);
+      return;
+    }
+    go(term ? `/search?q=${encodeURIComponent(term)}` : '/products');
+  };
 
   return (
-    <form
-      role="search"
-      className={cx('relative', className)}
-      onSubmit={(e) => {
-        e.preventDefault();
-        router.push(term ? `/search?q=${encodeURIComponent(term)}` : '/products');
-        onSubmitted?.();
-      }}
-    >
-      <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" />
-      <input
-        type="search"
-        value={term}
-        onChange={(e) => setTerm(e.target.value)}
-        placeholder={t('nav.searchPlaceholder')}
-        aria-label={t('nav.searchPlaceholder')}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus={autoFocus}
-        className="h-10 w-full rounded bg-ink-50 pl-9 pr-3 text-sm text-ink-900 ring-1 ring-inset ring-transparent transition-shadow placeholder:text-ink-500 hover:bg-ink-100 focus:bg-ink-25 focus:ring-ink-300"
-      />
-    </form>
+    <div ref={containerRef} className={cx('relative', className)}>
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" />
+        <input
+          type="search"
+          value={term}
+          onChange={(e) => {
+            setTerm(e.target.value);
+            setOpen(true);
+            setHighlighted(-1);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' && options.length > 0) {
+              e.preventDefault();
+              setOpen(true);
+              setHighlighted((i) => (i + 1) % options.length);
+            } else if (e.key === 'ArrowUp' && options.length > 0) {
+              e.preventDefault();
+              setHighlighted((i) => (i <= 0 ? options.length - 1 : i - 1));
+            } else if (e.key === 'Escape') {
+              setOpen(false);
+              setHighlighted(-1);
+            }
+          }}
+          placeholder={t('nav.searchPlaceholder')}
+          aria-label={t('nav.searchPlaceholder')}
+          role="combobox"
+          aria-expanded={showPanel}
+          aria-controls="search-suggestions"
+          aria-autocomplete="list"
+          aria-activedescendant={
+            highlighted >= 0 && options[highlighted]
+              ? `suggestion-${options[highlighted].key}`
+              : undefined
+          }
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus={autoFocus}
+          className="h-10 w-full rounded bg-ink-50 pl-9 pr-3 text-sm text-ink-900 ring-1 ring-inset ring-transparent transition-shadow placeholder:text-ink-500 hover:bg-ink-100 focus:bg-ink-25 focus:ring-ink-300"
+        />
+      </form>
+
+      {showPanel ? (
+        <div
+          id="search-suggestions"
+          role="listbox"
+          aria-label="Search suggestions"
+          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[70vh] overflow-y-auto rounded border border-ink-200 bg-ink-25 py-1.5 shadow-lg"
+        >
+          {options.length === 0 ? (
+            <p className="px-3 py-3 text-sm text-ink-500">
+              No matches for “{debounced}”. Press Enter to search anyway.
+            </p>
+          ) : (
+            <>
+              {data!.products.length > 0 ? (
+                <SuggestionGroup label="Products">
+                  {data!.products.map((product) => {
+                    const index = options.findIndex((o) => o.key === `p:${product.slug}`);
+                    return (
+                      <SuggestionRow
+                        key={product.slug}
+                        id={`suggestion-p:${product.slug}`}
+                        active={highlighted === index}
+                        onSelect={() => go(`/products/${product.slug}`)}
+                        onHover={() => setHighlighted(index)}
+                      >
+                        {product.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={product.imageUrl}
+                            alt=""
+                            className="h-10 w-8 shrink-0 rounded-xs object-cover"
+                          />
+                        ) : null}
+                        <span className="min-w-0 flex-1 truncate">{product.name}</span>
+                        <span data-numeric className="shrink-0 text-xs text-ink-500">
+                          {formatMoney(product.currentPriceMinor, 'EUR')}
+                        </span>
+                      </SuggestionRow>
+                    );
+                  })}
+                </SuggestionGroup>
+              ) : null}
+
+              {data!.brands.length > 0 ? (
+                <SuggestionGroup label="Brands">
+                  {data!.brands.map((brand) => {
+                    const index = options.findIndex((o) => o.key === `b:${brand.slug}`);
+                    return (
+                      <SuggestionRow
+                        key={brand.slug}
+                        id={`suggestion-b:${brand.slug}`}
+                        active={highlighted === index}
+                        onSelect={() => go(`/brand/${brand.slug}`)}
+                        onHover={() => setHighlighted(index)}
+                      >
+                        <span className="truncate">{brand.name}</span>
+                      </SuggestionRow>
+                    );
+                  })}
+                </SuggestionGroup>
+              ) : null}
+
+              {data!.categories.length > 0 ? (
+                <SuggestionGroup label="Categories">
+                  {data!.categories.map((category) => {
+                    const index = options.findIndex((o) => o.key === `c:${category.slug}`);
+                    return (
+                      <SuggestionRow
+                        key={category.slug}
+                        id={`suggestion-c:${category.slug}`}
+                        active={highlighted === index}
+                        onSelect={() => go(`/category/${category.slug}`)}
+                        onHover={() => setHighlighted(index)}
+                      >
+                        <span className="truncate">{category.name}</span>
+                      </SuggestionRow>
+                    );
+                  })}
+                </SuggestionGroup>
+              ) : null}
+            </>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SuggestionGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="py-1">
+      <p className="px-3 pb-1 text-2xs font-semibold uppercase tracking-[0.07em] text-ink-400">
+        {label}
+      </p>
+      <ul>{children}</ul>
+    </div>
+  );
+}
+
+function SuggestionRow({
+  id,
+  active,
+  onSelect,
+  onHover,
+  children,
+}: {
+  id: string;
+  active: boolean;
+  onSelect: () => void;
+  onHover: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <li id={id} role="option" aria-selected={active}>
+      <button
+        type="button"
+        onClick={onSelect}
+        onMouseEnter={onHover}
+        className={cx(
+          'flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm text-ink-900 transition-colors',
+          active ? 'bg-ink-100' : 'hover:bg-ink-50',
+        )}
+      >
+        {children}
+      </button>
+    </li>
   );
 }
 

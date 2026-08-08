@@ -18,14 +18,24 @@ import {
   getCampaign,
   getContentPage,
   getProduct,
+  getProductReviews,
   listBrands,
   listCampaigns,
   listCategories,
   listProducts,
+  recommendedProducts,
+  relatedProducts,
+  searchSuggestions,
   type ListProductsParams,
 } from './queries';
 
 export { DemoApiError };
+
+/** Comma-separated slug lists used by the recommendation endpoint. */
+function splitSlugs(value: string | null): string[] {
+  if (!value) return [];
+  return value.split(',').filter(Boolean).slice(0, 20);
+}
 
 function parse(path: string): { segments: string[]; query: URLSearchParams } {
   const [rawPath, rawQuery = ''] = path.split('?');
@@ -66,8 +76,31 @@ export function demoRequest(method: string, path: string, body?: unknown): unkno
       if (verb !== 'GET') break;
       if (rest[0] === 'brands') return listBrands();
       if (rest[0] === 'categories') return listCategories();
+      if (rest[0] === 'suggest') return searchSuggestions(query.get('q') ?? '');
+      if (rest[0] === 'recommended') {
+        return recommendedProducts(
+          {
+            recentSlugs: splitSlugs(query.get('recent')),
+            wishlistSlugs: splitSlugs(query.get('wishlist')),
+            cartSlugs: splitSlugs(query.get('cart')),
+          },
+          Number(query.get('limit')) || 4,
+        );
+      }
       if (rest[0] === 'products') {
         if (rest.length === 1) return listProducts(queryToParams(query));
+        if (rest[2] === 'reviews') {
+          const reviews = getProductReviews(rest[1], {
+            sort: query.get('sort') ?? undefined,
+            page: query.get('page') ?? undefined,
+            pageSize: query.get('pageSize') ?? undefined,
+          });
+          if (!reviews) throw new DemoApiError(404, 'Product not found.');
+          return reviews;
+        }
+        if (rest[2] === 'related') {
+          return relatedProducts(rest[1], Number(query.get('limit')) || 4);
+        }
         const product = getProduct(rest[1]);
         if (!product) throw new DemoApiError(404, 'Product not found.');
         return product;
@@ -93,10 +126,15 @@ export function demoRequest(method: string, path: string, body?: unknown): unkno
       }
       if (rest[0] === 'items') {
         if (verb === 'POST' && rest.length === 1) return cart.addItem(payload);
+        if (verb === 'POST' && rest[2] === 'save') return cart.saveForLater(rest[1]);
         if ((verb === 'PATCH' || verb === 'PUT') && rest[1]) {
           return cart.updateItem(rest[1], Number((payload as { quantity: number }).quantity));
         }
         if (verb === 'DELETE' && rest[1]) return cart.removeItem(rest[1]);
+      }
+      if (rest[0] === 'saved' && rest[1]) {
+        if (verb === 'POST' && rest[2] === 'restore') return cart.moveToCart(rest[1]);
+        if (verb === 'DELETE') return cart.removeSaved(rest[1]);
       }
       if (rest[0] === 'coupon') {
         if (verb === 'POST') return cart.applyCoupon((payload as { code: string }).code);
