@@ -41,7 +41,9 @@ async function bootstrap(): Promise<void> {
 
   app.enableShutdownHooks();
   await app.listen(config.server.port, config.server.host);
-  console.log(`API listening on http://${config.server.host}:${config.server.port} (docs at /docs)`);
+  console.log(
+    `API listening on http://${config.server.host}:${config.server.port} (docs at /docs)`,
+  );
 }
 
 bootstrap().catch((err) => {

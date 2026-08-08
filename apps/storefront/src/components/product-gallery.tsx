@@ -29,9 +29,7 @@ export function ProductGallery({
           className="h-full w-full object-cover"
         />
       ) : (
-        <div className="flex h-full items-center justify-center text-sm text-ink-400">
-          No image
-        </div>
+        <div className="flex h-full items-center justify-center text-sm text-ink-400">No image</div>
       )}
       <div className="pointer-events-none absolute inset-0 rounded ring-1 ring-inset ring-ink-950/[0.06]" />
     </div>
@@ -59,12 +57,7 @@ export function ProductGallery({
                 )}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image.url}
-                  alt=""
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
+                <img src={image.url} alt="" loading="lazy" className="h-full w-full object-cover" />
               </button>
             </li>
           );

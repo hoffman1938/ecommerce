@@ -5,11 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  assertTransition,
-  RETURN_TRANSITIONS,
-  RETURNABLE_ORDER_STATUSES,
-} from '@outlet/domain';
+import { assertTransition, RETURN_TRANSITIONS, RETURNABLE_ORDER_STATUSES } from '@outlet/domain';
 import { QUEUE_NAMES, JOB_NAMES, type QueueClient } from '@outlet/queue';
 import type { ReturnRequestDto } from '@outlet/types';
 import type {
@@ -277,9 +273,7 @@ export class ReturnsService {
           throw new BadRequestException('Received more units than were requested.');
         }
         const restock =
-          received.restock && received.condition === 'RESELLABLE'
-            ? received.receivedQuantity
-            : 0;
+          received.restock && received.condition === 'RESELLABLE' ? received.receivedQuantity : 0;
 
         await tx.returnItem.update({
           where: { id: item.id },
@@ -350,9 +344,7 @@ export class ReturnsService {
     if (!request) throw new NotFoundException('Return request not found');
     assertTransition('return', RETURN_TRANSITIONS, request.status, 'COMPLETED');
 
-    const allReturned = request.order.items.every(
-      (item) => item.returnedQuantity >= item.quantity,
-    );
+    const allReturned = request.order.items.every((item) => item.returnedQuantity >= item.quantity);
     const newOrderStatus = allReturned ? 'RETURNED' : 'PARTIALLY_RETURNED';
 
     await this.prisma.$transaction(async (tx) => {

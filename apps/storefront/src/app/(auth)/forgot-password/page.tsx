@@ -38,7 +38,12 @@ export default function ForgotPasswordPage() {
             <p>
               If that email is registered, a reset link is on its way. In local development, check
               Mailpit at{' '}
-              <a className="underline" href="http://localhost:8025" target="_blank" rel="noreferrer">
+              <a
+                className="underline"
+                href="http://localhost:8025"
+                target="_blank"
+                rel="noreferrer"
+              >
                 localhost:8025
               </a>
               .

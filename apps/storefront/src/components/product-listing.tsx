@@ -11,8 +11,19 @@ import { ProductGrid, ProductGridSkeleton } from './product-card';
 import { ActiveFilters, FilterPanel, SortSelect, useFilters } from './filter-panel';
 
 const ALLOWED_FILTERS = [
-  'q', 'category', 'brand', 'size', 'color', 'targetGroup', 'campaign',
-  'minPrice', 'maxPrice', 'minDiscount', 'inStock', 'sort', 'page',
+  'q',
+  'category',
+  'brand',
+  'size',
+  'color',
+  'targetGroup',
+  'campaign',
+  'minPrice',
+  'maxPrice',
+  'minDiscount',
+  'inStock',
+  'sort',
+  'page',
 ];
 
 /**
@@ -60,7 +71,11 @@ function ProductListingInner({
   const term = titleFromQueryParam ? searchParams.get(titleFromQueryParam) : null;
   const resolvedTitle = term ? `“${term}”` : title;
 
-  const { data: result, isPending, isError } = useQuery({
+  const {
+    data: result,
+    isPending,
+    isError,
+  } = useQuery({
     queryKey: ['products', queryString],
     queryFn: () => api.get<Paginated<ProductListItemDto>>(`/catalog/products?${queryString}`),
   });
@@ -188,7 +203,9 @@ function ProductListingInner({
         </div>
       </div>
 
-      {drawerOpen ? <FilterDrawer onClose={() => setDrawerOpen(false)} total={result?.total} /> : null}
+      {drawerOpen ? (
+        <FilterDrawer onClose={() => setDrawerOpen(false)} total={result?.total} />
+      ) : null}
     </div>
   );
 }

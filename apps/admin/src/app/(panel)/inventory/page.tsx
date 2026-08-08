@@ -71,10 +71,15 @@ export default function InventoryPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>SKU</th><th>Product</th><th className="text-right">On hand</th>
-              <th className="text-right">Reserved</th><th className="text-right">Available</th>
-              <th className="text-right">Sold</th><th className="text-right">Damaged</th>
-              <th className="text-right">Returned</th><th></th>
+              <th>SKU</th>
+              <th>Product</th>
+              <th className="text-right">On hand</th>
+              <th className="text-right">Reserved</th>
+              <th className="text-right">Available</th>
+              <th className="text-right">Sold</th>
+              <th className="text-right">Damaged</th>
+              <th className="text-right">Returned</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -89,7 +94,9 @@ export default function InventoryPage() {
                 </td>
                 <td className="text-right">{row.onHandQuantity}</td>
                 <td className="text-right">{row.reservedQuantity}</td>
-                <td className={`text-right font-semibold ${row.availableQuantity === 0 ? 'text-red-600' : ''}`}>
+                <td
+                  className={`text-right font-semibold ${row.availableQuantity === 0 ? 'text-red-600' : ''}`}
+                >
                   {row.availableQuantity}
                 </td>
                 <td className="text-right text-gray-500">{row.soldQuantity}</td>
@@ -167,7 +174,9 @@ export default function InventoryPage() {
                   type="number"
                   min={0}
                   value={adjustForm.quantity}
-                  onChange={(e) => setAdjustForm((f) => ({ ...f, quantity: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setAdjustForm((f) => ({ ...f, quantity: Number(e.target.value) }))
+                  }
                   className="w-full rounded-md border border-gray-300 px-3 py-2"
                   data-testid="adjust-quantity"
                 />
@@ -207,18 +216,32 @@ export default function InventoryPage() {
           <h2 className="border-b border-gray-100 px-4 py-3 font-semibold">Recent movements</h2>
           <table className="admin-table">
             <thead>
-              <tr><th>When</th><th>SKU</th><th>Type</th><th className="text-right">Change</th><th className="text-right">Before → After</th><th>Reason</th><th>By</th></tr>
+              <tr>
+                <th>When</th>
+                <th>SKU</th>
+                <th>Type</th>
+                <th className="text-right">Change</th>
+                <th className="text-right">Before → After</th>
+                <th>Reason</th>
+                <th>By</th>
+              </tr>
             </thead>
             <tbody>
               {(movements?.items ?? []).map((m) => (
                 <tr key={m.id}>
-                  <td className="text-xs text-gray-500">{new Date(m.createdAt).toLocaleString()}</td>
+                  <td className="text-xs text-gray-500">
+                    {new Date(m.createdAt).toLocaleString()}
+                  </td>
                   <td className="font-mono text-xs">{m.sku}</td>
                   <td>{m.type}</td>
-                  <td className={`text-right font-semibold ${m.quantityChange < 0 ? 'text-red-600' : 'text-green-700'}`}>
+                  <td
+                    className={`text-right font-semibold ${m.quantityChange < 0 ? 'text-red-600' : 'text-green-700'}`}
+                  >
                     {m.quantityChange > 0 ? `+${m.quantityChange}` : m.quantityChange}
                   </td>
-                  <td className="text-right text-gray-500">{m.previousOnHand} → {m.newOnHand}</td>
+                  <td className="text-right text-gray-500">
+                    {m.previousOnHand} → {m.newOnHand}
+                  </td>
                   <td className="text-gray-500">{m.reason}</td>
                   <td className="text-xs text-gray-400">{m.actorEmail ?? 'system'}</td>
                 </tr>

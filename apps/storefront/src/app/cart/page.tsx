@@ -141,11 +141,7 @@ export default function CartPage() {
             </div>
             <div className="flex items-baseline justify-between border-t border-ink-200 pt-3">
               <dt className="text-base font-semibold text-ink-950">Total</dt>
-              <dd
-                data-numeric
-                data-testid="cart-total"
-                className="text-lg font-bold text-ink-950"
-              >
+              <dd data-numeric data-testid="cart-total" className="text-lg font-bold text-ink-950">
                 {formatMoney(cart.totalMinor, cart.currencyCode)}
               </dd>
             </div>

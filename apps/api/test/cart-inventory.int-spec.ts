@@ -87,7 +87,10 @@ describe('cart merging & inventory adjustments (integration)', () => {
 
   it('quantity changes adjust the hold atomically without touching the deadline', async () => {
     const fixture = await seedVariant(ctx.prisma, { stock: 3 });
-    await ctx.carts.addItem({ cartToken: 'qty_tok' }, { variantId: fixture.variantId, quantity: 1 });
+    await ctx.carts.addItem(
+      { cartToken: 'qty_tok' },
+      { variantId: fixture.variantId, quantity: 1 },
+    );
     const cart = await ctx.prisma.cart.findFirstOrThrow({
       where: { anonymousToken: 'qty_tok' },
       include: { items: true },
@@ -115,7 +118,10 @@ describe('cart merging & inventory adjustments (integration)', () => {
     const fixture = await seedVariant(ctx.prisma, { stock: 5 });
     const admin = { userId: 'admin-test', email: 'admin@example.local' };
 
-    await ctx.carts.addItem({ cartToken: 'inv_tok' }, { variantId: fixture.variantId, quantity: 2 });
+    await ctx.carts.addItem(
+      { cartToken: 'inv_tok' },
+      { variantId: fixture.variantId, quantity: 2 },
+    );
 
     // Restock +5
     await ctx.inventory.adjust(

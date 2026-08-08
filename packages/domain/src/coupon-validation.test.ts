@@ -12,8 +12,22 @@ const baseCoupon: CouponSnapshot = {
 };
 
 const lines: CouponCartLine[] = [
-  { productId: 'p1', brandId: 'nike', categoryId: 'shoes', campaignId: null, unitPriceMinor: 5000, quantity: 1 },
-  { productId: 'p2', brandId: 'adidas', categoryId: 'tees', campaignId: 'c1', unitPriceMinor: 2000, quantity: 2 },
+  {
+    productId: 'p1',
+    brandId: 'nike',
+    categoryId: 'shoes',
+    campaignId: null,
+    unitPriceMinor: 5000,
+    quantity: 1,
+  },
+  {
+    productId: 'p2',
+    brandId: 'adidas',
+    categoryId: 'tees',
+    campaignId: 'c1',
+    unitPriceMinor: 2000,
+    quantity: 2,
+  },
 ];
 
 const freshCustomer = { customerOrderCount: 0, customerRedemptionsOfThisCoupon: 0 };
@@ -25,7 +39,9 @@ describe('validateCoupon', () => {
   });
 
   it('rejects inactive and out-of-window coupons', () => {
-    expect(validateCoupon({ ...baseCoupon, isActive: false }, lines, freshCustomer).valid).toBe(false);
+    expect(validateCoupon({ ...baseCoupon, isActive: false }, lines, freshCustomer).valid).toBe(
+      false,
+    );
     expect(
       validateCoupon(
         { ...baseCoupon, startsAt: new Date(Date.now() + 86400000) },
@@ -45,11 +61,10 @@ describe('validateCoupon', () => {
         .valid,
     ).toBe(false);
     expect(
-      validateCoupon(
-        { ...baseCoupon, maxRedemptionsPerCustomer: 1 },
-        lines,
-        { customerOrderCount: 3, customerRedemptionsOfThisCoupon: 1 },
-      ).valid,
+      validateCoupon({ ...baseCoupon, maxRedemptionsPerCustomer: 1 }, lines, {
+        customerOrderCount: 3,
+        customerRedemptionsOfThisCoupon: 1,
+      }).valid,
     ).toBe(false);
   });
 

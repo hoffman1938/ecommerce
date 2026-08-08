@@ -79,7 +79,11 @@ export function orderConfirmationEmail(to: string, data: OrderEmailData): EmailM
   };
 }
 
-export function paymentFailedEmail(to: string, orderNumber: string, retryUrl: string): EmailMessage {
+export function paymentFailedEmail(
+  to: string,
+  orderNumber: string,
+  retryUrl: string,
+): EmailMessage {
   return {
     to,
     subject: `Payment failed for order ${orderNumber}`,

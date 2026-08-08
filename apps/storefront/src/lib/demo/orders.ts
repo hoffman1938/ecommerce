@@ -98,7 +98,9 @@ function toStoredAddress(input: Record<string, unknown>): DemoOrder['shippingAdd
     city: String(input?.city ?? '').trim(),
     region: input?.region ? String(input.region).trim() : null,
     postalCode: String(input?.postalCode ?? '').trim(),
-    countryCode: String(input?.countryCode ?? '').trim().toUpperCase(),
+    countryCode: String(input?.countryCode ?? '')
+      .trim()
+      .toUpperCase(),
     phone: input?.phone ? String(input.phone).trim() : null,
   };
 }
@@ -130,14 +132,13 @@ export function submitCheckout(body: SubmitCheckoutBody): PaymentSessionDto {
   const { shippingMinor, totalMinor, taxMinor } = totalsFor(cart, shippingMethod);
 
   // Same guard the real API applies: refuse if the client's total is stale.
-  if (
-    typeof body?.expectedTotalMinor === 'number' &&
-    body.expectedTotalMinor !== totalMinor
-  ) {
+  if (typeof body?.expectedTotalMinor === 'number' && body.expectedTotalMinor !== totalMinor) {
     throw new DemoApiError(409, 'Prices changed while you were checking out.', 'TOTALS_CHANGED');
   }
 
-  const email = String(body?.email ?? '').trim().toLowerCase();
+  const email = String(body?.email ?? '')
+    .trim()
+    .toLowerCase();
   if (!email.includes('@')) throw new DemoApiError(400, 'Enter a valid email address.');
 
   return mutate((state) => {
@@ -272,7 +273,8 @@ function markPaid(state: DemoState, payment: DemoPayment, order: DemoOrder): voi
   order.paidAt = new Date().toISOString();
   // Converting the reservation consumes real stock from the seeded catalog.
   for (const item of order.items) {
-    state.stockConsumed[item.variantId] = (state.stockConsumed[item.variantId] ?? 0) + item.quantity;
+    state.stockConsumed[item.variantId] =
+      (state.stockConsumed[item.variantId] ?? 0) + item.quantity;
   }
   clearCart();
 }
@@ -315,7 +317,9 @@ function reconcile(state: DemoState): boolean {
         carrier: 'Demo Logistics',
         trackingNumber: `TRK-${order.orderNumber}`,
         status: 'SHIPPED',
-        shippedAt: new Date(Date.parse(order.paidAt) + FULFILMENT_STEPS.shipped * 1000).toISOString(),
+        shippedAt: new Date(
+          Date.parse(order.paidAt) + FULFILMENT_STEPS.shipped * 1000,
+        ).toISOString(),
         deliveredAt: null,
       });
       changed = true;

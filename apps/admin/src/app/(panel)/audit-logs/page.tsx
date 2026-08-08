@@ -42,12 +42,20 @@ export default function AuditLogsPage() {
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
-            <tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Reason</th></tr>
+            <tr>
+              <th>When</th>
+              <th>Actor</th>
+              <th>Action</th>
+              <th>Entity</th>
+              <th>Reason</th>
+            </tr>
           </thead>
           <tbody>
             {(data?.items ?? []).map((row) => (
               <tr key={row.id}>
-                <td className="whitespace-nowrap text-xs text-gray-500">{formatDate(row.createdAt)}</td>
+                <td className="whitespace-nowrap text-xs text-gray-500">
+                  {formatDate(row.createdAt)}
+                </td>
                 <td className="text-xs">
                   {row.actorEmail ?? 'system'}
                   <span className="block text-gray-400">{row.actorType}</span>
@@ -65,9 +73,23 @@ export default function AuditLogsPage() {
       </div>
       {data && data.totalPages > 1 ? (
         <div className="mt-4 flex items-center gap-3 text-sm">
-          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded border px-3 py-1.5 disabled:opacity-40">← Prev</button>
-          <span className="text-gray-500">Page {page} / {data.totalPages}</span>
-          <button disabled={page >= data.totalPages} onClick={() => setPage((p) => p + 1)} className="rounded border px-3 py-1.5 disabled:opacity-40">Next →</button>
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded border px-3 py-1.5 disabled:opacity-40"
+          >
+            ← Prev
+          </button>
+          <span className="text-gray-500">
+            Page {page} / {data.totalPages}
+          </span>
+          <button
+            disabled={page >= data.totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded border px-3 py-1.5 disabled:opacity-40"
+          >
+            Next →
+          </button>
         </div>
       ) : null}
     </div>

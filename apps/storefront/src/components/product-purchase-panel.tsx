@@ -30,7 +30,9 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
     product.variants.length === 1 ? product.variants[0].id : null,
   );
   const [quantity, setQuantity] = useState(1);
-  const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(
+    null,
+  );
 
   const selectedVariant = useMemo(
     () => product.variants.find((v) => v.id === selectedVariantId) ?? null,
@@ -189,7 +191,9 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
             );
           })}
         </div>
-        {selectedVariant && selectedVariant.availableQuantity > 0 && selectedVariant.availableQuantity <= 3 ? (
+        {selectedVariant &&
+        selectedVariant.availableQuantity > 0 &&
+        selectedVariant.availableQuantity <= 3 ? (
           <p data-numeric className="mt-2.5 text-sm font-medium text-warning-600">
             Only {selectedVariant.availableQuantity} left in this size
           </p>

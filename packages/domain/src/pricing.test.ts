@@ -132,7 +132,9 @@ describe('computeCartTotals', () => {
   it('rejects fractional prices', () => {
     expect(() =>
       computeCartTotals({
-        lines: [{ unitPriceMinor: 19.99 as unknown as number, quantity: 1, eligibleForCoupon: true }],
+        lines: [
+          { unitPriceMinor: 19.99 as unknown as number, quantity: 1, eligibleForCoupon: true },
+        ],
         shippingRules,
         shippingMethod: 'STANDARD',
         taxRateBps: 2000,

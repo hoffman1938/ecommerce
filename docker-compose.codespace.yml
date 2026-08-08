@@ -6,19 +6,19 @@ services:
       POSTGRES_PASSWORD: outlet
       POSTGRES_DB: outlet
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       # Creates the dedicated outlet_test database required by pnpm test:integration.
       - ./infrastructure/docker/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U outlet -d outlet"]
+      test: ['CMD-SHELL', 'pg_isready -U outlet -d outlet']
       interval: 5s
       timeout: 5s
       retries: 12
   redis:
     image: redis:7
     ports:
-      - "6379:6379"
+      - '6379:6379'
   minio:
     image: minio/minio:latest
     environment:
@@ -26,10 +26,10 @@ services:
       MINIO_ROOT_PASSWORD: minio123
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ['CMD', 'mc', 'ready', 'local']
       interval: 5s
       timeout: 5s
       retries: 12
@@ -50,5 +50,5 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - "8025:8025"
-      - "1025:1025"
+      - '8025:8025'
+      - '1025:1025'

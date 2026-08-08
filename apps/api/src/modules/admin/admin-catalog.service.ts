@@ -303,7 +303,12 @@ export class AdminCatalogService {
 
   async addImage(
     productId: string,
-    image: { url: string; objectKey?: string | null; altText?: string | null; variantId?: string | null },
+    image: {
+      url: string;
+      objectKey?: string | null;
+      altText?: string | null;
+      variantId?: string | null;
+    },
   ) {
     await this.getProduct(productId);
     const count = await this.prisma.productImage.count({ where: { productId } });
@@ -342,7 +347,15 @@ export class AdminCatalogService {
   // --- Brands & categories --------------------------------------------------
 
   async upsertBrand(
-    input: { id?: string; name: string; slug: string; description?: string | null; isFeatured?: boolean; isActive?: boolean; logoUrl?: string | null },
+    input: {
+      id?: string;
+      name: string;
+      slug: string;
+      description?: string | null;
+      isFeatured?: boolean;
+      isActive?: boolean;
+      logoUrl?: string | null;
+    },
     actor: Actor,
   ) {
     const data = {
@@ -369,7 +382,15 @@ export class AdminCatalogService {
   }
 
   async upsertCategory(
-    input: { id?: string; name: string; slug: string; parentId?: string | null; description?: string | null; position?: number; isActive?: boolean },
+    input: {
+      id?: string;
+      name: string;
+      slug: string;
+      parentId?: string | null;
+      description?: string | null;
+      position?: number;
+      isActive?: boolean;
+    },
     actor: Actor,
   ) {
     const data = {

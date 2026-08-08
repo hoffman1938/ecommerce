@@ -78,9 +78,7 @@ export default function AdminLoginPage() {
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-        <p className="mt-4 text-xs text-gray-400">
-          Local seed: admin@example.local / Admin123!
-        </p>
+        <p className="mt-4 text-xs text-gray-400">Local seed: admin@example.local / Admin123!</p>
       </div>
     </div>
   );

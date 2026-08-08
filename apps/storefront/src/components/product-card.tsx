@@ -78,10 +78,7 @@ export function ProductCard({
         <div className="mt-1.5 flex items-baseline gap-2">
           <span
             data-numeric
-            className={cx(
-              'text-sm font-semibold',
-              discounted ? 'text-sale-500' : 'text-ink-900',
-            )}
+            className={cx('text-sm font-semibold', discounted ? 'text-sale-500' : 'text-ink-900')}
           >
             {formatMoney(product.currentPriceMinor, product.currencyCode)}
           </span>

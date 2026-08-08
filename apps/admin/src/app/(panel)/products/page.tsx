@@ -14,7 +14,10 @@ interface AdminProduct {
   outletPriceMinor: number;
   originalPriceMinor: number;
   brand: { name: string };
-  variants: Array<{ id: string; inventory: { onHandQuantity: number; reservedQuantity: number } | null }>;
+  variants: Array<{
+    id: string;
+    inventory: { onHandQuantity: number; reservedQuantity: number } | null;
+  }>;
 }
 
 export default function AdminProductsPage() {
@@ -97,13 +100,21 @@ export default function AdminProductsPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Product</th><th>Brand</th><th>Status</th><th className="text-right">Price</th>
-              <th className="text-right">Variants</th><th className="text-right">Available</th>
+              <th>Product</th>
+              <th>Brand</th>
+              <th>Status</th>
+              <th className="text-right">Price</th>
+              <th className="text-right">Variants</th>
+              <th className="text-right">Available</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={6} className="text-gray-400">Loading…</td></tr>
+              <tr>
+                <td colSpan={6} className="text-gray-400">
+                  Loading…
+                </td>
+              </tr>
             ) : (
               (data?.items ?? []).map((product) => {
                 const available = product.variants.reduce(
@@ -118,14 +129,25 @@ export default function AdminProductsPage() {
                 return (
                   <tr key={product.id}>
                     <td>
-                      <Link href={`/products/${product.id}`} className="font-medium hover:underline">
+                      <Link
+                        href={`/products/${product.id}`}
+                        className="font-medium hover:underline"
+                      >
                         {product.name}
                       </Link>
                       <span className="block font-mono text-xs text-gray-400">{product.slug}</span>
                     </td>
                     <td>{product.brand.name}</td>
                     <td>
-                      <Badge tone={product.status === 'ACTIVE' ? 'green' : product.status === 'ARCHIVED' ? 'red' : 'gray'}>
+                      <Badge
+                        tone={
+                          product.status === 'ACTIVE'
+                            ? 'green'
+                            : product.status === 'ARCHIVED'
+                              ? 'red'
+                              : 'gray'
+                        }
+                      >
                         {product.status}
                       </Badge>
                     </td>
@@ -136,7 +158,9 @@ export default function AdminProductsPage() {
                       </span>
                     </td>
                     <td className="text-right">{product.variants.length}</td>
-                    <td className={`text-right font-semibold ${available === 0 ? 'text-red-600' : ''}`}>
+                    <td
+                      className={`text-right font-semibold ${available === 0 ? 'text-red-600' : ''}`}
+                    >
                       {available}
                     </td>
                   </tr>
@@ -148,11 +172,21 @@ export default function AdminProductsPage() {
       </div>
       {data && data.totalPages > 1 ? (
         <div className="mt-4 flex items-center gap-3 text-sm">
-          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded border px-3 py-1.5 disabled:opacity-40">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded border px-3 py-1.5 disabled:opacity-40"
+          >
             ← Prev
           </button>
-          <span className="text-gray-500">Page {page} / {data.totalPages}</span>
-          <button disabled={page >= data.totalPages} onClick={() => setPage((p) => p + 1)} className="rounded border px-3 py-1.5 disabled:opacity-40">
+          <span className="text-gray-500">
+            Page {page} / {data.totalPages}
+          </span>
+          <button
+            disabled={page >= data.totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded border px-3 py-1.5 disabled:opacity-40"
+          >
             Next →
           </button>
         </div>

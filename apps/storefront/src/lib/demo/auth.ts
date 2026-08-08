@@ -56,8 +56,10 @@ function assertPasswordStrength(password: unknown): string {
   if (typeof password !== 'string' || password.length < 8) {
     throw new DemoApiError(400, 'Password must be at least 8 characters.');
   }
-  if (!/[a-z]/.test(password)) throw new DemoApiError(400, 'Password must contain a lowercase letter.');
-  if (!/[A-Z]/.test(password)) throw new DemoApiError(400, 'Password must contain an uppercase letter.');
+  if (!/[a-z]/.test(password))
+    throw new DemoApiError(400, 'Password must contain a lowercase letter.');
+  if (!/[A-Z]/.test(password))
+    throw new DemoApiError(400, 'Password must contain an uppercase letter.');
   if (!/[0-9]/.test(password)) throw new DemoApiError(400, 'Password must contain a digit.');
   return password;
 }
@@ -175,7 +177,8 @@ export function resetPassword(body: { token: string; password: string }) {
   const token = String(body?.token ?? '');
   return mutate((state) => {
     const userId = state.resetTokens[token];
-    if (!userId) throw new DemoApiError(400, 'That reset link is invalid or has already been used.');
+    if (!userId)
+      throw new DemoApiError(400, 'That reset link is invalid or has already been used.');
     const user = state.users.find((u) => u.id === userId);
     if (!user) throw new DemoApiError(400, 'That reset link is no longer valid.');
     user.passwordHash = hashPassword(user.email, password);

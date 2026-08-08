@@ -7,13 +7,13 @@ role-based administration panel. Everything runs locally with zero paid services
 
 ## Stack
 
-| Layer | Technology |
-| --- | --- |
-| Monorepo | pnpm workspaces (modular monolith) |
-| API | NestJS + Prisma + PostgreSQL, Swagger at `/docs` |
-| Worker | Node + BullMQ (Redis) behind a swappable queue interface |
+| Layer              | Technology                                                                  |
+| ------------------ | --------------------------------------------------------------------------- |
+| Monorepo           | pnpm workspaces (modular monolith)                                          |
+| API                | NestJS + Prisma + PostgreSQL, Swagger at `/docs`                            |
+| Worker             | Node + BullMQ (Redis) behind a swappable queue interface                    |
 | Storefront / Admin | Next.js 14 (App Router) + Tailwind + TanStack Query, Cloudflare-Pages-ready |
-| Local services | PostgreSQL, Redis, MinIO (S3), Mailpit (SMTP), mock payment provider |
+| Local services     | PostgreSQL, Redis, MinIO (S3), Mailpit (SMTP), mock payment provider        |
 
 ## Prerequisites
 
@@ -32,16 +32,16 @@ docker compose up --build  # first run takes a few minutes
 The `migrate` one-shot container applies migrations and inserts idempotent seed data
 automatically. Then open:
 
-| Service | URL |
-| --- | --- |
-| Customer storefront | http://localhost:3000 |
-| Admin panel | http://localhost:3001 |
-| Backend API | http://localhost:4000 |
-| API documentation (Swagger) | http://localhost:4000/docs |
-| Mailpit (all local email) | http://localhost:8025 |
+| Service                        | URL                                      |
+| ------------------------------ | ---------------------------------------- |
+| Customer storefront            | http://localhost:3000                    |
+| Admin panel                    | http://localhost:3001                    |
+| Backend API                    | http://localhost:4000                    |
+| API documentation (Swagger)    | http://localhost:4000/docs               |
+| Mailpit (all local email)      | http://localhost:8025                    |
 | MinIO console (object storage) | http://localhost:9001 (minio / minio123) |
-| PostgreSQL | localhost:5432 (outlet / outlet) |
-| Redis | localhost:6379 |
+| PostgreSQL                     | localhost:5432 (outlet / outlet)         |
+| Redis                          | localhost:6379                           |
 
 ## Local test credentials (seed data only — never use in production)
 

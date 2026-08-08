@@ -88,11 +88,7 @@ export class AuthService {
     const user = await this.prisma.user.findFirst({
       where: { emailVerificationTokenHash: tokenHash },
     });
-    if (
-      !user ||
-      !user.emailVerificationExpiresAt ||
-      user.emailVerificationExpiresAt < new Date()
-    ) {
+    if (!user || !user.emailVerificationExpiresAt || user.emailVerificationExpiresAt < new Date()) {
       throw new BadRequestException('Verification link is invalid or has expired.');
     }
     await this.prisma.user.update({
@@ -131,9 +127,7 @@ export class AuthService {
         data: {
           failedLoginAttempts: failed,
           lockedUntil:
-            failed >= MAX_FAILED_ATTEMPTS
-              ? new Date(Date.now() + LOCKOUT_MINUTES * 60_000)
-              : null,
+            failed >= MAX_FAILED_ATTEMPTS ? new Date(Date.now() + LOCKOUT_MINUTES * 60_000) : null,
         },
       });
       throw genericError;
@@ -161,7 +155,11 @@ export class AuthService {
       entityId: user.id,
       ip: meta.ip,
     });
-    return { token: session.token, expiresAt: session.expiresAt, user: { id: user.id, email: user.email } };
+    return {
+      token: session.token,
+      expiresAt: session.expiresAt,
+      user: { id: user.id, email: user.email },
+    };
   }
 
   async logout(sessionId: string): Promise<void> {

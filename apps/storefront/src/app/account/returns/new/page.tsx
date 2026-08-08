@@ -33,7 +33,9 @@ function NewReturnInner() {
     <div className="max-w-xl">
       <h1 className="text-2xl font-bold">Return items from {order.orderNumber}</h1>
       {error ? (
-        <p className="mt-4 rounded border border-sale-200 bg-sale-50 px-4 py-2 text-sm text-sale-700">{error}</p>
+        <p className="mt-4 rounded border border-sale-200 bg-sale-50 px-4 py-2 text-sm text-sale-700">
+          {error}
+        </p>
       ) : null}
       <form
         className="mt-6 space-y-5"
@@ -87,9 +89,11 @@ function NewReturnInner() {
             onChange={(e) => setReason(e.target.value)}
             className="w-full rounded border border-ink-300 px-3 py-2"
           >
-            {['Wrong size', 'Damaged or defective', 'Not as described', 'Changed my mind'].map((r) => (
-              <option key={r}>{r}</option>
-            ))}
+            {['Wrong size', 'Damaged or defective', 'Not as described', 'Changed my mind'].map(
+              (r) => (
+                <option key={r}>{r}</option>
+              ),
+            )}
           </select>
         </label>
         <label className="block text-sm">

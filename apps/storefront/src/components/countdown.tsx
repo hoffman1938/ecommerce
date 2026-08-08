@@ -30,7 +30,10 @@ export function Countdown({
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+      const remaining = Math.max(
+        0,
+        Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000),
+      );
       setSecondsLeft(remaining);
       if (remaining === 0) {
         clearInterval(interval);
@@ -47,11 +50,7 @@ export function Countdown({
       data-numeric
       className={cx(
         'font-semibold',
-        tone === 'inverse'
-          ? 'text-ink-25'
-          : urgent
-            ? 'text-sale-500'
-            : 'text-ink-800',
+        tone === 'inverse' ? 'text-ink-25' : urgent ? 'text-sale-500' : 'text-ink-800',
         className,
       )}
       data-testid="reservation-countdown"

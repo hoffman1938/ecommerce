@@ -121,8 +121,15 @@ describe('checkout & mock payments (integration)', () => {
       quantity: 1,
     });
     const address = {
-      firstName: 'T', lastName: 'C', line1: 'S 1', line2: null, city: 'B',
-      region: null, postalCode: '10115', countryCode: 'DE', phone: null,
+      firstName: 'T',
+      lastName: 'C',
+      line1: 'S 1',
+      line2: null,
+      city: 'B',
+      region: null,
+      postalCode: '10115',
+      countryCode: 'DE',
+      phone: null,
     };
 
     await expect(

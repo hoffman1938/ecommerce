@@ -51,7 +51,9 @@ export class AdminInventoryController {
   @Get()
   @RequirePermissions(Permissions.InventoryView)
   @ApiOperation({ summary: 'Stock by SKU with reserved/available breakdown' })
-  list(@Query(new ZodValidationPipe(inventoryQuerySchema)) query: z.infer<typeof inventoryQuerySchema>) {
+  list(
+    @Query(new ZodValidationPipe(inventoryQuerySchema)) query: z.infer<typeof inventoryQuerySchema>,
+  ) {
     return this.inventory.listInventory(query);
   }
 
@@ -59,7 +61,8 @@ export class AdminInventoryController {
   @HttpCode(201)
   @RequirePermissions(Permissions.InventoryAdjust)
   @ApiOperation({
-    summary: 'Adjust stock (RESTOCK / ADJUSTMENT_INCREASE / ADJUSTMENT_DECREASE / CORRECTION / DAMAGED) with a mandatory reason',
+    summary:
+      'Adjust stock (RESTOCK / ADJUSTMENT_INCREASE / ADJUSTMENT_DECREASE / CORRECTION / DAMAGED) with a mandatory reason',
   })
   adjust(
     @Body(new ZodValidationPipe(inventoryAdjustSchema)) body: InventoryAdjustInput,

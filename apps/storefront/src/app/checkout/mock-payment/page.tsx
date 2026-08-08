@@ -9,7 +9,11 @@ const OUTCOMES = [
   { code: 'TEST-SUCCESS', label: 'Pay successfully', tone: 'bg-success-600 hover:bg-success-700' },
   { code: 'TEST-FAIL', label: 'Simulate failed payment', tone: 'bg-sale-500 hover:bg-sale-600' },
   { code: 'TEST-CANCEL', label: 'Cancel payment', tone: 'bg-ink-500 hover:bg-ink-600' },
-  { code: 'TEST-DELAYED', label: 'Simulate delayed confirmation (~10s)', tone: 'bg-warning-600 hover:bg-warning-700' },
+  {
+    code: 'TEST-DELAYED',
+    label: 'Simulate delayed confirmation (~10s)',
+    tone: 'bg-warning-600 hover:bg-warning-700',
+  },
 ] as const;
 
 function MockPaymentInner() {
@@ -30,7 +34,9 @@ function MockPaymentInner() {
       // The API turns this into a signed webhook and processes it through
       // the same verification path a real provider would use.
       await api.post(`/payments/mock/${paymentId}/simulate`, { outcome });
-      router.push(returnUrl.startsWith('http') ? returnUrl.replace(window.location.origin, '') : returnUrl);
+      router.push(
+        returnUrl.startsWith('http') ? returnUrl.replace(window.location.origin, '') : returnUrl,
+      );
       if (returnUrl.startsWith('http') && !returnUrl.startsWith(window.location.origin)) {
         window.location.href = returnUrl;
       }

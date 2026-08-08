@@ -58,7 +58,9 @@ export default function ReturnsPage() {
                   {request.refunds.map((refund) => (
                     <p key={refund.id} className="text-ink-600">
                       Refund {formatMoney(refund.amountMinor)} ·{' '}
-                      <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>{refund.status}</Badge>
+                      <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>
+                        {refund.status}
+                      </Badge>
                     </p>
                   ))}
                 </div>

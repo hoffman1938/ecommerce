@@ -11,15 +11,32 @@ interface AdminOrderDetail extends OrderDto {
   internalNote: string | null;
   customerNote: string | null;
   customer: { id: string; email: string; firstName: string; lastName: string } | null;
-  statusHistory: Array<{ id: string; fromStatus: string | null; toStatus: string; note: string | null; createdAt: string }>;
-  refunds: Array<{ id: string; amountMinor: number; status: string; reason: string | null; createdAt: string }>;
+  statusHistory: Array<{
+    id: string;
+    fromStatus: string | null;
+    toStatus: string;
+    note: string | null;
+    createdAt: string;
+  }>;
+  refunds: Array<{
+    id: string;
+    amountMinor: number;
+    status: string;
+    reason: string | null;
+    createdAt: string;
+  }>;
 }
 
 export default function AdminOrderDetailPage() {
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
-  const [statusForm, setStatusForm] = useState({ status: 'PROCESSING', trackingNumber: '', carrier: 'DHL', note: '' });
+  const [statusForm, setStatusForm] = useState({
+    status: 'PROCESSING',
+    trackingNumber: '',
+    carrier: 'DHL',
+    note: '',
+  });
   const [refundForm, setRefundForm] = useState({ amount: '', reason: '' });
   const [note, setNote] = useState('');
 
@@ -31,9 +48,7 @@ export default function AdminOrderDetailPage() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-order', params.id] });
   if (!order) return <p className="text-gray-500">Loading order…</p>;
 
-  const paidPayment = order.payments.find((p) =>
-    ['PAID', 'PARTIALLY_REFUNDED'].includes(p.status),
-  );
+  const paidPayment = order.payments.find((p) => ['PAID', 'PARTIALLY_REFUNDED'].includes(p.status));
   const refundableMinor = paidPayment
     ? paidPayment.amountMinor - paidPayment.refundedAmountMinor
     : 0;
@@ -48,7 +63,11 @@ export default function AdminOrderDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge tone={order.status === 'CANCELLED' ? 'red' : order.status === 'DELIVERED' ? 'green' : 'blue'}>
+          <Badge
+            tone={
+              order.status === 'CANCELLED' ? 'red' : order.status === 'DELIVERED' ? 'green' : 'blue'
+            }
+          >
             {order.status}
           </Badge>
           <a
@@ -70,7 +89,9 @@ export default function AdminOrderDetailPage() {
           <button
             type="button"
             onClick={async () => {
-              await api.post(`/admin/orders/${order.id}/resend-confirmation`).catch(() => undefined);
+              await api
+                .post(`/admin/orders/${order.id}/resend-confirmation`)
+                .catch(() => undefined);
             }}
             className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:border-gray-900"
           >
@@ -83,15 +104,34 @@ export default function AdminOrderDetailPage() {
       <section className="rounded-lg border border-gray-200 bg-white p-5">
         <h2 className="mb-3 font-semibold">Items</h2>
         <table className="admin-table">
-          <thead><tr><th>SKU</th><th>Item</th><th className="text-right">Qty</th><th className="text-right">Unit</th><th className="text-right">Total</th></tr></thead>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Item</th>
+              <th className="text-right">Qty</th>
+              <th className="text-right">Unit</th>
+              <th className="text-right">Total</th>
+            </tr>
+          </thead>
           <tbody>
             {order.items.map((item) => (
               <tr key={item.id}>
                 <td className="font-mono text-xs">{item.sku}</td>
-                <td>{item.name}{item.returnedQuantity > 0 ? <span className="ml-1 text-xs text-amber-600">({item.returnedQuantity} returned)</span> : null}</td>
+                <td>
+                  {item.name}
+                  {item.returnedQuantity > 0 ? (
+                    <span className="ml-1 text-xs text-amber-600">
+                      ({item.returnedQuantity} returned)
+                    </span>
+                  ) : null}
+                </td>
                 <td className="text-right">{item.quantity}</td>
-                <td className="text-right">{formatMoney(item.unitPriceMinor, order.currencyCode)}</td>
-                <td className="text-right font-medium">{formatMoney(item.totalMinor, order.currencyCode)}</td>
+                <td className="text-right">
+                  {formatMoney(item.unitPriceMinor, order.currencyCode)}
+                </td>
+                <td className="text-right font-medium">
+                  {formatMoney(item.totalMinor, order.currencyCode)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -176,7 +216,9 @@ export default function AdminOrderDetailPage() {
                   <span className="text-gray-600">{refund.reason ?? 'Refund'}</span>
                   <span>
                     {formatMoney(refund.amountMinor, order.currencyCode)}{' '}
-                    <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>{refund.status}</Badge>
+                    <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>
+                      {refund.status}
+                    </Badge>
                   </span>
                 </li>
               ))}

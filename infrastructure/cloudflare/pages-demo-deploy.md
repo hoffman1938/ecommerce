@@ -12,19 +12,19 @@ built around. So the demo build swaps the API out for a bundled copy of the
 Prisma seed catalog (`apps/storefront/src/lib/demo/`).
 
 The whole customer journey works — browsing, accounts, cart, checkout, orders
-and returns — but it works *in the browser*. All state lives in `localStorage`,
+and returns — but it works _in the browser_. All state lives in `localStorage`,
 private to each visitor and gone when they clear site data.
 
-| Works in the demo | Still needs the real backend |
-| --- | --- |
-| Home, campaigns, category, brand, search | Cross-customer stock contention |
-| Product detail with variants, live stock and SEO metadata | Durable, shared data |
-| Filtering, sorting, pagination | Real payment capture |
-| Cart with the 20-minute reservation countdown | Email (verification, receipts) |
-| Register, sign in, password reset and change | The admin panel |
-| Profile, addresses, wishlist, notification preferences | Server-enforced authorization |
-| Checkout, the four TEST-\* payment outcomes, order history | |
-| Returns with refunds and restocking | |
+| Works in the demo                                          | Still needs the real backend    |
+| ---------------------------------------------------------- | ------------------------------- |
+| Home, campaigns, category, brand, search                   | Cross-customer stock contention |
+| Product detail with variants, live stock and SEO metadata  | Durable, shared data            |
+| Filtering, sorting, pagination                             | Real payment capture            |
+| Cart with the 20-minute reservation countdown              | Email (verification, receipts)  |
+| Register, sign in, password reset and change               | The admin panel                 |
+| Profile, addresses, wishlist, notification preferences     | Server-enforced authorization   |
+| Checkout, the four TEST-\* payment outcomes, order history |                                 |
+| Returns with refunds and restocking                        |                                 |
 
 Three deliberate divergences, all because there is no server or worker:
 
@@ -51,20 +51,20 @@ on a container host, managed Postgres and Redis.
 
 Create a Pages project from the Git repository, then set:
 
-| Setting | Value |
-| --- | --- |
-| Production branch | the branch holding this work |
-| Framework preset | **None** |
-| Root directory | *(leave empty — the repo root, where `pnpm-workspace.yaml` lives)* |
-| Build command | `pnpm install --no-frozen-lockfile --filter "@outlet/storefront..." && pnpm run build:cloudflare` |
-| Build output directory | `apps/storefront/out` |
+| Setting                | Value                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------- |
+| Production branch      | the branch holding this work                                                                      |
+| Framework preset       | **None**                                                                                          |
+| Root directory         | _(leave empty — the repo root, where `pnpm-workspace.yaml` lives)_                                |
+| Build command          | `pnpm install --no-frozen-lockfile --filter "@outlet/storefront..." && pnpm run build:cloudflare` |
+| Build output directory | `apps/storefront/out`                                                                             |
 
 Environment variables (Production **and** Preview):
 
-| Name | Value |
-| --- | --- |
-| `NEXT_PUBLIC_DEMO_MODE` | `true` |
-| `NODE_VERSION` | `20` (also pinned by `.node-version`) |
+| Name                    | Value                                 |
+| ----------------------- | ------------------------------------- |
+| `NEXT_PUBLIC_DEMO_MODE` | `true`                                |
+| `NODE_VERSION`          | `20` (also pinned by `.node-version`) |
 
 `build:cloudflare` also sets `NEXT_PUBLIC_DEMO_MODE=true` inline, so the build is
 correct even if the dashboard variable is missed. Setting it explicitly keeps

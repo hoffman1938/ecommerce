@@ -31,9 +31,7 @@ export const PERMISSION_KEYS = [
   'admin_users.manage',
 ] as const;
 
-const VIEW_ONLY = PERMISSION_KEYS.filter(
-  (k) => k.endsWith('.view') || k === 'dashboard.view',
-);
+const VIEW_ONLY = PERMISSION_KEYS.filter((k) => k.endsWith('.view') || k === 'dashboard.view');
 
 export const ROLE_DEFINITIONS: Record<string, readonly string[]> = {
   'Super Admin': PERMISSION_KEYS,

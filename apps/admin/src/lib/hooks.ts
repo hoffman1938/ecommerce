@@ -20,6 +20,9 @@ export function useAdminUser() {
   });
 }
 
-export function hasPermission(user: AdminSessionUser | null | undefined, permission: string): boolean {
+export function hasPermission(
+  user: AdminSessionUser | null | undefined,
+  permission: string,
+): boolean {
   return Boolean(user?.permissions.includes(permission));
 }

@@ -49,10 +49,7 @@ export function CampaignCard({
             {upcoming ? `Starts ${DATE_SHORT.format(new Date(campaign.startsAt))}` : 'Live now'}
           </span>
           {campaign.productCount ? (
-            <span
-              data-numeric
-              className="text-2xs font-medium text-white/80"
-            >
+            <span data-numeric className="text-2xs font-medium text-white/80">
               {campaign.productCount} items
             </span>
           ) : null}
@@ -67,7 +64,10 @@ export function CampaignCard({
           ) : null}
           {!upcoming ? (
             <p className="mt-2.5 flex items-center gap-1.5 text-xs text-white/80">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sale-400" aria-hidden="true" />
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full bg-sale-400"
+                aria-hidden="true"
+              />
               Ends in <Countdown expiresAt={campaign.endsAt} tone="inverse" />
             </p>
           ) : null}

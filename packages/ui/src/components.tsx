@@ -118,10 +118,7 @@ export function Field({
   return (
     <div className={cx('min-w-0', className)}>
       {label ? (
-        <label
-          htmlFor={id}
-          className="mb-1.5 block text-sm font-medium text-ink-800"
-        >
+        <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-ink-800">
           {label}
           {required ? <span className="ml-0.5 text-sale-500">*</span> : null}
         </label>

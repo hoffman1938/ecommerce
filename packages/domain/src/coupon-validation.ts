@@ -33,8 +33,7 @@ export interface CouponCustomerContext {
 }
 
 export type CouponValidationResult =
-  | { valid: true; eligibleSubtotalMinor: number }
-  | { valid: false; reason: string };
+  { valid: true; eligibleSubtotalMinor: number } | { valid: false; reason: string };
 
 export function lineMatchesCouponRestrictions(
   coupon: CouponSnapshot,
@@ -81,9 +80,7 @@ export function validateCoupon(
 
   const eligibleSubtotalMinor = lines.reduce(
     (sum, line) =>
-      lineMatchesCouponRestrictions(coupon, line)
-        ? sum + line.unitPriceMinor * line.quantity
-        : sum,
+      lineMatchesCouponRestrictions(coupon, line) ? sum + line.unitPriceMinor * line.quantity : sum,
     0,
   );
   if (eligibleSubtotalMinor <= 0) {

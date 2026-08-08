@@ -69,7 +69,12 @@ export default function CheckoutPage() {
     const discounted = cart.subtotalMinor - cart.discountMinor;
     const shipping =
       shippingMethod === 'STANDARD' && cart.shippingMinor === 0 ? 0 : (method?.priceMinor ?? 0);
-    return { subtotal: cart.subtotalMinor, discount: cart.discountMinor, shipping, total: discounted + shipping };
+    return {
+      subtotal: cart.subtotalMinor,
+      discount: cart.discountMinor,
+      shipping,
+      total: discounted + shipping,
+    };
   }, [quote, shippingMethod]);
 
   const onSubmit = async (values: CheckoutForm) => {
@@ -92,7 +97,9 @@ export default function CheckoutPage() {
       window.location.href = session.redirectUrl;
     } catch (err) {
       if (err instanceof ApiError && err.body.code === 'TOTALS_CHANGED') {
-        setError('Prices changed while you were checking out. The page will reload with the new totals.');
+        setError(
+          'Prices changed while you were checking out. The page will reload with the new totals.',
+        );
         const fresh = await api.post<CheckoutQuoteDto>('/checkout/start').catch(() => null);
         if (fresh) setQuote(fresh);
       } else if (err instanceof ApiError && err.body.code === 'RESERVATIONS_EXPIRED') {
@@ -128,10 +135,7 @@ export default function CheckoutPage() {
   ) => (
     <label className={`block text-sm ${span2 ? 'sm:col-span-2' : ''}`}>
       <span className="mb-1 block font-medium text-ink-700">{label}</span>
-      <input
-        {...form.register(name)}
-        className="w-full rounded border border-ink-300 px-3 py-2"
-      />
+      <input {...form.register(name)} className="w-full rounded border border-ink-300 px-3 py-2" />
     </label>
   );
 
@@ -150,7 +154,10 @@ export default function CheckoutPage() {
         ) : null}
       </div>
       {error ? (
-        <div className="mt-6 rounded border border-sale-200 bg-sale-50 px-3.5 py-3 text-sm text-sale-700" role="alert">
+        <div
+          className="mt-6 rounded border border-sale-200 bg-sale-50 px-3.5 py-3 text-sm text-sale-700"
+          role="alert"
+        >
           {error}
         </div>
       ) : null}
@@ -186,7 +193,9 @@ export default function CheckoutPage() {
               {field('shippingAddress.phone', 'Phone (optional)')}
             </div>
             {Object.keys(form.formState.errors.shippingAddress ?? {}).length > 0 ? (
-              <p className="mt-2 text-xs text-sale-500">Please complete the highlighted address fields.</p>
+              <p className="mt-2 text-xs text-sale-500">
+                Please complete the highlighted address fields.
+              </p>
             ) : null}
             <label className="mt-4 flex items-center gap-2 text-sm">
               <input type="checkbox" {...form.register('billingSameAsShipping')} />
@@ -260,11 +269,17 @@ export default function CheckoutPage() {
               ) : null}
               <div className="flex justify-between">
                 <dt className="text-ink-500">Shipping</dt>
-                <dd>{totals.shipping === 0 ? 'Free' : formatMoney(totals.shipping, quote.cart.currencyCode)}</dd>
+                <dd>
+                  {totals.shipping === 0
+                    ? 'Free'
+                    : formatMoney(totals.shipping, quote.cart.currencyCode)}
+                </dd>
               </div>
               <div className="flex justify-between border-t border-ink-200 pt-2 text-base font-bold">
                 <dt>Total</dt>
-                <dd data-testid="checkout-total">{formatMoney(totals.total, quote.cart.currencyCode)}</dd>
+                <dd data-testid="checkout-total">
+                  {formatMoney(totals.total, quote.cart.currencyCode)}
+                </dd>
               </div>
             </dl>
           ) : null}

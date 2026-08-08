@@ -64,7 +64,9 @@ export class AdminOrdersController {
   @Get()
   @RequirePermissions(Permissions.OrdersView)
   @ApiOperation({ summary: 'Search and filter orders' })
-  async list(@Query(new ZodValidationPipe(ordersQuerySchema)) query: z.infer<typeof ordersQuerySchema>) {
+  async list(
+    @Query(new ZodValidationPipe(ordersQuerySchema)) query: z.infer<typeof ordersQuerySchema>,
+  ) {
     const where: Prisma.OrderWhereInput = {
       status: query.status ?? { not: 'DRAFT' },
       ...(query.q

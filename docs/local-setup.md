@@ -79,11 +79,11 @@ the final-unit product) — run `pnpm local:reset` for a clean slate before a fu
 
 ## 6. Troubleshooting
 
-| Symptom | Fix |
-| --- | --- |
-| Ports 3000/3001/4000/5432/6379/8025/9000/9001 in use | Stop the conflicting service or change the published port in `docker-compose.yml` (documented ports only) |
-| `migrate` service fails | `docker compose logs migrate`; usually Postgres was still starting — `docker compose up -d migrate` to retry |
-| Storefront shows "Could not load products" | API not healthy yet — `docker compose logs api` |
-| Emails missing | All mail is captured by Mailpit (8025); check the worker logs — sending is queued |
-| Reservation never expires | Check the worker container; the API also lazily expires on cart load, so a reload usually reconciles |
-| Windows line-ending warnings from git | Cosmetic; `.gitattributes` normalizes to LF in the repository |
+| Symptom                                              | Fix                                                                                                          |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Ports 3000/3001/4000/5432/6379/8025/9000/9001 in use | Stop the conflicting service or change the published port in `docker-compose.yml` (documented ports only)    |
+| `migrate` service fails                              | `docker compose logs migrate`; usually Postgres was still starting — `docker compose up -d migrate` to retry |
+| Storefront shows "Could not load products"           | API not healthy yet — `docker compose logs api`                                                              |
+| Emails missing                                       | All mail is captured by Mailpit (8025); check the worker logs — sending is queued                            |
+| Reservation never expires                            | Check the worker container; the API also lazily expires on cart load, so a reload usually reconciles         |
+| Windows line-ending warnings from git                | Cosmetic; `.gitattributes` normalizes to LF in the repository                                                |

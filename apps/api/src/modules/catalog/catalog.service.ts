@@ -44,7 +44,14 @@ export class CatalogService {
     const byId = new Map<string, CategoryDto>(
       categories.map((c) => [
         c.id,
-        { id: c.id, name: c.name, slug: c.slug, parentId: c.parentId, position: c.position, children: [] },
+        {
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          parentId: c.parentId,
+          position: c.position,
+          children: [],
+        },
       ]),
     );
     const roots: CategoryDto[] = [];
@@ -201,7 +208,8 @@ export class CatalogService {
             : basePrice;
         const totalAvailable = p.variants.reduce(
           (sum, v) =>
-            sum + Math.max(0, (v.inventory?.onHandQuantity ?? 0) - (v.inventory?.reservedQuantity ?? 0)),
+            sum +
+            Math.max(0, (v.inventory?.onHandQuantity ?? 0) - (v.inventory?.reservedQuantity ?? 0)),
           0,
         );
         return {
@@ -275,7 +283,8 @@ export class CatalogService {
       campaignSlug: running ? running.campaign.slug : null,
       totalAvailable: p.variants.reduce(
         (sum, v) =>
-          sum + Math.max(0, (v.inventory?.onHandQuantity ?? 0) - (v.inventory?.reservedQuantity ?? 0)),
+          sum +
+          Math.max(0, (v.inventory?.onHandQuantity ?? 0) - (v.inventory?.reservedQuantity ?? 0)),
         0,
       ),
       createdAt: p.createdAt.toISOString(),

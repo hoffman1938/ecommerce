@@ -52,13 +52,7 @@ export function SectionHeader({
 }
 
 /** Consistent vertical spacing between top-level page sections. */
-export function Section({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function Section({ children, className }: { children: ReactNode; className?: string }) {
   return <section className={cx('mt-12 lg:mt-16', className)}>{children}</section>;
 }
 

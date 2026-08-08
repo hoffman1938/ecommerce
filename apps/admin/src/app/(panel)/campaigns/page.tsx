@@ -60,7 +60,13 @@ export default function CampaignsAdminPage() {
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
-            <tr><th>Campaign</th><th>Window</th><th>Status</th><th className="text-right">Products</th><th>Actions</th></tr>
+            <tr>
+              <th>Campaign</th>
+              <th>Window</th>
+              <th>Status</th>
+              <th className="text-right">Products</th>
+              <th>Actions</th>
+            </tr>
           </thead>
           <tbody>
             {(campaigns ?? []).map((campaign) => (
@@ -75,27 +81,41 @@ export default function CampaignsAdminPage() {
                   {new Date(campaign.startsAt).toLocaleString()} →{' '}
                   {new Date(campaign.endsAt).toLocaleString()}
                 </td>
-                <td><Badge tone={TONE[campaign.status]}>{campaign.status}</Badge></td>
+                <td>
+                  <Badge tone={TONE[campaign.status]}>{campaign.status}</Badge>
+                </td>
                 <td className="text-right">{campaign._count.products}</td>
                 <td>
                   <div className="flex gap-2 text-xs">
                     {campaign.status !== 'ACTIVE' && campaign.status !== 'ARCHIVED' ? (
-                      <button onClick={() => act(campaign.id, 'activate')} className="text-green-700 underline">
+                      <button
+                        onClick={() => act(campaign.id, 'activate')}
+                        className="text-green-700 underline"
+                      >
                         Activate
                       </button>
                     ) : null}
                     {campaign.status === 'ACTIVE' ? (
                       <>
-                        <button onClick={() => act(campaign.id, 'pause')} className="text-amber-600 underline">
+                        <button
+                          onClick={() => act(campaign.id, 'pause')}
+                          className="text-amber-600 underline"
+                        >
                           Pause
                         </button>
-                        <button onClick={() => act(campaign.id, 'end')} className="text-gray-600 underline">
+                        <button
+                          onClick={() => act(campaign.id, 'end')}
+                          className="text-gray-600 underline"
+                        >
                           End
                         </button>
                       </>
                     ) : null}
                     {campaign.status !== 'ARCHIVED' ? (
-                      <button onClick={() => act(campaign.id, 'archive')} className="text-red-600 underline">
+                      <button
+                        onClick={() => act(campaign.id, 'archive')}
+                        className="text-red-600 underline"
+                      >
                         Archive
                       </button>
                     ) : null}

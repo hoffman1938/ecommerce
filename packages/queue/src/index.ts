@@ -48,7 +48,12 @@ export interface EnqueueOptions {
 }
 
 export interface QueueClient {
-  enqueue(queue: QueueName, jobName: string, payload: unknown, opts?: EnqueueOptions): Promise<void>;
+  enqueue(
+    queue: QueueName,
+    jobName: string,
+    payload: unknown,
+    opts?: EnqueueOptions,
+  ): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -121,7 +126,12 @@ export function createQueueWorker(
 
 /** In-memory stub used by unit tests. */
 export class InMemoryQueueClient implements QueueClient {
-  public readonly jobs: Array<{ queue: QueueName; jobName: string; payload: unknown; opts?: EnqueueOptions }> = [];
+  public readonly jobs: Array<{
+    queue: QueueName;
+    jobName: string;
+    payload: unknown;
+    opts?: EnqueueOptions;
+  }> = [];
 
   async enqueue(
     queue: QueueName,

@@ -60,7 +60,10 @@ export class SettingsService {
     };
 
     this.cache = {
-      reservationDurationMinutes: num(KEYS.reservationDurationMinutes, DEFAULTS.reservationDurationMinutes),
+      reservationDurationMinutes: num(
+        KEYS.reservationDurationMinutes,
+        DEFAULTS.reservationDurationMinutes,
+      ),
       lowStockThreshold: num(KEYS.lowStockThreshold, DEFAULTS.lowStockThreshold),
       standardShippingMinor: num(KEYS.standardShippingMinor, DEFAULTS.standardShippingMinor),
       expressShippingMinor: num(KEYS.expressShippingMinor, DEFAULTS.expressShippingMinor),

@@ -16,6 +16,10 @@ export class HealthController {
     } catch {
       database = 'down';
     }
-    return { status: database === 'up' ? 'ok' : 'degraded', database, time: new Date().toISOString() };
+    return {
+      status: database === 'up' ? 'ok' : 'degraded',
+      database,
+      time: new Date().toISOString(),
+    };
   }
 }

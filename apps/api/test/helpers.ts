@@ -123,7 +123,10 @@ export async function seedVariant(
   return { brandId: brand.id, productId: product.id, variantId: variant.id, sku };
 }
 
-export async function createCart(prisma: PrismaService, token = `tok_${Math.random().toString(36).slice(2)}`) {
+export async function createCart(
+  prisma: PrismaService,
+  token = `tok_${Math.random().toString(36).slice(2)}`,
+) {
   return prisma.cart.create({ data: { anonymousToken: token } });
 }
 

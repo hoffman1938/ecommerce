@@ -80,7 +80,8 @@ function findEnvFile(): string | undefined {
   // Walk upwards from cwd looking for .env / .env.local so apps can run from
   // their own directory or the repo root. Docker injects env vars directly,
   // so a missing file is fine.
-  const candidates = process.env.NODE_ENV === 'test' ? ['.env.test', '.env'] : ['.env.local', '.env'];
+  const candidates =
+    process.env.NODE_ENV === 'test' ? ['.env.test', '.env'] : ['.env.local', '.env'];
   let dir = process.cwd();
   for (let depth = 0; depth < 5; depth += 1) {
     for (const name of candidates) {

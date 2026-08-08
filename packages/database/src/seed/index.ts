@@ -26,7 +26,9 @@ async function main(): Promise<void> {
     await seedCoupons(prisma);
     await seedOrders(prisma);
     console.log('Seed complete.');
-    console.log('Local credentials -> Super Admin: admin@example.local / Admin123!  Customer: customer@example.local / Customer123!');
+    console.log(
+      'Local credentials -> Super Admin: admin@example.local / Admin123!  Customer: customer@example.local / Customer123!',
+    );
   } finally {
     await prisma.$disconnect();
   }

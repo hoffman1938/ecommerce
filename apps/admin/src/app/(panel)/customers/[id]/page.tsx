@@ -16,10 +16,28 @@ interface CustomerDetail {
   disabledReason: string | null;
   isEmailVerified: boolean;
   createdAt: string;
-  addresses: Array<{ id: string; line1: string; city: string; postalCode: string; countryCode: string }>;
-  orders: Array<{ id: string; orderNumber: string; status: string; totalMinor: number; currencyCode: string; placedAt: string }>;
+  addresses: Array<{
+    id: string;
+    line1: string;
+    city: string;
+    postalCode: string;
+    countryCode: string;
+  }>;
+  orders: Array<{
+    id: string;
+    orderNumber: string;
+    status: string;
+    totalMinor: number;
+    currencyCode: string;
+    placedAt: string;
+  }>;
   returnRequests: Array<{ id: string; rmaNumber: string; status: string; createdAt: string }>;
-  supportNotes: Array<{ id: string; note: string; createdAt: string; author: { email: string } | null }>;
+  supportNotes: Array<{
+    id: string;
+    note: string;
+    createdAt: string;
+    author: { email: string } | null;
+  }>;
   refunds: Array<{ id: string; amountMinor: number; status: string; createdAt: string }>;
 }
 
@@ -99,12 +117,18 @@ export default function CustomerDetailPage() {
                   </Link>
                 </td>
                 <td className="text-xs text-gray-500">{formatDate(order.placedAt)}</td>
-                <td><Badge tone={order.status === 'CANCELLED' ? 'red' : 'blue'}>{order.status}</Badge></td>
-                <td className="text-right font-medium">{formatMoney(order.totalMinor, order.currencyCode)}</td>
+                <td>
+                  <Badge tone={order.status === 'CANCELLED' ? 'red' : 'blue'}>{order.status}</Badge>
+                </td>
+                <td className="text-right font-medium">
+                  {formatMoney(order.totalMinor, order.currencyCode)}
+                </td>
               </tr>
             ))}
             {customer.orders.length === 0 ? (
-              <tr><td className="text-gray-400">No orders.</td></tr>
+              <tr>
+                <td className="text-gray-400">No orders.</td>
+              </tr>
             ) : null}
           </tbody>
         </table>
@@ -124,7 +148,10 @@ export default function CustomerDetailPage() {
           <h2 className="mb-2 font-semibold">Returns &amp; refunds</h2>
           {customer.returnRequests.map((r) => (
             <p key={r.id} className="text-gray-600">
-              <Link href={`/returns/${r.id}`} className="hover:underline">{r.rmaNumber}</Link> · {r.status}
+              <Link href={`/returns/${r.id}`} className="hover:underline">
+                {r.rmaNumber}
+              </Link>{' '}
+              · {r.status}
             </p>
           ))}
           {customer.refunds.map((refund) => (

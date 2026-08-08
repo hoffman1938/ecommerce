@@ -84,8 +84,14 @@ export interface DemoOrder {
   taxMinor: number;
   totalMinor: number;
   couponCode: string | null;
-  shippingAddress: Omit<DemoAddress, 'id' | 'userId' | 'type' | 'isDefaultShipping' | 'isDefaultBilling'>;
-  billingAddress: Omit<DemoAddress, 'id' | 'userId' | 'type' | 'isDefaultShipping' | 'isDefaultBilling'>;
+  shippingAddress: Omit<
+    DemoAddress,
+    'id' | 'userId' | 'type' | 'isDefaultShipping' | 'isDefaultBilling'
+  >;
+  billingAddress: Omit<
+    DemoAddress,
+    'id' | 'userId' | 'type' | 'isDefaultShipping' | 'isDefaultBilling'
+  >;
   shippingMethod: string;
   customerNote: string | null;
   items: DemoOrderItem[];

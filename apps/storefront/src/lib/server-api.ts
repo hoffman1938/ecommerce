@@ -8,9 +8,7 @@
  * static export renders real content with no API running.
  */
 const SERVER_API_BASE =
-  process.env.API_INTERNAL_URL ??
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  'http://localhost:4000';
+  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 

@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
 import type { AppConfig } from '@outlet/config';
 import { computeCartTotals, validateCoupon } from '@outlet/domain';
 import type { PaymentProvider } from '@outlet/payments';
@@ -130,7 +125,18 @@ export class CheckoutService {
       where: { id: cart.id },
       include: {
         coupon: true,
-        items: { include: { variant: { include: { product: { include: { brand: true, images: { orderBy: { position: 'asc' }, take: 1 } } } } }, campaign: true } },
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: {
+                  include: { brand: true, images: { orderBy: { position: 'asc' }, take: 1 } },
+                },
+              },
+            },
+            campaign: true,
+          },
+        },
       },
     });
 

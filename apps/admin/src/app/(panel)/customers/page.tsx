@@ -39,7 +39,13 @@ export default function CustomersPage() {
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
-            <tr><th>Customer</th><th>Status</th><th>Verified</th><th className="text-right">Orders</th><th>Joined</th></tr>
+            <tr>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Verified</th>
+              <th className="text-right">Orders</th>
+              <th>Joined</th>
+            </tr>
           </thead>
           <tbody>
             {(data?.items ?? []).map((customer) => (
@@ -51,7 +57,9 @@ export default function CustomersPage() {
                   <span className="block text-xs text-gray-400">{customer.email}</span>
                 </td>
                 <td>
-                  <Badge tone={customer.status === 'ACTIVE' ? 'green' : 'red'}>{customer.status}</Badge>
+                  <Badge tone={customer.status === 'ACTIVE' ? 'green' : 'red'}>
+                    {customer.status}
+                  </Badge>
                 </td>
                 <td>{customer.isEmailVerified ? '✓' : '—'}</td>
                 <td className="text-right">{customer._count.orders}</td>

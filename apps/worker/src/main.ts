@@ -96,7 +96,13 @@ handles.push(
         await recordJob(QUEUE_NAMES.emails, job.id ?? '', job.name, 'COMPLETED');
         console.log(`[emails] sent ${payload.kind} to ${payload.to}`);
       } catch (err) {
-        await recordJob(QUEUE_NAMES.emails, job.id ?? '', job.name, 'FAILED', (err as Error).message);
+        await recordJob(
+          QUEUE_NAMES.emails,
+          job.id ?? '',
+          job.name,
+          'FAILED',
+          (err as Error).message,
+        );
         throw err; // let BullMQ retry with backoff
       }
     }

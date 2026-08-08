@@ -77,7 +77,9 @@ export default function CouponsPage() {
           <span className="mb-1 block text-xs font-medium text-gray-500">Type</span>
           <select
             value={form.type}
-            onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as 'FIXED' | 'PERCENTAGE' }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, type: e.target.value as 'FIXED' | 'PERCENTAGE' }))
+            }
             className="rounded-md border border-gray-300 px-2 py-1.5"
           >
             <option value="PERCENTAGE">Percentage</option>
@@ -132,7 +134,14 @@ export default function CouponsPage() {
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
-            <tr><th>Code</th><th>Discount</th><th>Rules</th><th className="text-right">Used</th><th>Status</th><th></th></tr>
+            <tr>
+              <th>Code</th>
+              <th>Discount</th>
+              <th>Rules</th>
+              <th className="text-right">Used</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
             {(coupons ?? []).map((coupon) => (

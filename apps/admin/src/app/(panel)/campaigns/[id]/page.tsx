@@ -44,7 +44,9 @@ export default function EditCampaignPage() {
   const { data: products } = useQuery({
     queryKey: ['admin-products-all'],
     queryFn: () =>
-      api.get<{ items: Array<{ id: string; name: string }> }>('/admin/products?page=1&pageSize=100'),
+      api.get<{ items: Array<{ id: string; name: string }> }>(
+        '/admin/products?page=1&pageSize=100',
+      ),
   });
 
   useEffect(() => {
@@ -95,7 +97,12 @@ export default function EditCampaignPage() {
         <h2 className="mb-3 font-semibold">Assigned products</h2>
         <table className="admin-table">
           <thead>
-            <tr><th>Product</th><th className="text-right">Outlet price</th><th className="text-right">Campaign price</th><th></th></tr>
+            <tr>
+              <th>Product</th>
+              <th className="text-right">Outlet price</th>
+              <th className="text-right">Campaign price</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
             {campaign.products.map((cp) => (
@@ -155,7 +162,9 @@ export default function EditCampaignPage() {
             >
               <option value="">Select a product…</option>
               {(products?.items ?? []).map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
           </label>

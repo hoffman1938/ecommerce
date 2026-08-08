@@ -54,7 +54,10 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
       <div className="mt-8 grid gap-8 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-14">
         {/* Horizontal, scrollable tab rail on small screens; vertical list on
             desktop. Both use the same source list and active treatment. */}
-        <nav aria-label="Account" className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit">
+        <nav
+          aria-label="Account"
+          className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit"
+        >
           <ul className="-mx-4 flex gap-1 overflow-x-auto scrollbar-none px-4 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
             {NAV.map((item) => {
               const active = pathname === item.href;

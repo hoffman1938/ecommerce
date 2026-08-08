@@ -239,7 +239,10 @@ export class AccountController {
 
   @Delete('wishlist/:productId')
   @ApiOperation({ summary: 'Remove a product from the wishlist' })
-  async removeFromWishlist(@CurrentUser() user: RequestUser, @Param('productId') productId: string) {
+  async removeFromWishlist(
+    @CurrentUser() user: RequestUser,
+    @Param('productId') productId: string,
+  ) {
     const wishlist = await this.prisma.wishlist.findUnique({ where: { userId: user.id } });
     if (wishlist) {
       await this.prisma.wishlistItem.deleteMany({

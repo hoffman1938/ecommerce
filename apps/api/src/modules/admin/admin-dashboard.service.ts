@@ -28,42 +28,51 @@ export class AdminDashboardService {
     const now = new Date();
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    const [revenueAgg, orderCount, failedPaymentCount, activeCampaignCount, upcomingCampaignCount, openReturnCount, activeReservationCount, expiredReservationCount, recentOrders] =
-      await Promise.all([
-        this.prisma.order.aggregate({
-          _sum: { totalMinor: true },
-          where: { status: { in: [...REVENUE_STATUSES] } },
-        }),
-        this.prisma.order.count({ where: { status: { in: [...REVENUE_STATUSES] } } }),
-        this.prisma.payment.count({ where: { status: 'FAILED' } }),
-        this.prisma.campaign.count({
-          where: { status: 'ACTIVE', startsAt: { lte: now }, endsAt: { gt: now } },
-        }),
-        this.prisma.campaign.count({ where: { status: 'SCHEDULED', startsAt: { gt: now } } }),
-        this.prisma.returnRequest.count({
-          where: { status: { in: ['REQUESTED', 'APPROVED', 'RECEIVED'] } },
-        }),
-        this.prisma.inventoryReservation.count({
-          where: {
-            status: { in: ['ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING'] },
-            expiresAt: { gt: now },
-          },
-        }),
-        this.prisma.inventoryReservation.count({ where: { status: 'EXPIRED' } }),
-        this.prisma.order.findMany({
-          where: { status: { not: 'DRAFT' } },
-          orderBy: { placedAt: 'desc' },
-          take: 10,
-          select: {
-            id: true,
-            orderNumber: true,
-            email: true,
-            totalMinor: true,
-            status: true,
-            placedAt: true,
-          },
-        }),
-      ]);
+    const [
+      revenueAgg,
+      orderCount,
+      failedPaymentCount,
+      activeCampaignCount,
+      upcomingCampaignCount,
+      openReturnCount,
+      activeReservationCount,
+      expiredReservationCount,
+      recentOrders,
+    ] = await Promise.all([
+      this.prisma.order.aggregate({
+        _sum: { totalMinor: true },
+        where: { status: { in: [...REVENUE_STATUSES] } },
+      }),
+      this.prisma.order.count({ where: { status: { in: [...REVENUE_STATUSES] } } }),
+      this.prisma.payment.count({ where: { status: 'FAILED' } }),
+      this.prisma.campaign.count({
+        where: { status: 'ACTIVE', startsAt: { lte: now }, endsAt: { gt: now } },
+      }),
+      this.prisma.campaign.count({ where: { status: 'SCHEDULED', startsAt: { gt: now } } }),
+      this.prisma.returnRequest.count({
+        where: { status: { in: ['REQUESTED', 'APPROVED', 'RECEIVED'] } },
+      }),
+      this.prisma.inventoryReservation.count({
+        where: {
+          status: { in: ['ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING'] },
+          expiresAt: { gt: now },
+        },
+      }),
+      this.prisma.inventoryReservation.count({ where: { status: 'EXPIRED' } }),
+      this.prisma.order.findMany({
+        where: { status: { not: 'DRAFT' } },
+        orderBy: { placedAt: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          orderNumber: true,
+          email: true,
+          totalMinor: true,
+          status: true,
+          placedAt: true,
+        },
+      }),
+    ]);
 
     const lowStockRows = await this.prisma.$queryRaw<
       Array<{ variantId: string; sku: string; productName: string; available: number }>
