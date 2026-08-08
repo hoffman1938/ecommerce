@@ -6,6 +6,7 @@ import type { ProductDetailDto } from '@outlet/types';
 import { Alert, Button, HeartIcon, cx, formatMoney } from '@outlet/ui';
 import { useAddToCart, useCurrentUser } from '@/lib/hooks';
 import { api, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 const COLOR_HEX: Record<string, string> = {
   Black: '#1f2937',
@@ -24,6 +25,7 @@ const MAX_QUANTITY = 5;
 
 export function ProductPurchasePanel({ product }: { product: ProductDetailDto }) {
   const router = useRouter();
+  const { t } = useI18n();
   const addToCart = useAddToCart();
   const { data: me } = useCurrentUser();
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
@@ -195,7 +197,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
         selectedVariant.availableQuantity > 0 &&
         selectedVariant.availableQuantity <= 3 ? (
           <p data-numeric className="mt-2.5 text-sm font-medium text-warning-600">
-            Only {selectedVariant.availableQuantity} left in this size
+            {t('product.onlyLeft', { count: selectedVariant.availableQuantity })}
           </p>
         ) : null}
       </fieldset>
@@ -234,7 +236,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
           data-testid="add-to-cart"
           className="flex-1"
         >
-          {soldOut ? 'Sold out' : 'Add to bag'}
+          {soldOut ? t('product.soldOut') : 'Add to bag'}
         </Button>
 
         <button

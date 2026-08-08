@@ -39,7 +39,7 @@ const SALE_STOPS = [50, 100, 200, 300, 400, 500, 600, 700];
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: ['class', '[data-theme="dark"]'],
+  darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {

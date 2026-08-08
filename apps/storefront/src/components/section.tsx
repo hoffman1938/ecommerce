@@ -16,9 +16,9 @@ export function SectionHeader({
   as: Heading = 'h2',
   className,
 }: {
-  title: string;
-  description?: string;
-  action?: { href: string; label: string };
+  title: ReactNode;
+  description?: ReactNode;
+  action?: { href: string; label: ReactNode };
   as?: 'h1' | 'h2' | 'h3';
   className?: string;
 }) {
@@ -67,8 +67,8 @@ export function PageHeader({
   meta,
   className,
 }: {
-  title: string;
-  description?: string;
+  title: ReactNode;
+  description?: ReactNode;
   meta?: ReactNode;
   className?: string;
 }) {

@@ -2,11 +2,18 @@
 
 import { LOCALE_LABELS, useI18n, type Locale } from '@/lib/i18n';
 import { cx } from '@outlet/ui';
+import { useRouter } from 'next/navigation';
 
 const LOCALES = Object.keys(LOCALE_LABELS) as Locale[];
 
 export function LocaleSwitcher() {
   const { locale, setLocale } = useI18n();
+  const router = useRouter();
+
+  const handleLocaleChange = (l: Locale) => {
+    setLocale(l);
+    router.refresh();
+  };
 
   return (
     <div className="flex items-center gap-0.5" role="group" aria-label="Select language">
@@ -14,7 +21,7 @@ export function LocaleSwitcher() {
         <button
           key={l}
           type="button"
-          onClick={() => setLocale(l)}
+          onClick={() => handleLocaleChange(l)}
           aria-pressed={locale === l}
           className={cx(
             'h-7 rounded px-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors',
