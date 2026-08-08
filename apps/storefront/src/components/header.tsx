@@ -12,16 +12,18 @@ import {
 } from 'react';
 import { BagIcon, CloseIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon, cx } from '@outlet/ui';
 import { useCart, useCurrentUser, useLogout } from '@/lib/hooks';
+import { useI18n } from '@/lib/i18n';
+import { LocaleSwitcher } from './locale-switcher';
 import { ThemeToggle } from './theme';
 
-const CATEGORIES = [
-  { label: 'T-Shirts', slug: 't-shirts' },
-  { label: 'Shoes', slug: 'shoes' },
-  { label: 'Hoodies', slug: 'hoodies' },
-  { label: 'Jackets', slug: 'jackets' },
-  { label: 'Pants', slug: 'pants' },
-  { label: 'Accessories', slug: 'accessories' },
-];
+const CATEGORY_KEYS = [
+  { key: 'tShirts', slug: 't-shirts' },
+  { key: 'shoes', slug: 'shoes' },
+  { key: 'hoodies', slug: 'hoodies' },
+  { key: 'jackets', slug: 'jackets' },
+  { key: 'pants', slug: 'pants' },
+  { key: 'accessories', slug: 'accessories' },
+] as const;
 
 function Wordmark({ className }: { className?: string }) {
   return (
@@ -48,6 +50,7 @@ function SearchForm({
   className?: string;
 }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [term, setTerm] = useState('');
 
   return (
@@ -65,8 +68,8 @@ function SearchForm({
         type="search"
         value={term}
         onChange={(e) => setTerm(e.target.value)}
-        placeholder="Search products or brands"
-        aria-label="Search products or brands"
+        placeholder={t('nav.searchPlaceholder')}
+        aria-label={t('nav.searchPlaceholder')}
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
         className="h-10 w-full rounded bg-ink-50 pl-9 pr-3 text-sm text-ink-900 ring-1 ring-inset ring-transparent transition-shadow placeholder:text-ink-500 hover:bg-ink-100 focus:bg-ink-25 focus:ring-ink-300"
@@ -113,6 +116,7 @@ export function Header() {
   const { data: me } = useCurrentUser();
   const { data: cart } = useCart();
   const logout = useLogout();
+  const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -146,7 +150,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            aria-label="Open menu"
+            aria-label={t('nav.openMenu')}
             aria-expanded={menuOpen}
             className="-ml-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 lg:hidden"
           >
@@ -162,16 +166,17 @@ export function Header() {
             <button
               type="button"
               onClick={() => setSearchOpen((v) => !v)}
-              aria-label="Search"
+              aria-label={t('nav.search')}
               aria-expanded={searchOpen}
               className="inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 lg:hidden"
             >
               {searchOpen ? <CloseIcon className="h-5 w-5" /> : <SearchIcon className="h-5 w-5" />}
             </button>
 
+            <LocaleSwitcher />
             <ThemeToggle />
-            <HeaderAction href="/wishlist" label="Wishlist" icon={HeartIcon} />
-            <HeaderAction href="/cart" label="Cart" count={itemCount} icon={BagIcon} />
+            <HeaderAction href="/wishlist" label={t('nav.wishlist')} icon={HeartIcon} />
+            <HeaderAction href="/cart" label={t('nav.cart')} count={itemCount} icon={BagIcon} />
 
             {me?.user ? (
               <div className="hidden items-center lg:flex">
@@ -187,7 +192,7 @@ export function Header() {
                   onClick={() => logout.mutate()}
                   className="ml-1 hidden text-sm text-ink-500 transition-colors hover:text-ink-950 xl:inline"
                 >
-                  Sign out
+                  {t('nav.signOut')}
                 </button>
               </div>
             ) : (
@@ -196,7 +201,7 @@ export function Header() {
                 className="hidden h-9 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 lg:inline-flex"
               >
                 <UserIcon className="h-[18px] w-[18px]" />
-                <span className="hidden xl:inline">Sign in</span>
+                <span className="hidden xl:inline">{t('nav.signIn')}</span>
               </Link>
             )}
           </div>
@@ -221,19 +226,19 @@ export function Header() {
                   'inline-flex h-10 items-center px-2 text-sm font-semibold text-sale-500 transition-colors hover:text-sale-600',
                 )}
               >
-                Campaigns
+                {t('nav.campaigns')}
               </Link>
             </li>
             <li aria-hidden="true" className="mx-1 h-4 w-px bg-ink-200" />
             <li>
               <NavLink href="/products" active={pathname === '/products'}>
-                All products
+                {t('nav.allProducts')}
               </NavLink>
             </li>
-            {CATEGORIES.map((c) => (
+            {CATEGORY_KEYS.map((c) => (
               <li key={c.slug}>
                 <NavLink href={`/category/${c.slug}`} active={pathname === `/category/${c.slug}`}>
-                  {c.label}
+                  {t(`categories.${c.key}`)}
                 </NavLink>
               </li>
             ))}
@@ -284,12 +289,13 @@ function MobileMenu({
 }) {
   const { data: me } = useCurrentUser();
   const logout = useLogout();
+  const { t } = useI18n();
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
       <button
         type="button"
-        aria-label="Close menu"
+        aria-label={t('nav.closeMenu')}
         onClick={onClose}
         className="absolute inset-0 animate-fade-in bg-ink-950/40"
       />
@@ -300,7 +306,7 @@ function MobileMenu({
             ref={closeRef}
             type="button"
             onClick={onClose}
-            aria-label="Close menu"
+            aria-label={t('nav.closeMenu')}
             className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50"
           >
             <CloseIcon className="h-5 w-5" />
@@ -309,23 +315,23 @@ function MobileMenu({
 
         <nav className="flex-1 overflow-y-auto overscroll-contain py-2">
           <MenuLink href="/campaigns" className="text-sale-500">
-            Campaigns
+            {t('nav.campaigns')}
           </MenuLink>
-          <MenuLink href="/products">All products</MenuLink>
+          <MenuLink href="/products">{t('nav.allProducts')}</MenuLink>
 
           <p className="eyebrow px-4 pb-1 pt-5">Shop by category</p>
-          {CATEGORIES.map((c) => (
+          {CATEGORY_KEYS.map((c) => (
             <MenuLink key={c.slug} href={`/category/${c.slug}`}>
-              {c.label}
+              {t(`categories.${c.key}`)}
             </MenuLink>
           ))}
 
           <p className="eyebrow px-4 pb-1 pt-5">Account</p>
           {me?.user ? (
             <>
-              <MenuLink href="/account">Your account</MenuLink>
-              <MenuLink href="/account/orders">Orders</MenuLink>
-              <MenuLink href="/wishlist">Wishlist</MenuLink>
+              <MenuLink href="/account">{t('nav.yourAccount')}</MenuLink>
+              <MenuLink href="/account/orders">{t('nav.orders')}</MenuLink>
+              <MenuLink href="/wishlist">{t('nav.wishlist')}</MenuLink>
               <button
                 type="button"
                 onClick={() => {
@@ -334,17 +340,21 @@ function MobileMenu({
                 }}
                 className="block w-full px-4 py-2.5 text-left text-[15px] text-ink-500 transition-colors hover:bg-ink-50 hover:text-ink-950"
               >
-                Sign out
+                {t('nav.signOut')}
               </button>
             </>
           ) : (
             <>
-              <MenuLink href="/login">Sign in</MenuLink>
-              <MenuLink href="/register">Create an account</MenuLink>
-              <MenuLink href="/wishlist">Wishlist</MenuLink>
+              <MenuLink href="/login">{t('nav.signIn')}</MenuLink>
+              <MenuLink href="/register">{t('nav.createAccount')}</MenuLink>
+              <MenuLink href="/wishlist">{t('nav.wishlist')}</MenuLink>
             </>
           )}
         </nav>
+
+        <div className="border-t border-ink-200 p-4">
+          <LocaleSwitcher />
+        </div>
       </div>
     </div>
   );

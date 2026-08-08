@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ProductListItemDto } from '@outlet/types';
-import { Skeleton, cx, formatMoney } from '@outlet/ui';
+import { ImageIcon, Skeleton, cx, formatMoney } from '@outlet/ui';
 
 /**
  * Product tile.
@@ -39,8 +39,8 @@ export function ProductCard({
             )}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-ink-400">
-            No image
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-ink-300">
+            <ImageIcon className="h-10 w-10" />
           </div>
         )}
 

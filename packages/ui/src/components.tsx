@@ -438,3 +438,10 @@ export const UserIcon = icon(
   </>,
 );
 export const CheckIcon = icon(<path d="m4.5 10.5 3.5 3.5 7.5-8" />);
+export const ImageIcon = icon(
+  <>
+    <rect x="3" y="3" width="14" height="14" rx="2" />
+    <circle cx="7.5" cy="7.5" r="1" />
+    <path d="m3 13 4-4 3 3 2-2 5 5" />
+  </>,
+);

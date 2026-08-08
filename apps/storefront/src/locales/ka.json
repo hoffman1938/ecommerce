@@ -1,0 +1,97 @@
+{
+  "nav": {
+    "campaigns": "კამპანიები",
+    "allProducts": "ყველა პროდუქტი",
+    "search": "ძიება",
+    "searchPlaceholder": "მოძებნეთ პროდუქტი ან ბრენდი",
+    "openMenu": "მენიუს გახსნა",
+    "closeMenu": "მენიუს დახურვა",
+    "wishlist": "სასურველი",
+    "cart": "კალათა",
+    "signIn": "შესვლა",
+    "signOut": "გასვლა",
+    "yourAccount": "თქვენი ანგარიში",
+    "orders": "შეკვეთები",
+    "createAccount": "ანგარიშის შექმნა",
+    "skipToContent": "კონტენტზე გადასვლა"
+  },
+  "categories": {
+    "tShirts": "მაისური",
+    "shoes": "ფეხსაცმელი",
+    "hoodies": "ჰუდი",
+    "jackets": "ჟაკეტი",
+    "pants": "შარვალი",
+    "accessories": "აქსესუარები"
+  },
+  "product": {
+    "soldOut": "გაყიდულია",
+    "onlyLeft": "მხოლოდ {{count}} დარჩა",
+    "noImage": "სურათი არ არის",
+    "bestDiscounts": "საუკეთესო ფასდაკლებები",
+    "bestDiscountsDesc": "ყველაზე დიდი ფასდაკლებები ყველა ბრენდზე, ახლა.",
+    "recentlyAdded": "ბოლოდროინდელი",
+    "viewAll": "ყველა ნახვა",
+    "noCatalog": "კატალოგი ცარიელია — API მუშაობს? სცადეთ docker compose up --build.",
+    "noProducts": "პროდუქტი ვერ მოიძებნა."
+  },
+  "campaign": {
+    "liveNow": "ახლა აქტიურია",
+    "endsIn": "მთავრდება",
+    "items": "{{count}} ნივთი",
+    "startsOn": "იწყება {{date}}",
+    "shopCampaigns": "კამპანიების ნახვა",
+    "bestDiscounts": "საუკეთესო ფასდაკლებები",
+    "noCoverImage": "კამპანიის სურათი არ არის"
+  },
+  "home": {
+    "eyebrow": "Outlet — სეზონის გასუფთავება",
+    "headline": "60%-მდე\nფასდაკლება.",
+    "description": "Adidas, Nike, Puma, Tommy Hilfiger და Calvin Klein-ის ჭარბი მარაგი — გამოშვებულია მოკლე კამპანიებში და იყიდება ამოწურვამდე.",
+    "shopCampaigns": "კამპანიების ნახვა",
+    "bestDiscounts": "საუკეთესო ფასდაკლებები",
+    "theBrands": "ბრენდები",
+    "brandsDesc": "გასული სეზონის და ჭარბი მარაგის ხაზები, outlet ფასებით.",
+    "shop": "ნახვა →",
+    "prop1Title": "შეზღუდული მარაგი",
+    "prop1Body": "ნამდვილი ჭარბი მარაგი. ზომის გაყიდვის შემდეგ მეტი არ იქნება.",
+    "prop2Title": "20 წუთი დათმობილია",
+    "prop2Body": "კალათაში დამატება 20 წუთით ჯავშნავს ნივთს.",
+    "prop3Title": "უფასო €100-ზე მეტზე",
+    "prop3Body": "სტანდარტული მიწოდება. 30 დღის განმავლობაში დაბრუნება შეიძლება."
+  },
+  "footer": {
+    "newsletter": "კამპანიის შეტყობინებები",
+    "newsletterDesc": "ახალი კამპანიები სწრაფად იყიდება. გამოგიგზავნით დილით კამპანიის გახსნისას.",
+    "emailPlaceholder": "თქვენი@email.com",
+    "join": "გაწევრიანება",
+    "subscribeOk": "თქვენ სიაში ხართ.",
+    "subscribeError": "შეიყვანეთ სწორი ელ-ფოსტა.",
+    "shop": "მაღაზია",
+    "help": "დახმარება",
+    "legal": "სამართლებრივი",
+    "copyright": "© Outlet Marketplace",
+    "demoNotice": "სადემონსტრაციო ვერსია. არ არის დაკავშირებული ჩამოთვლილ ბრენდებთან.",
+    "shopLinks": {
+      "campaigns": "კამპანიები",
+      "bestDiscounts": "საუკეთესო ფასდაკლებები",
+      "newArrivals": "ახალი ჩამოსვლები",
+      "allProducts": "ყველა პროდუქტი"
+    },
+    "helpLinks": {
+      "faq": "FAQ",
+      "shipping": "მიწოდება",
+      "returns": "დაბრუნება",
+      "contact": "კონტაქტი"
+    },
+    "legalLinks": {
+      "privacy": "კონფიდენციალურობის პოლიტიკა",
+      "terms": "წესები და პირობები",
+      "cookies": "Cookie პოლიტიკა"
+    }
+  },
+  "lang": {
+    "en": "EN",
+    "ka": "KA",
+    "ru": "RU"
+  }
+}

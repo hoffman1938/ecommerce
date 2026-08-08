@@ -1,0 +1,97 @@
+{
+  "nav": {
+    "campaigns": "Акции",
+    "allProducts": "Все товары",
+    "search": "Поиск",
+    "searchPlaceholder": "Поиск товаров или брендов",
+    "openMenu": "Открыть меню",
+    "closeMenu": "Закрыть меню",
+    "wishlist": "Избранное",
+    "cart": "Корзина",
+    "signIn": "Войти",
+    "signOut": "Выйти",
+    "yourAccount": "Ваш аккаунт",
+    "orders": "Заказы",
+    "createAccount": "Создать аккаунт",
+    "skipToContent": "Перейти к содержимому"
+  },
+  "categories": {
+    "tShirts": "Футболки",
+    "shoes": "Обувь",
+    "hoodies": "Худи",
+    "jackets": "Куртки",
+    "pants": "Брюки",
+    "accessories": "Аксессуары"
+  },
+  "product": {
+    "soldOut": "Распродано",
+    "onlyLeft": "Осталось {{count}} шт.",
+    "noImage": "Нет изображения",
+    "bestDiscounts": "Лучшие скидки",
+    "bestDiscountsDesc": "Самые большие скидки по всем брендам прямо сейчас.",
+    "recentlyAdded": "Недавно добавленные",
+    "viewAll": "Смотреть все",
+    "noCatalog": "Каталог пуст — работает ли API? Попробуйте docker compose up --build.",
+    "noProducts": "Товары не найдены."
+  },
+  "campaign": {
+    "liveNow": "Сейчас активна",
+    "endsIn": "Заканчивается через",
+    "items": "{{count}} товаров",
+    "startsOn": "Начинается {{date}}",
+    "shopCampaigns": "Смотреть акции",
+    "bestDiscounts": "Лучшие скидки",
+    "noCoverImage": "Нет изображения акции"
+  },
+  "home": {
+    "eyebrow": "Outlet — распродажа сезона",
+    "headline": "Скидки\nдо 60%.",
+    "description": "Излишки от Adidas, Nike, Puma, Tommy Hilfiger и Calvin Klein — выходят короткими акциями и продаются до конца запасов.",
+    "shopCampaigns": "Смотреть акции",
+    "bestDiscounts": "Лучшие скидки",
+    "theBrands": "Бренды",
+    "brandsDesc": "Линейки прошлых сезонов и избыточные запасы по outlet-ценам.",
+    "shop": "Смотреть →",
+    "prop1Title": "Ограниченный запас",
+    "prop1Body": "Настоящий избыток. Когда размер заканчивается — он закончился.",
+    "prop2Title": "Бронь 20 минут",
+    "prop2Body": "Добавление в корзину бронирует товар на 20 минут.",
+    "prop3Title": "Бесплатно от €100",
+    "prop3Body": "Стандартная доставка. Возврат принимается в течение 30 дней."
+  },
+  "footer": {
+    "newsletter": "Уведомления об акциях",
+    "newsletterDesc": "Новые поступления раскупаются быстро. Мы сообщим утром, когда откроется акция.",
+    "emailPlaceholder": "вы@example.com",
+    "join": "Подписаться",
+    "subscribeOk": "Вы в списке.",
+    "subscribeError": "Введите корректный адрес электронной почты.",
+    "shop": "Магазин",
+    "help": "Помощь",
+    "legal": "Правовое",
+    "copyright": "© Outlet Marketplace",
+    "demoNotice": "Демонстрационная версия. Не связана ни с одним из указанных брендов.",
+    "shopLinks": {
+      "campaigns": "Акции",
+      "bestDiscounts": "Лучшие скидки",
+      "newArrivals": "Новые поступления",
+      "allProducts": "Все товары"
+    },
+    "helpLinks": {
+      "faq": "FAQ",
+      "shipping": "Доставка",
+      "returns": "Возврат",
+      "contact": "Контакт"
+    },
+    "legalLinks": {
+      "privacy": "Политика конфиденциальности",
+      "terms": "Условия использования",
+      "cookies": "Политика Cookie"
+    }
+  },
+  "lang": {
+    "en": "EN",
+    "ka": "KA",
+    "ru": "RU"
+  }
+}
