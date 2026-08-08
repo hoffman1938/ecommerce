@@ -37,22 +37,28 @@ const Ctx = createContext<I18nContext>({
   t: (key) => key,
 });
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en');
+export function I18nProvider({ children, initialLocale = 'en' }: { children: ReactNode; initialLocale?: Locale }) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as Locale | null;
-      if (stored && stored in LOCALES) setLocaleState(stored);
+      if (stored && stored in LOCALES && stored !== initialLocale) {
+        setLocaleState(stored);
+        document.cookie = `${STORAGE_KEY}=${stored}; path=/; max-age=31536000; samesite=lax`;
+      } else if (initialLocale) {
+        localStorage.setItem(STORAGE_KEY, initialLocale);
+      }
     } catch {
       // localStorage unavailable (SSR or private mode)
     }
-  }, []);
+  }, [initialLocale]);
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);
     try {
       localStorage.setItem(STORAGE_KEY, l);
+      document.cookie = `${STORAGE_KEY}=${l}; path=/; max-age=31536000; samesite=lax`;
     } catch {
       // ignore
     }

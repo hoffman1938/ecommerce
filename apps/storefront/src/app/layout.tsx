@@ -8,6 +8,7 @@ import { Footer } from '@/components/footer';
 import { DemoBanner } from '@/components/demo-banner';
 import { ThemeScript } from '@/components/theme';
 import { Reveal } from '@/lib/use-reveal';
+import { getServerI18n } from '@/lib/server-i18n';
 
 /**
  * Self-hosted at build time by next/font, so there is no third-party request
@@ -29,15 +30,17 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const { locale } = getServerI18n();
+
   return (
     // suppressHydrationWarning: ThemeScript sets data-theme before React
     // hydrates, so the server markup intentionally differs on this element.
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang={locale} className={inter.variable} suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>
       <body className="flex min-h-screen flex-col bg-ink-25">
-        <Providers>
+        <Providers locale={locale}>
           <a
             href="#main"
             className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-ink-950 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-ink-25"

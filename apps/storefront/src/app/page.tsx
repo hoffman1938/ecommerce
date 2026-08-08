@@ -4,14 +4,17 @@ import { serverGet } from '@/lib/server-api';
 import { ProductGrid } from '@/components/product-card';
 import { CampaignSections } from '@/components/campaign-sections';
 import { Section, SectionHeader } from '@/components/section';
-
-const PROPOSITIONS = [
-  ['01', 'Limited stock', 'Real surplus. When a size is gone, it is gone.'],
-  ['02', 'Held 20 minutes', 'Adding to your bag reserves the item while you decide.'],
-  ['03', 'Free over €100', 'Standard delivery. Returns accepted within 30 days.'],
-];
+import { getServerI18n } from '@/lib/server-i18n';
 
 export default async function HomePage() {
+  const { t } = getServerI18n();
+
+  const PROPOSITIONS = [
+    ['01', t('home.prop1Title'), t('home.prop1Body')],
+    ['02', t('home.prop2Title'), t('home.prop2Body')],
+    ['03', t('home.prop3Title'), t('home.prop3Body')],
+  ];
+
   const [brands, newest, bestDiscounts] = await Promise.all([
     serverGet<BrandDto[]>('/catalog/brands'),
     serverGet<Paginated<ProductListItemDto>>('/catalog/products?sort=newest&pageSize=8'),
@@ -28,25 +31,22 @@ export default async function HomePage() {
       <section className="container-page">
         <div className="grid items-end gap-8 border-b border-ink-200 pb-10 pt-10 lg:grid-cols-12 lg:pb-14 lg:pt-16">
           <div className="lg:col-span-8">
-            <p className="eyebrow">Outlet — season clearance</p>
-            <h1 className="display mt-5 text-5xl sm:text-7xl lg:text-8xl">
-              Up to 60%
-              <br />
-              off retail.
+            <p className="eyebrow">{t('home.eyebrow')}</p>
+            <h1 className="display mt-5 whitespace-pre-line text-5xl sm:text-7xl lg:text-8xl">
+              {t('home.headline')}
             </h1>
           </div>
 
           <div className="lg:col-span-4 lg:pb-2">
             <p className="max-w-sm text-lg text-ink-600">
-              Surplus stock from Adidas, Nike, Puma, Tommy Hilfiger and Calvin Klein — released in
-              short campaigns and sold until it runs out.
+              {t('home.description')}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/campaigns"
                 className="group inline-flex h-12 items-center gap-2 rounded-none bg-ink-950 px-7 text-sm font-semibold uppercase tracking-[0.06em] text-ink-25 transition-colors hover:bg-ink-800"
               >
-                Shop campaigns
+                {t('home.shopCampaigns')}
                 <span className="transition-transform duration-300 ease-out group-hover:translate-x-1">
                   →
                 </span>
@@ -55,7 +55,7 @@ export default async function HomePage() {
                 href="/products?sort=discount"
                 className="inline-flex h-12 items-center px-1 text-sm font-semibold uppercase tracking-[0.06em] text-ink-950"
               >
-                <span className="link-underline">Best discounts</span>
+                <span className="link-underline">{t('home.bestDiscounts')}</span>
               </Link>
             </div>
           </div>
@@ -92,16 +92,16 @@ export default async function HomePage() {
         {bestDiscounts && bestDiscounts.items.length > 0 ? (
           <Section className="reveal">
             <SectionHeader
-              title="Best discounts"
-              description="The steepest reductions across every brand, right now."
-              action={{ href: '/products?sort=discount', label: 'View all' }}
+              title={t('product.bestDiscounts')}
+              description={t('product.bestDiscountsDesc')}
+              action={{ href: '/products?sort=discount', label: t('product.viewAll') }}
             />
             <ProductGrid products={bestDiscounts.items} priorityCount={4} />
           </Section>
         ) : (
           <Section>
             <p className="border-t border-ink-200 py-16 text-center text-sm text-ink-500">
-              The catalog is empty — is the API running? Try <code>docker compose up --build</code>.
+              {t('product.noCatalog')}
             </p>
           </Section>
         )}
@@ -113,10 +113,10 @@ export default async function HomePage() {
             <div className="grid gap-8 border-t border-ink-950 pt-4 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-4">
                 <h2 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
-                  The brands
+                  {t('home.theBrands')}
                 </h2>
                 <p className="mt-2 max-w-xs text-sm text-ink-600">
-                  Past-season and overstock lines, sold at outlet prices while they last.
+                  {t('home.brandsDesc')}
                 </p>
               </div>
               <ul className="lg:col-span-8">
@@ -130,7 +130,7 @@ export default async function HomePage() {
                         {brand.name}
                       </span>
                       <span className="shrink-0 text-2xs font-semibold uppercase tracking-[0.12em] text-ink-400 transition-colors group-hover:text-ink-950">
-                        Shop →
+                        {t('home.shop')}
                       </span>
                     </Link>
                   </li>
@@ -143,8 +143,8 @@ export default async function HomePage() {
         {newest && newest.items.length > 0 ? (
           <Section className="reveal">
             <SectionHeader
-              title="Recently added"
-              action={{ href: '/products?sort=newest', label: 'View all' }}
+              title={t('product.recentlyAdded')}
+              action={{ href: '/products?sort=newest', label: t('product.viewAll') }}
             />
             <ProductGrid products={newest.items} />
           </Section>
