@@ -11,17 +11,37 @@ NestJS API, PostgreSQL, Redis, MinIO, or the BullMQ worker that this project is
 built around. So the demo build swaps the API out for a bundled copy of the
 Prisma seed catalog (`apps/storefront/src/lib/demo/`).
 
-| Works in the demo | Needs the real backend |
-| --- | --- |
-| Home, campaigns, category, brand, search pages | Register / sign in / sessions |
-| Product detail with variants, stock and SEO metadata | Checkout and payments |
-| Filtering, sorting, pagination | Orders, returns, wishlist |
-| Cart with the 20-minute reservation countdown | Cross-customer stock contention |
-| Content pages (privacy, terms, FAQ, …) | The admin panel |
+The whole customer journey works — browsing, accounts, cart, checkout, orders
+and returns — but it works *in the browser*. All state lives in `localStorage`,
+private to each visitor and gone when they clear site data.
 
-The cart is per-browser (`localStorage`), so the concurrency guarantees the real
-reservation service exists to provide cannot be demonstrated here. A banner on
-every page states this so visitors are not misled.
+| Works in the demo | Still needs the real backend |
+| --- | --- |
+| Home, campaigns, category, brand, search | Cross-customer stock contention |
+| Product detail with variants, live stock and SEO metadata | Durable, shared data |
+| Filtering, sorting, pagination | Real payment capture |
+| Cart with the 20-minute reservation countdown | Email (verification, receipts) |
+| Register, sign in, password reset and change | The admin panel |
+| Profile, addresses, wishlist, notification preferences | Server-enforced authorization |
+| Checkout, the four TEST-\* payment outcomes, order history | |
+| Returns with refunds and restocking | |
+
+Three deliberate divergences, all because there is no server or worker:
+
+- **Registration verifies immediately** and signs the user in, and password
+  reset hands back the link instead of emailing it — there is no mail server.
+- **Payment outcomes apply locally** rather than arriving as HMAC-signed
+  webhooks. `TEST-DELAYED` stores a timestamp and settles on the next poll.
+- **Fulfilment advances on a timer** (~20s to shipped, ~45s to delivered)
+  instead of an operator moving it, so returns are reachable in about a minute.
+
+Sign in with `customer@example.local` / `Customer123!`, or register any address.
+A banner on every page states all of this so visitors are not misled.
+
+**The "auth" here is not authentication.** It is a user id in `localStorage`
+with a non-cryptographic password hash, entirely client-side and user-editable.
+The real system uses Argon2id server-side (`packages/auth`). Nothing in the demo
+should ever handle a real credential.
 
 For a fully functional deployment, use Strategy A in
 [docs/deployment.md](../../docs/deployment.md): frontends on Pages, API + worker
@@ -68,8 +88,15 @@ preview deployments consistent.
 - `apps/storefront/next.config.mjs` — `output: 'export'` when
   `NEXT_PUBLIC_DEMO_MODE=true`, otherwise the original `'standalone'` for Docker.
   The Docker build is unaffected.
-- `src/lib/demo/` — the seed catalog as plain TypeScript, plus query, cart and
-  routing layers that mirror the real API's public endpoints and DTOs.
+- `src/lib/demo/` — a browser-side stand-in for the API, mirroring its routes
+  and `@outlet/types` DTOs:
+  - `data.ts` — the Prisma seed as plain TypeScript
+  - `queries.ts` — catalog reads, filtering, campaign pricing, live stock
+  - `cart.ts` — cart and the 20-minute reservations
+  - `store.ts` — persistent state (accounts, orders, stock) in `localStorage`
+  - `auth.ts` / `account.ts` / `orders.ts` — sessions, account area, checkout,
+    payments, order fulfilment and returns
+  - `router.ts` — dispatches an HTTP method and path to the above
 - `src/lib/api.ts` / `src/lib/server-api.ts` — in demo mode these resolve against
   `src/lib/demo` instead of issuing HTTP requests. With the flag unset both
   behave exactly as before.

@@ -35,7 +35,12 @@ async function demoRequest<T>(path: string, init: RequestInit): Promise<T> {
     return resolve(init.method ?? 'GET', path, body) as T;
   } catch (error) {
     if (error instanceof DemoApiError) {
-      throw new ApiError(error.status, { message: error.message, code: 'DEMO_MODE' });
+      // Preserve the domain code — checkout branches on TOTALS_CHANGED and
+      // RESERVATIONS_EXPIRED exactly as it does against the real API.
+      throw new ApiError(error.status, {
+        message: error.message,
+        code: error.code ?? 'DEMO_MODE',
+      });
     }
     throw error;
   }

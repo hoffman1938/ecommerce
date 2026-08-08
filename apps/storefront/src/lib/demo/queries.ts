@@ -29,7 +29,18 @@ import {
   productBySlug,
   type DemoCampaign,
   type DemoProduct,
+  type DemoVariant,
 } from './data';
+import { consumedFor } from './store';
+
+/** Seeded stock minus whatever paid demo orders have consumed. */
+export function availableFor(variant: DemoVariant): number {
+  return Math.max(0, variant.onHandQuantity - consumedFor(variant.id));
+}
+
+export function totalAvailableFor(product: DemoProduct): number {
+  return product.variants.reduce((sum, variant) => sum + availableFor(variant), 0);
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -98,7 +109,7 @@ function toListItem(product: DemoProduct, now: number): ProductListItemDto {
     imageUrl: product.images[0]?.url ?? null,
     campaignId: pricing.campaignId,
     campaignSlug: pricing.campaignSlug,
-    totalAvailable: product.totalAvailable,
+    totalAvailable: totalAvailableFor(product),
     createdAt: product.createdAt,
   };
 }
@@ -299,7 +310,7 @@ export function getProduct(slug: string, now = Date.now()): ProductDetailDto | n
       color: variant.color,
       priceMinor: pricing.currentPriceMinor,
       isEnabled: true,
-      availableQuantity: variant.onHandQuantity,
+      availableQuantity: availableFor(variant),
       attributes: null,
     })),
   };

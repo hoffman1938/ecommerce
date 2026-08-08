@@ -15,7 +15,10 @@
 
 import type { CartDto, CartItemDto } from '@outlet/types';
 import { CURRENCY_CODE, SETTINGS, brandBySlug, productBySlug, type DemoProduct } from './data';
-import { getProduct } from './queries';
+import { availableFor, getProduct } from './queries';
+import { DemoApiError } from './store';
+
+export { DemoApiError };
 
 const CART_KEY = 'outlet_demo_cart';
 const RESERVATION_MS = SETTINGS.reservationDurationMinutes * 60 * 1000;
@@ -174,13 +177,12 @@ export function addItem(
 
   const existing = cart.lines.find((line) => line.variantId === input.variantId);
   const desired = (existing?.quantity ?? 0) + input.quantity;
+  const available = availableFor(variant);
 
-  if (desired > variant.onHandQuantity) {
+  if (desired > available) {
     throw new DemoApiError(
       409,
-      variant.onHandQuantity === 0
-        ? 'This size is sold out.'
-        : `Only ${variant.onHandQuantity} left in this size.`,
+      available === 0 ? 'This size is sold out.' : `Only ${available} left in this size.`,
     );
   }
 
@@ -212,8 +214,9 @@ export function updateItem(lineId: string, quantity: number, now = Date.now()): 
   } else {
     const product = productBySlug.get(line.productSlug)!;
     const variant = product.variants.find((v) => v.id === line.variantId)!;
-    if (quantity > variant.onHandQuantity) {
-      throw new DemoApiError(409, `Only ${variant.onHandQuantity} left in this size.`);
+    const available = availableFor(variant);
+    if (quantity > available) {
+      throw new DemoApiError(409, `Only ${available} left in this size.`);
     }
     line.quantity = quantity;
     line.reservedAt = now;
@@ -245,17 +248,6 @@ export function clearCart(now = Date.now()): CartDto {
   const cart = emptyCart();
   write(cart);
   return toDto(cart, now);
-}
-
-/** Error carrying an HTTP status so the api shim can mimic real failures. */
-export class DemoApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-  ) {
-    super(message);
-    this.name = 'DemoApiError';
-  }
 }
 
 const PRODUCTS_BY_VARIANT = new Map<string, DemoProduct>(
