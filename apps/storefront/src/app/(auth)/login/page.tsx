@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginInput } from '@outlet/validation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Button, TextField } from '@outlet/ui';
-import { useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
 function LoginInner() {
