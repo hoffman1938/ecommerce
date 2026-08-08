@@ -45,7 +45,7 @@ export default function WishlistPage() {
           action={
             <Link
               href="/login?next=/wishlist"
-              className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
+              className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
             >
               Sign in
             </Link>
@@ -85,7 +85,7 @@ export default function WishlistPage() {
             action={
               <Link
                 href="/products"
-                className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
+                className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
               >
                 Browse the outlet
               </Link>

@@ -48,7 +48,7 @@ export function Countdown({
       className={cx(
         'font-semibold',
         tone === 'inverse'
-          ? 'text-white'
+          ? 'text-ink-25'
           : urgent
             ? 'text-sale-500'
             : 'text-ink-800',

@@ -158,7 +158,7 @@ export default function CheckoutPage() {
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          <section className="rounded-lg border border-gray-200 bg-white p-5">
+          <section className="rounded-lg border border-gray-200 bg-ink-25 p-5">
             <h2 className="mb-3 font-semibold">1 · Contact</h2>
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-gray-700">Email</span>
@@ -173,7 +173,7 @@ export default function CheckoutPage() {
             </label>
           </section>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-5">
+          <section className="rounded-lg border border-gray-200 bg-ink-25 p-5">
             <h2 className="mb-3 font-semibold">2 · Shipping address</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {field('shippingAddress.firstName', 'First name')}
@@ -200,7 +200,7 @@ export default function CheckoutPage() {
             ) : null}
           </section>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-5">
+          <section className="rounded-lg border border-gray-200 bg-ink-25 p-5">
             <h2 className="mb-3 font-semibold">3 · Delivery</h2>
             <div className="space-y-2">
               {quote.shippingMethods.map((method) => (
@@ -234,7 +234,7 @@ export default function CheckoutPage() {
           </section>
         </div>
 
-        <aside className="h-fit rounded-lg border border-gray-200 bg-white p-5">
+        <aside className="h-fit rounded-lg border border-gray-200 bg-ink-25 p-5">
           <h2 className="font-semibold">4 · Review &amp; pay</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {quote.cart.items.map((item) => (
@@ -272,7 +272,7 @@ export default function CheckoutPage() {
             type="submit"
             disabled={submitting}
             data-testid="pay-now"
-            className="mt-5 w-full rounded-md bg-gray-900 px-5 py-3 text-sm font-semibold text-white hover:bg-gray-700 disabled:bg-gray-400"
+            className="mt-5 w-full rounded-md bg-gray-900 px-5 py-3 text-sm font-semibold text-ink-25 hover:bg-gray-700 disabled:bg-gray-400"
           >
             {submitting ? 'Creating payment…' : 'Continue to payment'}
           </button>

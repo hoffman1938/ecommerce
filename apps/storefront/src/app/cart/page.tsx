@@ -64,7 +64,7 @@ export default function CartPage() {
           action={
             <Link
               href="/products"
-              className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
+              className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
             >
               Browse the outlet
             </Link>
@@ -184,7 +184,7 @@ export default function CartPage() {
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
                   placeholder="Coupon code"
-                  className="h-10 w-full rounded bg-white px-3 text-sm uppercase ring-1 ring-inset ring-ink-300 transition-shadow placeholder:normal-case placeholder:text-ink-400 hover:ring-ink-400"
+                  className="h-10 w-full rounded bg-ink-25 px-3 text-sm uppercase ring-1 ring-inset ring-ink-300 transition-shadow placeholder:normal-case placeholder:text-ink-400 hover:ring-ink-400"
                 />
                 <Button type="submit" variant="secondary">
                   Apply
@@ -197,7 +197,7 @@ export default function CartPage() {
             href="/checkout"
             data-testid="go-to-checkout"
             className={cx(
-              'mt-6 hidden h-12 items-center justify-center rounded bg-ink-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-ink-800 lg:flex',
+              'mt-6 hidden h-12 items-center justify-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800 lg:flex',
               liveItems.length === 0 && 'pointer-events-none bg-ink-200 text-ink-400',
             )}
           >
@@ -210,7 +210,7 @@ export default function CartPage() {
       </div>
 
       {/* Mobile: keep checkout reachable without scrolling past every item. */}
-      <div className="sticky bottom-0 -mx-4 mt-8 border-t border-ink-200 bg-white/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+      <div className="sticky bottom-0 -mx-4 mt-8 border-t border-ink-200 bg-ink-25/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-xs text-ink-500">Total</p>
@@ -221,7 +221,7 @@ export default function CartPage() {
           <Link
             href="/checkout"
             className={cx(
-              'inline-flex h-11 flex-1 max-w-48 items-center justify-center rounded bg-ink-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-ink-800',
+              'inline-flex h-11 flex-1 max-w-48 items-center justify-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800',
               liveItems.length === 0 && 'pointer-events-none bg-ink-200 text-ink-400',
             )}
           >

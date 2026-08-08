@@ -46,7 +46,7 @@ function MockPaymentInner() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-12 sm:px-6">
-      <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-ink-25 p-8 shadow-sm">
         <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
           Mock payment provider · local test mode
         </p>
@@ -65,7 +65,7 @@ function MockPaymentInner() {
               disabled={busy !== null}
               onClick={() => simulate(outcome.code)}
               data-testid={`mock-${outcome.code}`}
-              className={`w-full rounded-md px-4 py-3 text-sm font-semibold text-white disabled:opacity-60 ${outcome.tone}`}
+              className={`w-full rounded-md px-4 py-3 text-sm font-semibold text-ink-25 disabled:opacity-60 ${outcome.tone}`}
             >
               {busy === outcome.code ? 'Processing…' : `${outcome.label} (${outcome.code})`}
             </button>

@@ -20,6 +20,7 @@ import {
   cx,
 } from '@outlet/ui';
 import { useCart, useCurrentUser, useLogout } from '@/lib/hooks';
+import { ThemeToggle } from './theme';
 
 const CATEGORIES = [
   { label: 'T-Shirts', slug: 't-shirts' },
@@ -76,7 +77,7 @@ function SearchForm({
         aria-label="Search products or brands"
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
-        className="h-10 w-full rounded bg-ink-50 pl-9 pr-3 text-sm text-ink-900 ring-1 ring-inset ring-transparent transition-shadow placeholder:text-ink-500 hover:bg-ink-100 focus:bg-white focus:ring-ink-300"
+        className="h-10 w-full rounded bg-ink-50 pl-9 pr-3 text-sm text-ink-900 ring-1 ring-inset ring-transparent transition-shadow placeholder:text-ink-500 hover:bg-ink-100 focus:bg-ink-25 focus:ring-ink-300"
       />
     </form>
   );
@@ -104,7 +105,7 @@ function HeaderAction({
         {count && count > 0 ? (
           <span
             data-numeric
-            className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-sale-500 px-1 text-[10px] font-semibold leading-none text-white"
+            className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-sale-500 px-1 text-[10px] font-semibold leading-none text-ink-25"
           >
             {count > 99 ? '99+' : count}
           </span>
@@ -147,7 +148,7 @@ export function Header() {
   const itemCount = cart?.itemCount ?? 0;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+    <header className="sticky top-0 z-40 border-b border-ink-200 bg-ink-25/95 backdrop-blur supports-[backdrop-filter]:bg-ink-25/85">
       <div className="container-page">
         <div className="flex h-14 items-center gap-3 lg:h-16 lg:gap-6">
           <button
@@ -176,6 +177,7 @@ export function Header() {
               {searchOpen ? <CloseIcon className="h-5 w-5" /> : <SearchIcon className="h-5 w-5" />}
             </button>
 
+            <ThemeToggle />
             <HeaderAction href="/wishlist" label="Wishlist" icon={HeartIcon} />
             <HeaderAction href="/cart" label="Cart" count={itemCount} icon={BagIcon} />
 
@@ -302,7 +304,7 @@ function MobileMenu({
         onClick={onClose}
         className="absolute inset-0 animate-fade-in bg-ink-950/40"
       />
-      <div className="absolute inset-y-0 left-0 flex w-[min(20rem,85vw)] animate-slide-in-right flex-col bg-white shadow-md">
+      <div className="absolute inset-y-0 left-0 flex w-[min(20rem,85vw)] animate-slide-in-right flex-col bg-ink-25 shadow-md">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-ink-200 px-4">
           <Wordmark />
           <button

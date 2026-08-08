@@ -2,6 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /**
+   * The shared preset (packages/ui/tailwind-preset.js) resolves ink/sale/etc.
+   * through CSS variables so the storefront can theme. Those variables must be
+   * defined wherever preset colours are used, or components from packages/ui
+   * render with invalid colours here.
+   *
+   * The admin panel is light-only, so it defines the light values and no dark
+   * override. Keep these in sync with the storefront's globals.css.
+   */
+  :root {
+    --ink-25: 255 255 255;
+    --ink-50: 246 246 244;
+    --ink-100: 237 237 234;
+    --ink-200: 226 225 221;
+    --ink-300: 198 197 192;
+    --ink-400: 162 161 155;
+    --ink-500: 123 122 116;
+    --ink-600: 90 89 84;
+    --ink-700: 66 65 61;
+    --ink-800: 41 41 39;
+    --ink-900: 25 25 24;
+    --ink-950: 13 13 12;
+
+    --sale-50: 254 243 243;
+    --sale-100: 253 228 229;
+    --sale-200: 250 199 203;
+    --sale-300: 242 154 161;
+    --sale-400: 228 94 106;
+    --sale-500: 200 16 46;
+    --sale-600: 171 12 39;
+    --sale-700: 139 10 31;
+
+    --success-50: 241 247 243;
+    --success-100: 220 237 226;
+    --success-600: 47 107 71;
+    --success-700: 37 85 57;
+
+    --warning-50: 253 246 236;
+    --warning-100: 249 232 204;
+    --warning-600: 138 90 17;
+    --warning-700: 110 71 13;
+
+    color-scheme: light;
+  }
+}
+
 body {
   @apply bg-gray-100 text-gray-900 antialiased;
 }

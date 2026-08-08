@@ -38,7 +38,7 @@ function VerifyInner() {
       {state !== 'working' ? (
         <Link
           href="/login"
-          className="mt-6 inline-block rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white"
+          className="mt-6 inline-block rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-ink-25"
         >
           Go to sign in
         </Link>

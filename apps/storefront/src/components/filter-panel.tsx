@@ -146,7 +146,7 @@ export function FilterPanel() {
                 className={cx(
                   'h-9 min-w-[2.75rem] rounded px-2 text-sm font-medium transition-colors',
                   selected
-                    ? 'bg-ink-950 text-white'
+                    ? 'bg-ink-950 text-ink-25'
                     : 'text-ink-700 ring-1 ring-inset ring-ink-300 hover:ring-ink-950',
                 )}
               >
@@ -271,7 +271,7 @@ export function SortSelect() {
       <select
         value={params.get('sort') ?? 'recommended'}
         onChange={(e) => setParam('sort', e.target.value === 'recommended' ? null : e.target.value)}
-        className="h-9 cursor-pointer rounded bg-white pl-2.5 pr-8 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow hover:ring-ink-400"
+        className="h-9 cursor-pointer rounded bg-ink-25 pl-2.5 pr-8 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow hover:ring-ink-400"
       >
         {SORTS.map(([value, label]) => (
           <option key={value} value={value}>

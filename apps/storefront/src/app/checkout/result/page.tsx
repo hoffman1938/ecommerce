@@ -95,7 +95,7 @@ function ResultInner() {
           ) : null}
           <Link
             href={me?.user ? `/account/orders/${orderId}` : '/'}
-            className="mt-6 inline-block rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white"
+            className="mt-6 inline-block rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-ink-25"
           >
             {me?.user ? 'View your order' : 'Continue shopping'}
           </Link>
@@ -108,7 +108,7 @@ function ResultInner() {
             The payment did not complete (or stock ran out during a delayed payment and it was
             automatically refunded).
           </p>
-          <Link href="/cart" className="mt-6 inline-block rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white">
+          <Link href="/cart" className="mt-6 inline-block rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-ink-25">
             Back to cart
           </Link>
         </>

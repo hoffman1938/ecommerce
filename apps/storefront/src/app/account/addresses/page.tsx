@@ -45,7 +45,7 @@ export default function AddressesPage() {
       <h1 className="mb-4 text-2xl font-bold">Saved addresses</h1>
       <div className="space-y-3">
         {(addresses ?? []).map((address) => (
-          <div key={address.id} className="rounded-lg border border-gray-200 bg-white p-4 text-sm">
+          <div key={address.id} className="rounded-lg border border-gray-200 bg-ink-25 p-4 text-sm">
             <p className="font-medium">
               {address.firstName} {address.lastName}
               {address.isDefaultShipping ? (
@@ -77,7 +77,7 @@ export default function AddressesPage() {
 
       {showForm ? (
         <form
-          className="mt-6 space-y-3 rounded-lg border border-gray-200 bg-white p-4"
+          className="mt-6 space-y-3 rounded-lg border border-gray-200 bg-ink-25 p-4"
           onSubmit={async (e) => {
             e.preventDefault();
             setError(null);
@@ -121,7 +121,7 @@ export default function AddressesPage() {
             ))}
           </div>
           <div className="flex gap-3">
-            <button className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white">
+            <button className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-ink-25">
               Save address
             </button>
             <button
@@ -137,7 +137,7 @@ export default function AddressesPage() {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="mt-6 rounded-md border border-gray-900 px-4 py-2 text-sm font-semibold hover:bg-gray-900 hover:text-white"
+          className="mt-6 rounded-md border border-gray-900 px-4 py-2 text-sm font-semibold hover:bg-gray-900 hover:text-ink-25"
         >
           Add a new address
         </button>

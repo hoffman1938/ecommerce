@@ -57,7 +57,7 @@ export function ProductCard({
         ) : null}
 
         {soldOut ? (
-          <span className="absolute inset-x-0 bottom-0 bg-ink-950/85 py-1.5 text-center text-2xs font-semibold uppercase tracking-[0.08em] text-white">
+          <span className="absolute inset-x-0 bottom-0 bg-ink-950/85 py-1.5 text-center text-2xs font-semibold uppercase tracking-[0.08em] text-ink-25">
             Sold out
           </span>
         ) : null}

@@ -38,7 +38,7 @@ export function AccountOrderDetail() {
         </Badge>
       </div>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-5">
+      <section className="rounded-lg border border-gray-200 bg-ink-25 p-5">
         <h2 className="mb-3 font-semibold">Items</h2>
         <div className="space-y-3">
           {order.items.map((item) => (
@@ -63,7 +63,7 @@ export function AccountOrderDetail() {
       </section>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <section className="rounded-lg border border-gray-200 bg-white p-5 text-sm">
+        <section className="rounded-lg border border-gray-200 bg-ink-25 p-5 text-sm">
           <h2 className="mb-2 font-semibold">Delivery</h2>
           <p className="text-gray-600">
             {order.shippingAddress.firstName} {order.shippingAddress.lastName}
@@ -86,7 +86,7 @@ export function AccountOrderDetail() {
           ) : null}
         </section>
 
-        <section className="rounded-lg border border-gray-200 bg-white p-5 text-sm">
+        <section className="rounded-lg border border-gray-200 bg-ink-25 p-5 text-sm">
           <h2 className="mb-2 font-semibold">Payment</h2>
           <dl className="space-y-1">
             <div className="flex justify-between">
@@ -124,7 +124,7 @@ export function AccountOrderDetail() {
       {canReturn ? (
         <Link
           href={`/account/returns/new?orderId=${order.id}`}
-          className="inline-block rounded-md border border-gray-900 px-5 py-2.5 text-sm font-semibold hover:bg-gray-900 hover:text-white"
+          className="inline-block rounded-md border border-gray-900 px-5 py-2.5 text-sm font-semibold hover:bg-gray-900 hover:text-ink-25"
         >
           Request a return
         </Link>

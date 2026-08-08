@@ -37,13 +37,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    'bg-ink-950 text-white hover:bg-ink-800 active:bg-ink-900 disabled:bg-ink-200 disabled:text-ink-400',
+    'bg-ink-950 text-ink-25 hover:bg-ink-800 active:bg-ink-900 disabled:bg-ink-200 disabled:text-ink-400',
   secondary:
-    'bg-white text-ink-900 ring-1 ring-inset ring-ink-300 hover:bg-ink-25 hover:ring-ink-400 active:bg-ink-50 disabled:text-ink-400 disabled:ring-ink-200 disabled:bg-white',
+    'bg-ink-25 text-ink-900 ring-1 ring-inset ring-ink-300 hover:bg-ink-25 hover:ring-ink-400 active:bg-ink-50 disabled:text-ink-400 disabled:ring-ink-200 disabled:bg-ink-25',
   ghost:
     'bg-transparent text-ink-700 hover:bg-ink-100 hover:text-ink-950 active:bg-ink-200 disabled:text-ink-300',
   danger:
-    'bg-sale-500 text-white hover:bg-sale-600 active:bg-sale-700 disabled:bg-sale-200 disabled:text-white',
+    'bg-sale-500 text-ink-25 hover:bg-sale-600 active:bg-sale-700 disabled:bg-sale-200 disabled:text-ink-25',
   link: 'bg-transparent text-ink-900 underline underline-offset-[3px] decoration-ink-300 hover:decoration-ink-900 disabled:text-ink-400 disabled:no-underline',
 };
 
@@ -87,7 +87,7 @@ export function Button({
 
 function fieldShell(hasError: boolean): string {
   return cx(
-    'w-full rounded bg-white text-base text-ink-900 transition-shadow duration-150',
+    'w-full rounded bg-ink-25 text-base text-ink-900 transition-shadow duration-150',
     'ring-1 ring-inset placeholder:text-ink-400',
     'hover:ring-ink-400',
     'disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-400 disabled:ring-ink-200',
@@ -275,13 +275,13 @@ export function Badge({
     success: 'bg-success-100 text-success-700',
     sale: 'bg-sale-100 text-sale-700',
     warning: 'bg-warning-100 text-warning-700',
-    info: 'bg-ink-900 text-white',
-    solid: 'bg-sale-500 text-white',
+    info: 'bg-ink-900 text-ink-25',
+    solid: 'bg-sale-500 text-ink-25',
     gray: 'bg-ink-100 text-ink-700',
     green: 'bg-success-100 text-success-700',
     red: 'bg-sale-100 text-sale-700',
     yellow: 'bg-warning-100 text-warning-700',
-    blue: 'bg-ink-900 text-white',
+    blue: 'bg-ink-900 text-ink-25',
   };
   return (
     <span

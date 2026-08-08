@@ -99,7 +99,7 @@ export function Footer() {
                 placeholder="you@example.com"
                 aria-invalid={state === 'error' || undefined}
                 className={cx(
-                  'h-10 w-full rounded bg-white px-3 text-sm ring-1 ring-inset transition-shadow placeholder:text-ink-400',
+                  'h-10 w-full rounded bg-ink-25 px-3 text-sm ring-1 ring-inset transition-shadow placeholder:text-ink-400',
                   state === 'error' ? 'ring-sale-500' : 'ring-ink-300 hover:ring-ink-400',
                 )}
               />

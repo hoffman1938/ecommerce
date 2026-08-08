@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
                 </p>
                 <Link
                   href={resetUrl}
-                  className="inline-block rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
+                  className="inline-block rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-ink-25 hover:bg-gray-700"
                 >
                   Open the reset link
                 </Link>
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
               className="w-full rounded-md border border-gray-300 px-3 py-2"
             />
           </label>
-          <button className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700">
+          <button className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-ink-25 hover:bg-gray-700">
             Send reset link
           </button>
         </form>

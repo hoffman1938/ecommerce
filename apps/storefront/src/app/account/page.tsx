@@ -16,7 +16,7 @@ export default function AccountOverviewPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Account overview</h1>
-      <section className="rounded-lg border border-gray-200 bg-white p-5">
+      <section className="rounded-lg border border-gray-200 bg-ink-25 p-5">
         <div className="mb-3 flex items-baseline justify-between">
           <h2 className="font-semibold">Recent orders</h2>
           <Link href="/account/orders" className="text-sm text-gray-500 hover:underline">

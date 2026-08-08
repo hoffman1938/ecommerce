@@ -5,11 +5,10 @@ import { ProductGrid } from '@/components/product-card';
 import { CampaignSections } from '@/components/campaign-sections';
 import { Section, SectionHeader } from '@/components/section';
 
-/** Service facts, stated once, near the top — not repeated as badges later. */
 const PROPOSITIONS = [
-  { title: 'Limited stock', body: 'Every deal is real surplus. When a size is gone, it is gone.' },
-  { title: 'Held for 20 minutes', body: 'Adding to your bag reserves the item while you decide.' },
-  { title: 'Free standard delivery', body: 'On orders over €100. Returns accepted within 30 days.' },
+  ['01', 'Limited stock', 'Real surplus. When a size is gone, it is gone.'],
+  ['02', 'Held 20 minutes', 'Adding to your bag reserves the item while you decide.'],
+  ['03', 'Free over €100', 'Standard delivery. Returns accepted within 30 days.'],
 ];
 
 export default async function HomePage() {
@@ -19,94 +18,156 @@ export default async function HomePage() {
     serverGet<Paginated<ProductListItemDto>>('/catalog/products?sort=discount&pageSize=8'),
   ]);
 
+  const featured = (brands ?? []).filter((b) => b.isFeatured);
+
   return (
-    <div className="container-page pb-4">
-      {/* Compact editorial intro. The campaigns below are the real hero. */}
-      <section className="grid gap-8 border-b border-ink-200 py-10 lg:grid-cols-12 lg:gap-12 lg:py-14">
-        <div className="lg:col-span-7">
-          <p className="eyebrow">Outlet marketplace</p>
-          <h1 className="mt-3 max-w-[13ch] text-4xl font-extrabold leading-[1.04] tracking-[-0.03em] text-ink-950 sm:text-5xl lg:text-6xl">
-            Brand deals, up to 60% off.
-          </h1>
-          <p className="mt-4 max-w-md text-lg text-ink-600">
-            Surplus stock from Adidas, Nike, Puma, Tommy Hilfiger and Calvin Klein — released in
-            short campaigns and sold until it runs out.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            <Link
-              href="/campaigns"
-              className="inline-flex h-11 items-center rounded bg-ink-950 px-6 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
-            >
-              Shop active campaigns
-            </Link>
-            <Link
-              href="/products?sort=discount"
-              className="inline-flex h-11 items-center rounded px-4 text-sm font-semibold text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors hover:bg-ink-25 hover:ring-ink-400"
-            >
-              Browse best discounts
-            </Link>
+    <>
+      {/* Editorial masthead. Type is the image here — the campaign artwork
+          immediately below carries the photography, so competing with it would
+          only crowd the fold. */}
+      <section className="container-page">
+        <div className="grid items-end gap-8 border-b border-ink-200 pb-10 pt-10 lg:grid-cols-12 lg:pb-14 lg:pt-16">
+          <div className="lg:col-span-8">
+            <p className="eyebrow">Outlet — season clearance</p>
+            <h1 className="display mt-5 text-5xl sm:text-7xl lg:text-8xl">
+              Up to 60%
+              <br />
+              off retail.
+            </h1>
+          </div>
+
+          <div className="lg:col-span-4 lg:pb-2">
+            <p className="max-w-sm text-lg text-ink-600">
+              Surplus stock from Adidas, Nike, Puma, Tommy Hilfiger and Calvin Klein — released in
+              short campaigns and sold until it runs out.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/campaigns"
+                className="group inline-flex h-12 items-center gap-2 rounded-none bg-ink-950 px-7 text-sm font-semibold uppercase tracking-[0.06em] text-ink-25 transition-colors hover:bg-ink-800"
+              >
+                Shop campaigns
+                <span className="transition-transform duration-300 ease-out group-hover:translate-x-1">
+                  →
+                </span>
+              </Link>
+              <Link
+                href="/products?sort=discount"
+                className="inline-flex h-12 items-center px-1 text-sm font-semibold uppercase tracking-[0.06em] text-ink-950"
+              >
+                <span className="link-underline">Best discounts</span>
+              </Link>
+            </div>
           </div>
         </div>
-
-        <dl className="grid gap-px self-end overflow-hidden rounded bg-ink-200 sm:grid-cols-3 lg:col-span-5 lg:grid-cols-1">
-          {PROPOSITIONS.map((item) => (
-            <div key={item.title} className="bg-white px-4 py-3.5">
-              <dt className="text-sm font-semibold text-ink-950">{item.title}</dt>
-              <dd className="mt-0.5 text-sm leading-snug text-ink-600">{item.body}</dd>
-            </div>
-          ))}
-        </dl>
       </section>
 
-      {/* Client-rendered so campaign windows stay live in a static build. */}
-      <CampaignSections limit={3} />
-
-      {bestDiscounts && bestDiscounts.items.length > 0 ? (
-        <Section>
-          <SectionHeader
-            title="Best discounts"
-            description="The steepest reductions across every brand, right now."
-            action={{ href: '/products?sort=discount', label: 'View all' }}
-          />
-          <ProductGrid products={bestDiscounts.items} priorityCount={4} />
-        </Section>
-      ) : (
-        <Section>
-          <p className="border-t border-ink-200 py-16 text-center text-sm text-ink-500">
-            The catalog is empty — is the API running? Try <code>docker compose up --build</code>.
-          </p>
-        </Section>
-      )}
-
-      {brands && brands.length > 0 ? (
-        <Section>
-          <SectionHeader title="Shop by brand" />
-          <ul className="grid grid-cols-2 gap-px overflow-hidden rounded bg-ink-200 sm:grid-cols-3 lg:grid-cols-6">
-            {brands
-              .filter((b) => b.isFeatured)
-              .map((brand) => (
-                <li key={brand.id}>
-                  <Link
-                    href={`/brand/${brand.slug}`}
-                    className="flex h-20 items-center justify-center bg-white px-3 text-center text-sm font-semibold text-ink-800 transition-colors hover:bg-ink-25 hover:text-ink-950"
-                  >
-                    {brand.name}
-                  </Link>
-                </li>
-              ))}
-          </ul>
-        </Section>
+      {/* Brand ticker. A quiet editorial device, not a headline — small type,
+          slow, and stopped entirely under reduced-motion. */}
+      {featured.length > 0 ? (
+        <div className="overflow-hidden border-b border-ink-200 py-3">
+          <div className="flex w-max animate-marquee gap-10 pr-10 motion-reduce:animate-none">
+            {[0, 1].map((copy) => (
+              <ul
+                key={copy}
+                className="flex shrink-0 items-center gap-10"
+                aria-hidden={copy === 1}
+              >
+                {featured.map((brand) => (
+                  <li key={brand.id}>
+                    <Link
+                      href={`/brand/${brand.slug}`}
+                      className="text-sm font-semibold uppercase tracking-[0.14em] text-ink-400 transition-colors hover:text-ink-950"
+                      tabIndex={copy === 1 ? -1 : undefined}
+                    >
+                      {brand.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </div>
+        </div>
       ) : null}
 
-      {newest && newest.items.length > 0 ? (
-        <Section>
-          <SectionHeader
-            title="Recently added"
-            action={{ href: '/products?sort=newest', label: 'View all' }}
-          />
-          <ProductGrid products={newest.items} />
+      <div className="container-page pb-8">
+        <CampaignSections limit={3} />
+
+        {bestDiscounts && bestDiscounts.items.length > 0 ? (
+          <Section className="reveal">
+            <SectionHeader
+              title="Best discounts"
+              description="The steepest reductions across every brand, right now."
+              action={{ href: '/products?sort=discount', label: 'View all' }}
+            />
+            <ProductGrid products={bestDiscounts.items} priorityCount={4} />
+          </Section>
+        ) : (
+          <Section>
+            <p className="border-t border-ink-200 py-16 text-center text-sm text-ink-500">
+              The catalog is empty — is the API running? Try <code>docker compose up --build</code>.
+            </p>
+          </Section>
+        )}
+
+        {/* Asymmetric editorial block: a standing statement beside the brand
+            index, rather than another even grid of tiles. */}
+        {featured.length > 0 ? (
+          <Section className="reveal">
+            <div className="grid gap-8 border-t border-ink-950 pt-4 lg:grid-cols-12 lg:gap-12">
+              <div className="lg:col-span-4">
+                <h2 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
+                  The brands
+                </h2>
+                <p className="mt-2 max-w-xs text-sm text-ink-600">
+                  Past-season and overstock lines, sold at outlet prices while they last.
+                </p>
+              </div>
+              <ul className="lg:col-span-8">
+                {featured.map((brand) => (
+                  <li key={brand.id} className="border-b border-ink-200 first:border-t">
+                    <Link
+                      href={`/brand/${brand.slug}`}
+                      className="group flex items-baseline justify-between gap-6 py-5 lg:py-6"
+                    >
+                      <span className="text-2xl font-bold tracking-[-0.02em] text-ink-950 transition-transform duration-300 ease-out group-hover:translate-x-1.5 lg:text-3xl">
+                        {brand.name}
+                      </span>
+                      <span className="shrink-0 text-2xs font-semibold uppercase tracking-[0.12em] text-ink-400 transition-colors group-hover:text-ink-950">
+                        Shop →
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Section>
+        ) : null}
+
+        {newest && newest.items.length > 0 ? (
+          <Section className="reveal">
+            <SectionHeader
+              title="Recently added"
+              action={{ href: '/products?sort=newest', label: 'View all' }}
+            />
+            <ProductGrid products={newest.items} />
+          </Section>
+        ) : null}
+
+        {/* Service facts, numbered. Stated once, low on the page, where they
+            answer a question rather than interrupt the offer. */}
+        <Section className="reveal">
+          <dl className="grid gap-px border-t border-ink-950 bg-ink-200 pt-px sm:grid-cols-3">
+            {PROPOSITIONS.map(([index, title, body]) => (
+              <div key={index} className="bg-ink-25 py-6 sm:px-5 sm:first:pl-0">
+                <span className="eyebrow">{index}</span>
+                <dt className="mt-2 text-base font-semibold text-ink-950">{title}</dt>
+                <dd className="mt-1 text-sm leading-relaxed text-ink-600">{body}</dd>
+              </div>
+            ))}
+          </dl>
         </Section>
-      ) : null}
-    </div>
+      </div>
+    </>
   );
 }

@@ -119,7 +119,7 @@ function ProductListingInner({
               {activeCount > 0 ? (
                 <span
                   data-numeric
-                  className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ink-950 px-1 text-[10px] font-semibold text-white"
+                  className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ink-950 px-1 text-[10px] font-semibold text-ink-25"
                 >
                   {activeCount}
                 </span>
@@ -209,7 +209,7 @@ function FilterDrawer({ onClose, total }: { onClose: () => void; total?: number 
         onClick={onClose}
         className="absolute inset-0 animate-fade-in bg-ink-950/40"
       />
-      <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-xl bg-white shadow-overlay">
+      <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-xl bg-ink-25 shadow-overlay">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-ink-200 px-4">
           <h2 className="text-base font-semibold text-ink-950">Filters</h2>
           <button

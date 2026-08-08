@@ -176,7 +176,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetailDto })
                 data-testid={`variant-${variant.sku}`}
                 className={cx(
                   'relative h-11 rounded text-sm font-medium transition-colors',
-                  active && 'bg-ink-950 text-white',
+                  active && 'bg-ink-950 text-ink-25',
                   !active &&
                     !disabled &&
                     'text-ink-900 ring-1 ring-inset ring-ink-300 hover:ring-ink-950',

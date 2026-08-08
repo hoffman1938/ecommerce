@@ -5,65 +5,63 @@
  * drift apart, and so components in packages/ui can rely on these names being
  * defined wherever they are rendered.
  *
- * Principles encoded here:
- *  - One neutral ramp, very slightly warm, so large flat areas do not read
- *    cold and screen-blue the way default grays do.
- *  - One accent (`sale`) used for price reductions and destructive actions
- *    only. Everything else is neutral. Colour carries meaning, not decoration.
- *  - A restrained radius scale. Nothing above 8px except deliberate pills.
- *  - Three shadows, all subtle. Hierarchy comes from borders, weight and
- *    spacing — not from floating every element off the page.
+ * THEMING
+ * -------
+ * `ink` is not a fixed grey ramp — it is a *theme-relative* lightness scale
+ * backed by CSS variables (see apps/storefront/src/app/globals.css):
+ *
+ *   ink-25  = the page surface      (white in light, near-black in dark)
+ *   ink-950 = primary content       (near-black in light, near-white in dark)
+ *
+ * In dark mode the variables invert, so `text-ink-950` is the primary text
+ * colour in both themes and `bg-ink-25` is the page in both themes. That keeps
+ * one set of class names working across themes instead of sprinkling `dark:`
+ * variants through every component.
+ *
+ * Consequence worth knowing: literal `bg-white` / `text-white` do NOT theme.
+ * Use them only over fixed-dark imagery (campaign scrims), where white is
+ * correct in both themes. Everywhere else use the ink scale.
+ *
+ * `sale` is the single accent — price reductions and destructive actions only.
+ * It also shifts in dark mode, because #C8102E does not hold contrast on a
+ * near-black surface.
  */
+
+/** Builds `rgb(var(--x) / <alpha-value>)` entries so opacity utilities work. */
+function themed(prefix, stops) {
+  return Object.fromEntries(
+    stops.map((stop) => [stop, `rgb(var(--${prefix}-${stop}) / <alpha-value>)`]),
+  );
+}
+
+const INK_STOPS = [25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+const SALE_STOPS = [50, 100, 200, 300, 400, 500, 600, 700];
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: ['class', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
-        // Page and surface neutrals. `ink` is the text/UI ramp.
-        ink: {
-          25: '#FAFAF9',
-          50: '#F5F5F3',
-          100: '#EBEBE8',
-          200: '#DEDDD9',
-          300: '#C6C5C0',
-          400: '#A2A19B',
-          500: '#7B7A74',
-          600: '#5A5954',
-          700: '#42413D',
-          800: '#292927',
-          900: '#191918',
-          950: '#0D0D0C',
-        },
-        // Retail sale red. Deep and flat — not neon, never a gradient.
-        sale: {
-          50: '#FEF3F3',
-          100: '#FDE4E5',
-          200: '#FAC7CB',
-          300: '#F29AA1',
-          400: '#E45E6A',
-          500: '#C8102E',
-          600: '#AB0C27',
-          700: '#8B0A1F',
-          800: '#6E0819',
-          900: '#4F0512',
-        },
+        ink: themed('ink', INK_STOPS),
+        sale: themed('sale', SALE_STOPS),
         success: {
-          50: '#F1F7F3',
-          100: '#DCEDE2',
-          600: '#2F6B47',
-          700: '#255539',
+          50: 'rgb(var(--success-50) / <alpha-value>)',
+          100: 'rgb(var(--success-100) / <alpha-value>)',
+          600: 'rgb(var(--success-600) / <alpha-value>)',
+          700: 'rgb(var(--success-700) / <alpha-value>)',
         },
         warning: {
-          50: '#FDF6EC',
-          100: '#F9E8CC',
-          600: '#8A5A11',
-          700: '#6E470D',
+          50: 'rgb(var(--warning-50) / <alpha-value>)',
+          100: 'rgb(var(--warning-100) / <alpha-value>)',
+          600: 'rgb(var(--warning-600) / <alpha-value>)',
+          700: 'rgb(var(--warning-700) / <alpha-value>)',
         },
       },
 
       // Explicit line-height and tracking on every step: the scale is the
-      // typography system, so callers never hand-tune leading.
+      // typography system, so callers never hand-tune leading. The top end is
+      // deliberately large — editorial commerce leads with type.
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.04em' }],
         xs: ['0.75rem', { lineHeight: '1.125rem', letterSpacing: '0.01em' }],
@@ -72,10 +70,13 @@ module.exports = {
         lg: ['1.0625rem', { lineHeight: '1.5', letterSpacing: '-0.006em' }],
         xl: ['1.25rem', { lineHeight: '1.35', letterSpacing: '-0.012em' }],
         '2xl': ['1.5rem', { lineHeight: '1.25', letterSpacing: '-0.018em' }],
-        '3xl': ['1.875rem', { lineHeight: '1.18', letterSpacing: '-0.022em' }],
-        '4xl': ['2.25rem', { lineHeight: '1.1', letterSpacing: '-0.028em' }],
-        '5xl': ['3rem', { lineHeight: '1.04', letterSpacing: '-0.032em' }],
-        '6xl': ['3.75rem', { lineHeight: '1', letterSpacing: '-0.036em' }],
+        '3xl': ['1.875rem', { lineHeight: '1.15', letterSpacing: '-0.022em' }],
+        '4xl': ['2.25rem', { lineHeight: '1.08', letterSpacing: '-0.028em' }],
+        '5xl': ['3rem', { lineHeight: '1.02', letterSpacing: '-0.032em' }],
+        '6xl': ['3.75rem', { lineHeight: '0.98', letterSpacing: '-0.036em' }],
+        '7xl': ['5rem', { lineHeight: '0.94', letterSpacing: '-0.04em' }],
+        '8xl': ['6.75rem', { lineHeight: '0.9', letterSpacing: '-0.045em' }],
+        '9xl': ['9rem', { lineHeight: '0.86', letterSpacing: '-0.05em' }],
       },
 
       borderRadius: {
@@ -89,24 +90,24 @@ module.exports = {
       },
 
       boxShadow: {
-        xs: '0 1px 2px 0 rgb(13 13 12 / 0.04)',
-        sm: '0 1px 2px 0 rgb(13 13 12 / 0.04), 0 1px 3px 0 rgb(13 13 12 / 0.06)',
-        md: '0 2px 4px -1px rgb(13 13 12 / 0.05), 0 6px 16px -2px rgb(13 13 12 / 0.08)',
-        // For sticky bars and drawers only.
-        overlay: '0 -1px 0 0 rgb(13 13 12 / 0.06), 0 -8px 24px -6px rgb(13 13 12 / 0.10)',
+        xs: '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+        sm: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)',
+        md: '0 2px 4px -1px rgb(0 0 0 / 0.05), 0 6px 16px -2px rgb(0 0 0 / 0.08)',
+        overlay: '0 -1px 0 0 rgb(0 0 0 / 0.06), 0 -8px 24px -6px rgb(0 0 0 / 0.16)',
         none: 'none',
       },
 
       transitionTimingFunction: {
         DEFAULT: 'cubic-bezier(0.2, 0, 0.13, 1)',
         out: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        editorial: 'cubic-bezier(0.65, 0, 0.35, 1)',
       },
       transitionDuration: {
         DEFAULT: '150ms',
       },
 
       maxWidth: {
-        page: '80rem',
+        page: '90rem',
         prose: '68ch',
       },
 
@@ -127,11 +128,21 @@ module.exports = {
           from: { transform: 'translateX(100%)' },
           to: { transform: 'translateX(0)' },
         },
+        'slide-in-left': {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(0)' },
+        },
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
-        'fade-in': 'fade-in 150ms cubic-bezier(0.2, 0, 0.13, 1)',
-        'slide-up': 'slide-up 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-        'slide-in-right': 'slide-in-right 240ms cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in': 'fade-in 200ms cubic-bezier(0.2, 0, 0.13, 1)',
+        'slide-up': 'slide-up 260ms cubic-bezier(0.16, 1, 0.3, 1)',
+        'slide-in-right': 'slide-in-right 260ms cubic-bezier(0.16, 1, 0.3, 1)',
+        'slide-in-left': 'slide-in-left 260ms cubic-bezier(0.16, 1, 0.3, 1)',
+        marquee: 'marquee 40s linear infinite',
       },
     },
   },

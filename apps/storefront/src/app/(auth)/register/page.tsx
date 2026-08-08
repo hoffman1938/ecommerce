@@ -58,7 +58,7 @@ export default function RegisterPage() {
         </p>
         <Link
           href={DEMO_MODE ? '/account' : '/login'}
-          className="mt-7 inline-flex h-11 items-center rounded bg-ink-950 px-6 text-sm font-semibold text-white transition-colors hover:bg-ink-800"
+          className="mt-7 inline-flex h-11 items-center rounded bg-ink-950 px-6 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
         >
           {DEMO_MODE ? 'Go to your account' : 'Go to sign in'}
         </Link>

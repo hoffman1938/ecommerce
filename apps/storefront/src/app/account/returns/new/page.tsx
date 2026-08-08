@@ -57,7 +57,7 @@ function NewReturnInner() {
           }
         }}
       >
-        <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
+        <div className="space-y-3 rounded-lg border border-gray-200 bg-ink-25 p-4">
           {returnable.map((item) => (
             <label key={item.id} className="flex items-center justify-between gap-4 text-sm">
               <span>
@@ -101,7 +101,7 @@ function NewReturnInner() {
             className="w-full rounded-md border border-gray-300 px-3 py-2"
           />
         </label>
-        <button className="rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-700">
+        <button className="rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-gray-700">
           Submit return request
         </button>
       </form>
