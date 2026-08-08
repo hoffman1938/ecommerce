@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import en from '@/locales/en.json';
 import ka from '@/locales/ka.json';
 import ru from '@/locales/ru.json';
