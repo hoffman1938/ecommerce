@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { CampaignDto } from '@outlet/types';
-import { cx } from '@outlet/ui';
+import { ImageIcon, cx } from '@outlet/ui';
 import { Countdown } from './countdown';
 
 const DATE_SHORT = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' });
@@ -32,7 +32,11 @@ export function CampaignCard({
             decoding="async"
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
-        ) : null}
+        ) : (
+          <div className="flex h-full items-center justify-center bg-ink-100">
+            <ImageIcon className="h-12 w-12 text-ink-300" />
+          </div>
+        )}
 
         <div
           className="absolute inset-0 bg-gradient-to-t from-ink-950/85 via-ink-950/25 to-transparent"

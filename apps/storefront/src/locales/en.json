@@ -1,0 +1,100 @@
+{
+  "nav": {
+    "campaigns": "Campaigns",
+    "allProducts": "All products",
+    "search": "Search",
+    "searchPlaceholder": "Search products or brands",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "wishlist": "Wishlist",
+    "cart": "Cart",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "yourAccount": "Your account",
+    "orders": "Orders",
+    "createAccount": "Create an account",
+    "skipToContent": "Skip to content",
+    "shopByCategory": "Shop by category",
+    "account": "Account"
+  },
+  "categories": {
+    "tShirts": "T-Shirts",
+    "shoes": "Shoes",
+    "hoodies": "Hoodies",
+    "jackets": "Jackets",
+    "pants": "Pants",
+    "accessories": "Accessories"
+  },
+  "product": {
+    "soldOut": "Sold out",
+    "onlyLeft": "Only {{count}} left",
+    "noImage": "No image",
+    "bestDiscounts": "Best discounts",
+    "bestDiscountsDesc": "The steepest reductions across every brand, right now.",
+    "recentlyAdded": "Recently added",
+    "viewAll": "View all",
+    "noCatalog": "The catalog is empty — is the API running? Try docker compose up --build.",
+    "noProducts": "No products found."
+  },
+  "campaign": {
+    "liveNow": "Live now",
+    "endsIn": "Ends in",
+    "items": "{{count}} items",
+    "startsOn": "Starts {{date}}",
+    "shopCampaigns": "Shop campaigns",
+    "bestDiscounts": "Best discounts",
+    "noCoverImage": "No campaign image"
+  },
+  "home": {
+    "eyebrow": "Outlet — season clearance",
+    "headline": "Up to 60%\noff retail.",
+    "description": "Surplus stock from Adidas, Nike, Puma, Tommy Hilfiger and Calvin Klein — released in short campaigns and sold until it runs out.",
+    "shopCampaigns": "Shop campaigns",
+    "bestDiscounts": "Best discounts",
+    "theBrands": "The brands",
+    "brandsDesc": "Past-season and overstock lines, sold at outlet prices while they last.",
+    "shop": "Shop →",
+    "prop1Title": "Limited stock",
+    "prop1Body": "Real surplus. When a size is gone, it is gone.",
+    "prop2Title": "Held 20 minutes",
+    "prop2Body": "Adding to your bag reserves the item while you decide.",
+    "prop3Title": "Free over €100",
+    "prop3Body": "Standard delivery. Returns accepted within 30 days."
+  },
+  "footer": {
+    "newsletter": "Get campaign alerts",
+    "newsletterDesc": "New drops sell out fast. We'll tell you the morning a campaign opens — nothing else.",
+    "emailPlaceholder": "you@example.com",
+    "join": "Join",
+    "subscribeOk": "You're on the list.",
+    "subscribeError": "Enter a valid email address.",
+    "shop": "Shop",
+    "help": "Help",
+    "legal": "Legal",
+    "copyright": "© Outlet Marketplace",
+    "demoNotice": "Demonstration build. Not affiliated with any listed brand.",
+    "shopLinks": {
+      "campaigns": "Campaigns",
+      "bestDiscounts": "Best discounts",
+      "newArrivals": "New arrivals",
+      "allProducts": "All products"
+    },
+    "helpLinks": {
+      "faq": "FAQ",
+      "shipping": "Shipping",
+      "returns": "Returns",
+      "contact": "Contact"
+    },
+    "legalLinks": {
+      "privacy": "Privacy policy",
+      "terms": "Terms & conditions",
+      "cookies": "Cookie policy"
+    },
+    "emailLabel": "Email address"
+  },
+  "lang": {
+    "en": "EN",
+    "ka": "KA",
+    "ru": "RU"
+  }
+}
