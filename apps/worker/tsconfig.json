@@ -2,7 +2,10 @@
   "extends": "@outlet/typescript-config/library.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    // See apps/api/tsconfig.json — applications do not emit declarations.
+    "declaration": false,
+    "declarationMap": false
   },
   "include": ["src"]
 }

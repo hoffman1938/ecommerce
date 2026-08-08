@@ -2,7 +2,7 @@
   "name": "ecommerce Codespace",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:0-20",
   "workspaceFolder": "/workspaces/ecommerce",
-  "forwardPorts": [3000, 3001, 4000, 9001, 8025, 5432, 6379],
+  "forwardPorts": [3000, 3001, 4000, 9000, 9001, 8025, 5432, 6379],
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:1": {}
   },
@@ -12,5 +12,5 @@
     "ms-azuretools.vscode-docker"
   ],
   "remoteUser": "node",
-  "postCreateCommand": "sudo corepack enable"
+  "postCreateCommand": "sudo npm uninstall -g pnpm || true; sudo corepack enable --install-directory $(dirname $(which node))"
 }
