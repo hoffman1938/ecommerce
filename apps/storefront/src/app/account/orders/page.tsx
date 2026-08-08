@@ -16,20 +16,20 @@ export default function OrdersPage() {
     <div>
       <h1 className="mb-4 text-2xl font-bold">Order history</h1>
       {isLoading ? (
-        <p className="text-gray-500">Loading…</p>
+        <p className="text-ink-500">Loading…</p>
       ) : !orders || orders.length === 0 ? (
-        <p className="text-gray-500">No orders yet.</p>
+        <p className="text-ink-500">No orders yet.</p>
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
             <Link
               key={order.id}
               href={`/account/orders/${order.id}`}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-ink-25 p-4 hover:shadow-sm"
+              className="flex items-center justify-between rounded border border-ink-200 bg-ink-25 p-4 hover:shadow-sm"
             >
               <div>
                 <p className="font-semibold">{order.orderNumber}</p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-ink-500">
                   {formatDate(order.placedAt)} · {order.items.length} item(s)
                 </p>
               </div>

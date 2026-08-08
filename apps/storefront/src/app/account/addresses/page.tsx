@@ -45,14 +45,14 @@ export default function AddressesPage() {
       <h1 className="mb-4 text-2xl font-bold">Saved addresses</h1>
       <div className="space-y-3">
         {(addresses ?? []).map((address) => (
-          <div key={address.id} className="rounded-lg border border-gray-200 bg-ink-25 p-4 text-sm">
+          <div key={address.id} className="rounded border border-ink-200 bg-ink-25 p-4 text-sm">
             <p className="font-medium">
               {address.firstName} {address.lastName}
               {address.isDefaultShipping ? (
-                <span className="ml-2 text-xs text-gray-500">Default shipping</span>
+                <span className="ml-2 text-xs text-ink-500">Default shipping</span>
               ) : null}
             </p>
-            <p className="text-gray-600">
+            <p className="text-ink-600">
               {address.line1}
               {address.line2 ? `, ${address.line2}` : ''}
               <br />
@@ -64,20 +64,20 @@ export default function AddressesPage() {
                 await api.delete(`/account/addresses/${address.id}`);
                 refresh();
               }}
-              className="mt-2 text-xs text-gray-500 underline"
+              className="mt-2 text-xs text-ink-500 underline"
             >
               Delete
             </button>
           </div>
         ))}
         {addresses && addresses.length === 0 ? (
-          <p className="text-sm text-gray-500">No saved addresses yet.</p>
+          <p className="text-sm text-ink-500">No saved addresses yet.</p>
         ) : null}
       </div>
 
       {showForm ? (
         <form
-          className="mt-6 space-y-3 rounded-lg border border-gray-200 bg-ink-25 p-4"
+          className="mt-6 space-y-3 rounded border border-ink-200 bg-ink-25 p-4"
           onSubmit={async (e) => {
             e.preventDefault();
             setError(null);
@@ -97,7 +97,7 @@ export default function AddressesPage() {
             }
           }}
         >
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="text-sm text-sale-500">{error}</p> : null}
           <div className="grid grid-cols-2 gap-3">
             {(
               [
@@ -115,19 +115,19 @@ export default function AddressesPage() {
                 <input
                   value={form[key]}
                   onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  className="w-full rounded border border-ink-300 px-3 py-2"
                 />
               </label>
             ))}
           </div>
           <div className="flex gap-3">
-            <button className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-ink-25">
+            <button className="rounded bg-ink-950 px-4 py-2 text-sm font-semibold text-ink-25">
               Save address
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="text-sm text-gray-500 underline"
+              className="text-sm text-ink-500 underline"
             >
               Cancel
             </button>
@@ -137,7 +137,7 @@ export default function AddressesPage() {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="mt-6 rounded-md border border-gray-900 px-4 py-2 text-sm font-semibold hover:bg-gray-900 hover:text-ink-25"
+          className="mt-6 rounded border border-ink-950 px-4 py-2 text-sm font-semibold hover:bg-ink-950 hover:text-ink-25"
         >
           Add a new address
         </button>

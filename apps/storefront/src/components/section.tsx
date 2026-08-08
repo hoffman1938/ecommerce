@@ -30,7 +30,7 @@ export function SectionHeader({
       )}
     >
       <div className="min-w-0">
-        <Heading className="text-xl font-bold tracking-[-0.015em] text-ink-950 lg:text-2xl">
+        <Heading className="text-2xl font-bold tracking-[-0.025em] text-ink-950 lg:text-3xl">
           {title}
         </Heading>
         {description ? (

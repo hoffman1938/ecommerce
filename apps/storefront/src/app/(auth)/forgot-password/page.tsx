@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
     <div className="mx-auto max-w-sm py-10">
       <h1 className="text-2xl font-bold">Reset your password</h1>
       {sent ? (
-        <div className="mt-4 space-y-3 text-gray-600">
+        <div className="mt-4 space-y-3 text-ink-600">
           {DEMO_MODE ? (
             resetUrl ? (
               <>
@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
                 </p>
                 <Link
                   href={resetUrl}
-                  className="inline-block rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-ink-25 hover:bg-gray-700"
+                  className="inline-block rounded bg-ink-950 px-4 py-2 text-sm font-semibold text-ink-25 hover:bg-ink-800"
                 >
                   Open the reset link
                 </Link>
@@ -64,10 +64,10 @@ export default function ForgotPasswordPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2"
+              className="w-full rounded border border-ink-300 px-3 py-2"
             />
           </label>
-          <button className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-ink-25 hover:bg-gray-700">
+          <button className="w-full rounded bg-ink-950 px-4 py-2.5 text-sm font-semibold text-ink-25 hover:bg-ink-800">
             Send reset link
           </button>
         </form>

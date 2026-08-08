@@ -37,7 +37,7 @@ export default function NotificationsPage() {
   return (
     <div className="max-w-md">
       <h1 className="text-2xl font-bold">Notification preferences</h1>
-      {saved ? <p className="mt-3 text-sm text-green-700">Preferences saved.</p> : null}
+      {saved ? <p className="mt-3 text-sm text-success-700">Preferences saved.</p> : null}
       <form
         className="mt-6 space-y-3"
         onSubmit={async (e) => {
@@ -47,7 +47,7 @@ export default function NotificationsPage() {
         }}
       >
         {options.map(([key, label]) => (
-          <label key={key} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-ink-25 p-4 text-sm">
+          <label key={key} className="flex items-center gap-3 rounded border border-ink-200 bg-ink-25 p-4 text-sm">
             <input
               type="checkbox"
               checked={prefs[key]}
@@ -59,7 +59,7 @@ export default function NotificationsPage() {
             {label}
           </label>
         ))}
-        <button className="rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-gray-700">
+        <button className="rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-ink-800">
           Save preferences
         </button>
       </form>

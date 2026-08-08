@@ -91,11 +91,11 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
           >
             {product.brand.name}
           </Link>
-          <h1 className="mt-2 text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
+          <h1 className="mt-2.5 text-3xl font-extrabold leading-[1.02] tracking-[-0.032em] text-ink-950 lg:text-4xl">
             {product.name}
           </h1>
           {product.shortDescription ? (
-            <p className="mt-2.5 text-base text-ink-600">{product.shortDescription}</p>
+            <p className="mt-3.5 max-w-md text-lg text-ink-600">{product.shortDescription}</p>
           ) : null}
 
           <div className="mt-7 border-t border-ink-200 pt-7">

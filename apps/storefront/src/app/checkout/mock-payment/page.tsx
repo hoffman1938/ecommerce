@@ -6,10 +6,10 @@ import { formatMoney } from '@outlet/ui';
 import { api } from '@/lib/api';
 
 const OUTCOMES = [
-  { code: 'TEST-SUCCESS', label: 'Pay successfully', tone: 'bg-green-600 hover:bg-green-500' },
-  { code: 'TEST-FAIL', label: 'Simulate failed payment', tone: 'bg-red-600 hover:bg-red-500' },
-  { code: 'TEST-CANCEL', label: 'Cancel payment', tone: 'bg-gray-500 hover:bg-gray-400' },
-  { code: 'TEST-DELAYED', label: 'Simulate delayed confirmation (~10s)', tone: 'bg-amber-600 hover:bg-amber-500' },
+  { code: 'TEST-SUCCESS', label: 'Pay successfully', tone: 'bg-success-600 hover:bg-success-700' },
+  { code: 'TEST-FAIL', label: 'Simulate failed payment', tone: 'bg-sale-500 hover:bg-sale-600' },
+  { code: 'TEST-CANCEL', label: 'Cancel payment', tone: 'bg-ink-500 hover:bg-ink-600' },
+  { code: 'TEST-DELAYED', label: 'Simulate delayed confirmation (~10s)', tone: 'bg-warning-600 hover:bg-warning-700' },
 ] as const;
 
 function MockPaymentInner() {
@@ -41,20 +41,20 @@ function MockPaymentInner() {
   };
 
   if (!paymentId) {
-    return <p className="py-10 text-center text-gray-500">Missing payment reference.</p>;
+    return <p className="py-10 text-center text-ink-500">Missing payment reference.</p>;
   }
 
   return (
     <div className="mx-auto max-w-md px-4 py-12 sm:px-6">
-      <div className="rounded-xl border border-gray-200 bg-ink-25 p-8 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+      <div className="rounded-xl border border-ink-200 bg-ink-25 p-8 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-wide text-ink-400">
           Mock payment provider · local test mode
         </p>
         <h1 className="mt-2 text-xl font-bold">Order {orderNumber}</h1>
         <p className="mt-1 text-3xl font-black">{formatMoney(amount, currency)}</p>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-ink-500">
           Choose a test outcome. Real deployments swap this page for Stripe via
-          <code className="mx-1 rounded bg-gray-100 px-1">PAYMENT_PROVIDER=stripe</code>.
+          <code className="mx-1 rounded bg-ink-100 px-1">PAYMENT_PROVIDER=stripe</code>.
         </p>
 
         <div className="mt-6 space-y-3">
@@ -65,13 +65,13 @@ function MockPaymentInner() {
               disabled={busy !== null}
               onClick={() => simulate(outcome.code)}
               data-testid={`mock-${outcome.code}`}
-              className={`w-full rounded-md px-4 py-3 text-sm font-semibold text-ink-25 disabled:opacity-60 ${outcome.tone}`}
+              className={`w-full rounded px-4 py-3 text-sm font-semibold text-ink-25 disabled:opacity-60 ${outcome.tone}`}
             >
               {busy === outcome.code ? 'Processing…' : `${outcome.label} (${outcome.code})`}
             </button>
           ))}
         </div>
-        {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="mt-4 text-sm text-sale-500">{error}</p> : null}
       </div>
     </div>
   );
@@ -79,7 +79,7 @@ function MockPaymentInner() {
 
 export default function MockPaymentPage() {
   return (
-    <Suspense fallback={<p className="py-10 text-center text-gray-500">Loading…</p>}>
+    <Suspense fallback={<p className="py-10 text-center text-ink-500">Loading…</p>}>
       <MockPaymentInner />
     </Suspense>
   );

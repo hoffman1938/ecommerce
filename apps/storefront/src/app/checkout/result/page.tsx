@@ -69,7 +69,7 @@ function ResultInner() {
     queryClient.invalidateQueries({ queryKey: ['cart'] });
   }, [order?.status, queryClient]);
 
-  if (!orderId) return <p className="py-10 text-center text-gray-500">Missing order reference.</p>;
+  if (!orderId) return <p className="py-10 text-center text-ink-500">Missing order reference.</p>;
 
   const paid = order && ['PAID', 'PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED'].includes(order.status);
   const failed = order && order.status === 'CANCELLED';
@@ -79,12 +79,12 @@ function ResultInner() {
     <div className="mx-auto max-w-lg px-4 py-16 text-center sm:px-6">
       {paid ? (
         <>
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">✓</div>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success-100 text-3xl">✓</div>
           <h1 className="mt-4 text-2xl font-bold" data-testid="order-confirmed">
             Thank you! Order {order.orderNumber} is confirmed.
           </h1>
           {order.totalMinor != null ? (
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-ink-600">
               We received your payment of {formatMoney(order.totalMinor, order.currencyCode ?? 'EUR')}. A
               confirmation email is on its way (check Mailpit at{' '}
               <a className="underline" href="http://localhost:8025" target="_blank" rel="noreferrer">
@@ -95,35 +95,35 @@ function ResultInner() {
           ) : null}
           <Link
             href={me?.user ? `/account/orders/${orderId}` : '/'}
-            className="mt-6 inline-block rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-ink-25"
+            className="mt-6 inline-block rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25"
           >
             {me?.user ? 'View your order' : 'Continue shopping'}
           </Link>
         </>
       ) : failed ? (
         <>
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-3xl">✕</div>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sale-100 text-3xl">✕</div>
           <h1 className="mt-4 text-2xl font-bold">This order was cancelled</h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-ink-600">
             The payment did not complete (or stock ran out during a delayed payment and it was
             automatically refunded).
           </p>
-          <Link href="/cart" className="mt-6 inline-block rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-ink-25">
+          <Link href="/cart" className="mt-6 inline-block rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25">
             Back to cart
           </Link>
         </>
       ) : waiting ? (
         <>
-          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900" />
+          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-ink-200 border-t-ink-950" />
           <h1 className="mt-4 text-2xl font-bold">Waiting for payment confirmation…</h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-ink-600">
             {attempts > 5
               ? 'Still waiting — a delayed test payment confirms after ~10 seconds. This page refreshes automatically.'
               : 'The payment provider is confirming your payment. This page refreshes automatically.'}
           </p>
         </>
       ) : (
-        <p className="text-gray-500">Order status: {order?.status}</p>
+        <p className="text-ink-500">Order status: {order?.status}</p>
       )}
     </div>
   );
@@ -131,7 +131,7 @@ function ResultInner() {
 
 export default function CheckoutResultPage() {
   return (
-    <Suspense fallback={<p className="py-10 text-center text-gray-500">Loading…</p>}>
+    <Suspense fallback={<p className="py-10 text-center text-ink-500">Loading…</p>}>
       <ResultInner />
     </Suspense>
   );

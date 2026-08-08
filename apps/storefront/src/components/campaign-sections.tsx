@@ -143,7 +143,7 @@ export function CampaignDetail({ slug }: { slug: string }) {
             <p className="text-2xs font-bold uppercase tracking-[0.09em] text-white/70">
               {isUpcoming ? 'Upcoming campaign' : 'Live campaign'}
             </p>
-            <h1 className="mt-2 text-2xl font-extrabold tracking-[-0.025em] text-white sm:text-3xl lg:text-4xl">
+            <h1 className="mt-2 text-3xl font-extrabold leading-[0.96] tracking-[-0.038em] text-white sm:text-5xl lg:text-7xl">
               {campaign.title}
             </h1>
             {campaign.shortDescription ? (

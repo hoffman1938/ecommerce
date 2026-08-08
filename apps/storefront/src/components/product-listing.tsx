@@ -89,12 +89,16 @@ function ProductListingInner({
 
   return (
     <div className="container-page py-6 lg:py-10">
-      <div className="border-b border-ink-200 pb-5">
-        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
-          {term ? <span className="font-normal text-ink-500">Results for </span> : null}
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink-200 pb-6">
+        <h1 className="display text-4xl sm:text-5xl lg:text-6xl">
+          {term ? (
+            <span className="block text-base font-semibold uppercase tracking-[0.12em] text-ink-500">
+              Results for
+            </span>
+          ) : null}
           {resolvedTitle}
         </h1>
-        <p data-numeric className="mt-1.5 text-sm text-ink-500">
+        <p data-numeric className="pb-1.5 text-sm text-ink-500">
           {isPending ? 'Loading…' : `${result?.total ?? 0} products`}
         </p>
       </div>

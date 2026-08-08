@@ -21,8 +21,8 @@ function NewReturnInner() {
     enabled: Boolean(orderId),
   });
 
-  if (!orderId) return <p className="text-gray-500">Missing order reference.</p>;
-  if (!order) return <p className="text-gray-500">Loading order…</p>;
+  if (!orderId) return <p className="text-ink-500">Missing order reference.</p>;
+  if (!order) return <p className="text-ink-500">Loading order…</p>;
 
   const returnable = order.items.filter((i) => i.returnableQuantity > 0);
   const selectedItems = returnable
@@ -33,7 +33,7 @@ function NewReturnInner() {
     <div className="max-w-xl">
       <h1 className="text-2xl font-bold">Return items from {order.orderNumber}</h1>
       {error ? (
-        <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+        <p className="mt-4 rounded border border-sale-200 bg-sale-50 px-4 py-2 text-sm text-sale-700">{error}</p>
       ) : null}
       <form
         className="mt-6 space-y-5"
@@ -57,18 +57,18 @@ function NewReturnInner() {
           }
         }}
       >
-        <div className="space-y-3 rounded-lg border border-gray-200 bg-ink-25 p-4">
+        <div className="space-y-3 rounded border border-ink-200 bg-ink-25 p-4">
           {returnable.map((item) => (
             <label key={item.id} className="flex items-center justify-between gap-4 text-sm">
               <span>
-                {item.name} <span className="text-gray-500">({item.sku})</span>
+                {item.name} <span className="text-ink-500">({item.sku})</span>
               </span>
               <select
                 value={quantities[item.id] ?? 0}
                 onChange={(e) =>
                   setQuantities((q) => ({ ...q, [item.id]: Number(e.target.value) }))
                 }
-                className="rounded border border-gray-300 px-2 py-1"
+                className="rounded border border-ink-300 px-2 py-1"
               >
                 {Array.from({ length: item.returnableQuantity + 1 }, (_, n) => (
                   <option key={n} value={n}>
@@ -85,7 +85,7 @@ function NewReturnInner() {
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2"
+            className="w-full rounded border border-ink-300 px-3 py-2"
           >
             {['Wrong size', 'Damaged or defective', 'Not as described', 'Changed my mind'].map((r) => (
               <option key={r}>{r}</option>
@@ -98,10 +98,10 @@ function NewReturnInner() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}
-            className="w-full rounded-md border border-gray-300 px-3 py-2"
+            className="w-full rounded border border-ink-300 px-3 py-2"
           />
         </label>
-        <button className="rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-gray-700">
+        <button className="rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-ink-800">
           Submit return request
         </button>
       </form>

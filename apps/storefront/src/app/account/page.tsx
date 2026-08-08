@@ -16,26 +16,26 @@ export default function AccountOverviewPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Account overview</h1>
-      <section className="rounded-lg border border-gray-200 bg-ink-25 p-5">
+      <section className="rounded border border-ink-200 bg-ink-25 p-5">
         <div className="mb-3 flex items-baseline justify-between">
           <h2 className="font-semibold">Recent orders</h2>
-          <Link href="/account/orders" className="text-sm text-gray-500 hover:underline">
+          <Link href="/account/orders" className="text-sm text-ink-500 hover:underline">
             View all
           </Link>
         </div>
         {recent.length === 0 ? (
-          <p className="text-sm text-gray-500">No orders yet — grab a deal before it’s gone.</p>
+          <p className="text-sm text-ink-500">No orders yet — grab a deal before it’s gone.</p>
         ) : (
           <table className="w-full text-sm">
             <tbody>
               {recent.map((order) => (
-                <tr key={order.id} className="border-t border-gray-100">
+                <tr key={order.id} className="border-t border-ink-100">
                   <td className="py-2">
                     <Link href={`/account/orders/${order.id}`} className="font-medium hover:underline">
                       {order.orderNumber}
                     </Link>
                   </td>
-                  <td className="py-2 text-gray-500">{formatDate(order.placedAt)}</td>
+                  <td className="py-2 text-ink-500">{formatDate(order.placedAt)}</td>
                   <td className="py-2">
                     <Badge tone={order.status === 'CANCELLED' ? 'red' : order.status === 'DELIVERED' ? 'green' : 'blue'}>
                       {order.status}

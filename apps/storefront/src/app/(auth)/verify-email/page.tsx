@@ -34,11 +34,11 @@ function VerifyInner() {
       <h1 className="text-2xl font-bold" data-testid="verify-result">
         {state === 'working' ? 'One moment…' : state === 'ok' ? 'Email verified ✓' : 'Verification failed'}
       </h1>
-      <p className="mt-3 text-gray-600">{message}</p>
+      <p className="mt-3 text-ink-600">{message}</p>
       {state !== 'working' ? (
         <Link
           href="/login"
-          className="mt-6 inline-block rounded-md bg-gray-900 px-5 py-2.5 text-sm font-semibold text-ink-25"
+          className="mt-6 inline-block rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25"
         >
           Go to sign in
         </Link>
