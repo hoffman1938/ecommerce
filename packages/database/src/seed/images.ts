@@ -1,5 +1,13 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { campaignArtworkSvg, productArtworkSvg, type ProductSpec } from '@outlet/catalog';
+import {
+  PRODUCT_VIEWS,
+  campaignArtworkItems,
+  campaignArtworkSvg,
+  productArtworkAlt,
+  productArtworkSvg,
+  type ProductSpec,
+  type ProductView,
+} from '@outlet/catalog';
 
 /**
  * Uploads the catalogue's generated artwork (packages/catalog/src/artwork.ts) to
@@ -54,29 +62,44 @@ async function put(objectKey: string, svg: string): Promise<string | null> {
   }
 }
 
-/** Upload one colourway's product image; returns { url, objectKey } or null. */
-export async function uploadProductImage(
+export interface UploadedImage {
+  url: string;
+  objectKey: string;
+  altText: string;
+  view: ProductView;
+}
+
+/**
+ * Upload every view of one colourway. A colourway ships a front, back and
+ * fabric-detail shot so the product gallery has real content to page through.
+ */
+export async function uploadProductImages(
   spec: ProductSpec,
   brandName: string,
   color: string,
-): Promise<{ url: string; objectKey: string } | null> {
-  const objectKey = `products/${spec.slug}/${color.toLowerCase()}.svg`;
-  const url = await put(
-    objectKey,
-    productArtworkSvg({
-      shape: spec.shape,
-      color,
-      brandName,
-      productName: spec.name,
-    }),
-  );
-  return url ? { url, objectKey } : null;
+): Promise<UploadedImage[]> {
+  const uploaded: UploadedImage[] = [];
+  for (const view of PRODUCT_VIEWS) {
+    const objectKey = `products/${spec.slug}/${color.toLowerCase()}-${view}.svg`;
+    const url = await put(
+      objectKey,
+      productArtworkSvg({ shape: spec.shape, color, brandName, productName: spec.name, view }),
+    );
+    if (url) {
+      uploaded.push({ url, objectKey, altText: productArtworkAlt(spec.name, color, view), view });
+    }
+  }
+  return uploaded;
 }
 
 /** Upload a campaign cover image; returns URL or null. */
 export async function uploadCampaignImage(
   campaignSlug: string,
-  title: string,
+  productSlugs: string[],
+  lookup: (slug: string) => { shape: ProductSpec['shape']; colors: string[] } | undefined,
 ): Promise<string | null> {
-  return put(`campaigns/${campaignSlug}/cover.svg`, campaignArtworkSvg(title));
+  return put(
+    `campaigns/${campaignSlug}/cover.svg`,
+    campaignArtworkSvg(campaignSlug, campaignArtworkItems(productSlugs, lookup)),
+  );
 }

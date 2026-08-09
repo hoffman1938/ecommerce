@@ -243,6 +243,8 @@ export class CatalogService {
           discountPercent: discountPercent(p.originalPriceMinor, currentPrice),
           currencyCode: p.currencyCode,
           imageUrl: p.images[0]?.url ?? null,
+          hoverImageUrl: p.images[1]?.url ?? null,
+          colors: [...new Set(p.variants.map((v) => v.color).filter(Boolean))] as string[],
           campaignId: running?.campaignId ?? null,
           campaignSlug: running ? running.campaign.slug : null,
           totalAvailable,
@@ -298,6 +300,8 @@ export class CatalogService {
       discountPercent: discountPercent(p.originalPriceMinor, currentPrice),
       currencyCode: p.currencyCode,
       imageUrl: p.images[0]?.url ?? null,
+      hoverImageUrl: p.images[1]?.url ?? null,
+      colors: [...new Set(p.variants.map((v) => v.color).filter(Boolean))] as string[],
       campaignId: running?.campaignId ?? null,
       campaignSlug: running ? running.campaign.slug : null,
       totalAvailable: p.variants.reduce(

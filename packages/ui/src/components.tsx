@@ -448,6 +448,55 @@ export const ImageIcon = icon(
     <path d="m3 13 4-4 3 3 2-2 5 5" />
   </>,
 );
+export const ChevronLeft = icon(<path d="m12.5 5-5 5 5 5" />);
+export const ChevronUp = icon(<path d="m5 12.5 5-5 5 5" />);
+export const PlusIcon = icon(<path d="M10 4v12M4 10h12" />);
+export const MinusIcon = icon(<path d="M4 10h12" />);
+export const ZoomInIcon = icon(
+  <>
+    <circle cx="9" cy="9" r="5.25" />
+    <path d="m13 13 3.5 3.5M9 6.75v4.5M6.75 9h4.5" />
+  </>,
+);
+export const ZoomOutIcon = icon(
+  <>
+    <circle cx="9" cy="9" r="5.25" />
+    <path d="m13 13 3.5 3.5M6.75 9h4.5" />
+  </>,
+);
+export const ExpandIcon = icon(<path d="M8 3H3v5M12 3h5v5M12 17h5v-5M8 17H3v-5" />);
+export const FilterIcon = icon(
+  <>
+    <path d="M3 6h14M6 10h8M8.5 14h3" />
+  </>,
+);
+export const TruckIcon = icon(
+  <>
+    <path d="M2.5 5.5h8v7h-8z" />
+    <path d="M10.5 8h3l2 2.5v2h-5z" />
+    <circle cx="6" cy="14" r="1.4" />
+    <circle cx="13" cy="14" r="1.4" />
+  </>,
+);
+export const ReturnIcon = icon(
+  <>
+    <path d="M7 4 4 7l3 3" />
+    <path d="M4 7h7a4.5 4.5 0 0 1 0 9H6" />
+  </>,
+);
+export const ShieldIcon = icon(
+  <>
+    <path d="M10 3 4.5 5v4.5c0 3.2 2.3 5.6 5.5 6.8 3.2-1.2 5.5-3.6 5.5-6.8V5L10 3Z" />
+    <path d="m7.75 9.75 1.6 1.6 3-3.4" />
+  </>,
+);
+export const SlidersIcon = icon(
+  <>
+    <path d="M4 6h12M4 14h12" />
+    <circle cx="8" cy="6" r="1.75" />
+    <circle cx="13" cy="14" r="1.75" />
+  </>,
+);
 
 // --- Rating ----------------------------------------------------------------
 

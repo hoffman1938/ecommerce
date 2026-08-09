@@ -1,0 +1,72 @@
+'use client';
+
+import type { FreeShippingProgressDto } from '@outlet/types';
+import { CheckIcon, TruckIcon, formatMoney } from '@outlet/ui';
+
+/**
+ * Progress toward free delivery.
+ *
+ * The number it shows is the server's, computed from the real basket and the
+ * real threshold — there is no invented urgency here, only a fact the shopper
+ * would otherwise have to work out at checkout. Once qualified it stops nagging
+ * and simply confirms.
+ */
+export function FreeShippingBar({
+  progress,
+  currency,
+}: {
+  progress: FreeShippingProgressDto;
+  currency: string;
+}) {
+  const percent = progress.qualified
+    ? 100
+    : Math.max(
+        4,
+        Math.min(
+          100,
+          Math.round(
+            ((progress.thresholdMinor - progress.remainingMinor) / progress.thresholdMinor) * 100,
+          ),
+        ),
+      );
+
+  return (
+    <div>
+      <p className="flex items-center gap-2 text-xs">
+        {progress.qualified ? (
+          <>
+            <CheckIcon className="h-4 w-4 shrink-0 text-success-600" />
+            <span className="font-medium text-success-600">
+              Standard delivery is free on this order
+            </span>
+          </>
+        ) : (
+          <>
+            <TruckIcon className="h-4 w-4 shrink-0 text-ink-500" />
+            <span className="text-ink-600">
+              <span data-numeric className="font-semibold text-ink-950">
+                {formatMoney(progress.remainingMinor, currency)}
+              </span>{' '}
+              away from free standard delivery
+            </span>
+          </>
+        )}
+      </p>
+      <div
+        className="mt-2 h-1 overflow-hidden rounded-full bg-ink-100"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Progress toward free delivery"
+      >
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ease-out ${
+            progress.qualified ? 'bg-success-600' : 'bg-ink-950'
+          }`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  );
+}

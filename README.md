@@ -102,6 +102,23 @@ page, no money moves, nothing is sent to anyone.
 Customers see the simulated notifications and emails at **`/account/inbox`**; tracking numbers look
 like `SIM-GEO-100001` and order numbers like `OUT-100001`.
 
+## Product imagery
+
+The catalogue ships no photography. Every product, category, brand and campaign
+image is generated from `packages/catalog/src/artwork.ts` — a studio still per
+colourway, in three views (`front`, `back` and a fabric `detail` macro), lit and
+framed identically. Two properties are why generated art beats stock
+photography here: each colourway is exactly the colour the variant claims, and
+nothing is licensed from anyone.
+
+`pnpm --filter @outlet/storefront artwork` writes them to
+`apps/storefront/public/artwork/` (gitignored, ~3 MB, 346 files). `predev` and
+`prebuild` run it automatically, so it is not a step you have to remember. The
+API-backed stack uploads the same SVGs to MinIO/S3 during seeding instead.
+
+Swapping in real photography later means replacing the URLs the seed writes —
+nothing downstream cares where an image came from.
+
 ## Commands
 
 ```bash

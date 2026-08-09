@@ -11,7 +11,7 @@ import {
   skuFor,
 } from '@outlet/catalog';
 import { aggregateReviews, generateReviews, reviewKindForCategory } from '@outlet/domain';
-import { uploadProductImage } from './images';
+import { uploadProductImages } from './images';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -132,17 +132,37 @@ export async function seedCatalog(prisma: PrismaClient): Promise<void> {
     if (existingImages === 0) {
       let position = 0;
       for (const color of spec.colors) {
-        const uploaded = await uploadProductImage(spec, brand.name, color);
-        await prisma.productImage.create({
-          data: {
-            productId: product.id,
-            url: uploaded?.url ?? `/placeholders/${spec.slug}-${color.toLowerCase()}.svg`,
-            objectKey: uploaded?.objectKey,
-            altText: `${spec.name} in ${color}`,
-            position,
-          },
+        // Attaching each shot to a variant of its own colourway is what lets
+        // the storefront swap the gallery when a colour is picked.
+        const colorVariant = await prisma.productVariant.findFirst({
+          where: { productId: product.id, color },
+          orderBy: { position: 'asc' },
         });
-        position += 1;
+        const uploaded = await uploadProductImages(spec, brand.name, color);
+        // Object storage being unreachable must not leave a product with no
+        // imagery at all, so fall back to one placeholder per colourway.
+        const rows = uploaded.length
+          ? uploaded
+          : [
+              {
+                url: `/placeholders/${spec.slug}-${color.toLowerCase()}.svg`,
+                objectKey: undefined,
+                altText: `${spec.name} in ${color}`,
+              },
+            ];
+        for (const row of rows) {
+          await prisma.productImage.create({
+            data: {
+              productId: product.id,
+              variantId: colorVariant?.id,
+              url: row.url,
+              objectKey: 'objectKey' in row ? row.objectKey : undefined,
+              altText: row.altText,
+              position,
+            },
+          });
+          position += 1;
+        }
       }
     }
 

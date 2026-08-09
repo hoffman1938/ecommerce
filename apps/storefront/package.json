@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "artwork": "node ../../infrastructure/scripts/generate-artwork.mjs",
+    "predev": "pnpm run artwork",
     "dev": "next dev -p 3000",
+    "prebuild": "pnpm run artwork",
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",

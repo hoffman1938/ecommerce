@@ -2,11 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { ProductDetailDto, ProductListItemDto } from '@outlet/types';
-import { StarRating } from '@outlet/ui';
 import { serverGet } from '@/lib/server-api';
 import { productSlugs } from '@/lib/demo/queries';
-import { ProductPurchasePanel } from '@/components/product-purchase-panel';
-import { ProductGallery } from '@/components/product-gallery';
+import { ProductDetailTop } from '@/components/product-detail-top';
 import { ProductReviews } from '@/components/product-reviews';
 import { ProductGrid } from '@/components/product-card';
 import { Section, SectionHeader } from '@/components/section';
@@ -74,7 +72,9 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
   ];
 
   return (
-    <div className="container-page py-5 lg:py-8">
+    // Bottom padding on small screens clears the sticky Add to bag bar, so the
+    // last section is never trapped underneath it.
+    <div className="container-page py-5 pb-24 lg:py-8 lg:pb-8">
       <TrackProductView
         slug={product.slug}
         productId={product.id}
@@ -124,71 +124,43 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
         </ol>
       </nav>
 
-      <div className="grid gap-8 lg:grid-cols-2 lg:gap-14">
-        <div className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:self-start">
-          <ProductGallery images={product.images} productName={product.name} />
-        </div>
+      <ProductDetailTop product={product} />
 
-        <div className="min-w-0">
-          <Link
-            href={`/brand/${product.brand.slug}`}
-            className="eyebrow transition-colors hover:text-ink-950"
-          >
-            {product.brand.name}
-          </Link>
-          <h1 className="mt-2.5 text-3xl font-extrabold leading-[1.02] tracking-[-0.032em] text-ink-950 lg:text-4xl">
-            {product.name}
-          </h1>
+      {/* Long-form content spans the page rather than stacking under the buying
+          column, which is what used to leave a column-height void beside the
+          sticky gallery. */}
+      {product.description || rows.length > 0 ? (
+        <section className="mt-14 border-t border-ink-200 pt-8 lg:mt-20">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
+            {product.description ? (
+              <div>
+                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950">
+                  About this piece
+                </h2>
+                <p className="mt-3 max-w-prose whitespace-pre-line text-[15px] leading-relaxed text-ink-600">
+                  {product.description}
+                </p>
+              </div>
+            ) : null}
 
-          {/* Jumps to the reviews rather than repeating them — the rating here
-              is a credibility signal, not the content. */}
-          {product.ratingAverage !== null && product.reviewCount > 0 ? (
-            <a href="#reviews" className="group mt-3 inline-flex items-center gap-2">
-              <StarRating value={product.ratingAverage} size="md" />
-              <span data-numeric className="text-sm text-ink-600 group-hover:text-ink-950">
-                {product.ratingAverage.toFixed(1)}
-              </span>
-              <span
-                data-numeric
-                className="text-sm text-ink-500 underline underline-offset-2 group-hover:text-ink-950"
-              >
-                ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
-              </span>
-            </a>
-          ) : null}
-
-          {product.shortDescription ? (
-            <p className="mt-3.5 max-w-md text-lg text-ink-600">{product.shortDescription}</p>
-          ) : null}
-
-          <div className="mt-7 border-t border-ink-200 pt-7">
-            <ProductPurchasePanel product={product} />
+            {rows.length > 0 ? (
+              <div>
+                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950">
+                  Product details
+                </h2>
+                <dl className="mt-3 divide-y divide-ink-100 border-t border-ink-100 text-sm">
+                  {rows.map(([label, value]) => (
+                    <div key={label} className="flex gap-4 py-3">
+                      <dt className="w-28 shrink-0 text-ink-500">{label}</dt>
+                      <dd className="min-w-0 text-ink-800">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : null}
           </div>
-
-          {product.description ? (
-            <section className="mt-10 border-t border-ink-200 pt-7">
-              <h2 className="text-sm font-semibold text-ink-950">Description</h2>
-              <p className="mt-2.5 whitespace-pre-line text-sm leading-relaxed text-ink-600">
-                {product.description}
-              </p>
-            </section>
-          ) : null}
-
-          {rows.length > 0 ? (
-            <section className="mt-8 border-t border-ink-200 pt-7">
-              <h2 className="text-sm font-semibold text-ink-950">Details</h2>
-              <dl className="mt-3 divide-y divide-ink-100 text-sm">
-                {rows.map(([label, value]) => (
-                  <div key={label} className="flex gap-4 py-2.5">
-                    <dt className="w-32 shrink-0 text-ink-500">{label}</dt>
-                    <dd className="min-w-0 text-ink-800">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          ) : null}
-        </div>
-      </div>
+        </section>
+      ) : null}
 
       <ProductReviews
         slug={product.slug}

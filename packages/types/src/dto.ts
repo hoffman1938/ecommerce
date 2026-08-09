@@ -88,6 +88,13 @@ export interface ProductListItemDto {
   discountPercent: number;
   currencyCode: string;
   imageUrl: string | null;
+  /**
+   * A second shot, revealed when a listing tile is hovered. Null when the
+   * product only has one image.
+   */
+  hoverImageUrl: string | null;
+  /** Colourways offered, so a tile can say "3 colours" without a second call. */
+  colors: string[];
   campaignId: string | null;
   campaignSlug: string | null;
   totalAvailable: number;

@@ -32,9 +32,10 @@ import {
   productBySlug,
   type DemoCampaign,
   type DemoProduct,
+  brandImageUrl,
+  categoryImageUrl,
   type DemoVariant,
 } from './data';
-import { brandArtworkDataUri, categoryArtworkDataUri } from '@outlet/catalog';
 import { consumedFor, simNow } from './store';
 
 /** Seeded stock minus whatever paid demo orders have consumed. */
@@ -111,6 +112,10 @@ function toListItem(product: DemoProduct, now: number): ProductListItemDto {
     discountPercent: pricing.discountPercent,
     currencyCode: CURRENCY_CODE,
     imageUrl: product.images[0]?.url ?? null,
+    // The hover shot is the next view of the *same* colourway where one exists,
+    // so hovering shows the garment from the back rather than in another colour.
+    hoverImageUrl: product.images[1]?.url ?? null,
+    colors: [...new Set(product.variants.map((v) => v.color))],
     campaignId: pricing.campaignId,
     campaignSlug: pricing.campaignSlug,
     totalAvailable: totalAvailableFor(product),
@@ -129,7 +134,7 @@ export function listBrands(): BrandDto[] {
     slug: b.slug,
     description: `${b.name} outlet deals.`,
     logoUrl: null,
-    imageUrl: brandArtworkDataUri(b.name),
+    imageUrl: brandImageUrl(b.slug),
     isFeatured: b.isFeatured,
   }));
 }
@@ -146,14 +151,14 @@ export function listCategories(): CategoryDto[] {
     slug: c.slug,
     parentId: null,
     position: c.position,
-    imageUrl: categoryArtworkDataUri(c.slug, c.name),
+    imageUrl: categoryImageUrl(c.slug),
     children: CATEGORIES.filter((child) => child.parentSlug === c.slug).map((child) => ({
       id: `cat_${child.slug}`,
       name: child.name,
       slug: child.slug,
       parentId: `cat_${c.slug}`,
       position: child.position,
-      imageUrl: categoryArtworkDataUri(child.slug, child.name),
+      imageUrl: categoryImageUrl(child.slug),
     })),
   }));
 }
@@ -168,7 +173,7 @@ export function getCategory(slug: string): CategoryDto | null {
     slug: spec.slug,
     parentId: spec.parentSlug ? `cat_${spec.parentSlug}` : null,
     position: spec.position,
-    imageUrl: categoryArtworkDataUri(spec.slug, spec.name),
+    imageUrl: categoryImageUrl(spec.slug),
   };
 }
 
@@ -334,12 +339,15 @@ export function getProduct(slug: string, now = simNow()): ProductDetailDto | nul
     taxClass: 'STANDARD',
     seoTitle: product.seoTitle,
     seoDescription: product.seoDescription,
+    // Each shot is attached to a variant of its own colourway, which is how the
+    // gallery knows to swap when a colour is picked. Any variant of the colour
+    // will do — they share the same imagery.
     images: product.images.map((image) => ({
       id: image.id,
       url: image.url,
       altText: image.altText,
       position: image.position,
-      variantId: null,
+      variantId: product.variants.find((v) => v.color === image.color)?.id ?? null,
     })),
     variants: product.variants.map((variant) => ({
       id: variant.id,

@@ -1,8 +1,9 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
-import { CheckIcon, CloseIcon, cx } from '@outlet/ui';
+import { useCallback, useEffect, useState } from 'react';
+import { COLOR_HEX } from '@outlet/catalog';
+import { CheckIcon, ChevronDown, CloseIcon, cx } from '@outlet/ui';
 import { track } from '@/lib/analytics';
 
 export const SORTS = [
@@ -29,18 +30,25 @@ const DISCOUNTS = [
   ['50', '50% or more'],
 ] as const;
 
-/** Matches the swatch colours used by the seeded catalog imagery. */
-const COLORS: Array<[string, string]> = [
-  ['Black', '#1f2937'],
-  ['White', '#e5e7eb'],
-  ['Grey', '#6b7280'],
-  ['Navy', '#1e3a5f'],
-  ['Blue', '#2563eb'],
-  ['Red', '#dc2626'],
-  ['Green', '#16a34a'],
-  ['Pink', '#ec4899'],
-  ['Beige', '#d6c7a1'],
-  ['Orange', '#ea580c'],
+/**
+ * Swatches come from the catalogue's own colour table, so the dot in the filter
+ * is literally the colour the product artwork is rendered in. Keeping a second
+ * hand-maintained list here is how the two drift apart.
+ */
+const COLORS: Array<[string, string]> = Object.entries(COLOR_HEX);
+
+/** Featured brands, in the order the storefront presents them elsewhere. */
+const BRANDS: Array<[string, string]> = [
+  ['adidas', 'Adidas'],
+  ['nike', 'Nike'],
+  ['puma', 'Puma'],
+  ['tommy-hilfiger', 'Tommy Hilfiger'],
+  ['calvin-klein', 'Calvin Klein'],
+  ['levis', 'Levi’s'],
+  ['new-balance', 'New Balance'],
+  ['the-north-face', 'The North Face'],
+  ['lacoste', 'Lacoste'],
+  ['champion', 'Champion'],
 ];
 
 const RATINGS = [
@@ -49,9 +57,12 @@ const RATINGS = [
 ] as const;
 
 const FILTER_KEYS = [
+  'brand',
   'size',
   'color',
   'targetGroup',
+  'minPrice',
+  'maxPrice',
   'minDiscount',
   'minRating',
   'inStock',
@@ -91,11 +102,53 @@ export function useFilters() {
   return { params, setParam, clearAll, activeCount };
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+/**
+ * A collapsible facet group.
+ *
+ * Eight expanded groups make a sidebar taller than the viewport, which pushes
+ * everything below the third facet out of sight and turns the whole panel into
+ * a scroll-within-a-scroll. Groups whose contents are long start closed, and a
+ * group that already has something applied always starts open — otherwise a
+ * filter could be in effect with no visible sign of it.
+ */
+function Group({
+  title,
+  defaultOpen = true,
+  badge,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  /** Shown beside the title when the group is collapsed but active. */
+  badge?: string | null;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen || Boolean(badge));
+
   return (
-    <div className="border-t border-ink-200 py-5 first:border-t-0 first:pt-0">
-      <h3 className="mb-3 text-sm font-semibold text-ink-950">{title}</h3>
-      {children}
+    <div className="border-t border-ink-200 py-4 first:border-t-0 first:pt-0">
+      <h3>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex w-full items-center justify-between gap-2 py-1 text-left text-sm font-semibold text-ink-950"
+        >
+          <span className="flex items-baseline gap-2">
+            {title}
+            {!open && badge ? (
+              <span className="truncate text-xs font-normal text-ink-500">{badge}</span>
+            ) : null}
+          </span>
+          <ChevronDown
+            className={cx(
+              'h-4 w-4 shrink-0 text-ink-400 transition-transform',
+              open && 'rotate-180',
+            )}
+          />
+        </button>
+      </h3>
+      {open ? <div className="mt-2.5">{children}</div> : null}
     </div>
   );
 }
@@ -128,11 +181,93 @@ function OptionRow({
   );
 }
 
+/**
+ * Min/max price.
+ *
+ * Kept as a local draft and only committed on submit or blur — pushing a new
+ * URL on every keystroke would refetch the grid four times while someone types
+ * "120", and each push would fight the cursor.
+ */
+function PriceRange() {
+  const { params, setParam } = useFilters();
+  const min = params.get('minPrice') ?? '';
+  const max = params.get('maxPrice') ?? '';
+  const [draft, setDraft] = useState({ min, max });
+
+  // Follow the URL when it changes elsewhere — a chip being removed, say.
+  useEffect(() => setDraft({ min, max }), [min, max]);
+
+  const commit = () => {
+    const nextMin = draft.min.trim();
+    const nextMax = draft.max.trim();
+    // A backwards range returns nothing and looks broken; swap it instead.
+    const lo = Number(nextMin);
+    const hi = Number(nextMax);
+    const swap = nextMin && nextMax && Number.isFinite(lo) && Number.isFinite(hi) && lo > hi;
+    setParam('minPrice', (swap ? nextMax : nextMin) || null);
+    setParam('maxPrice', (swap ? nextMin : nextMax) || null);
+  };
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        commit();
+      }}
+      className="flex items-center gap-2"
+    >
+      <label className="flex-1">
+        <span className="sr-only">Minimum price</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          placeholder="Min"
+          value={draft.min}
+          onChange={(e) => setDraft((d) => ({ ...d, min: e.target.value }))}
+          onBlur={commit}
+          className="h-9 w-full rounded bg-ink-25 px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 placeholder:text-ink-400 focus:ring-ink-950"
+        />
+      </label>
+      <span aria-hidden="true" className="text-ink-400">
+        –
+      </span>
+      <label className="flex-1">
+        <span className="sr-only">Maximum price</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          placeholder="Max"
+          value={draft.max}
+          onChange={(e) => setDraft((d) => ({ ...d, max: e.target.value }))}
+          onBlur={commit}
+          className="h-9 w-full rounded bg-ink-25 px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 placeholder:text-ink-400 focus:ring-ink-950"
+        />
+      </label>
+      <button type="submit" className="sr-only">
+        Apply price range
+      </button>
+    </form>
+  );
+}
+
 export function FilterPanel() {
   const { params, setParam } = useFilters();
   const current = (key: string) => params.get(key);
   const toggle = (key: string, value: string) =>
     setParam(key, current(key) === value ? null : value);
+
+  const minPrice = current('minPrice');
+  const maxPrice = current('maxPrice');
+  const priceBadge =
+    minPrice && maxPrice
+      ? `€${minPrice}–€${maxPrice}`
+      : minPrice
+        ? `From €${minPrice}`
+        : maxPrice
+          ? `Up to €${maxPrice}`
+          : null;
 
   return (
     <div>
@@ -148,7 +283,28 @@ export function FilterPanel() {
         </label>
       </Group>
 
-      <Group title="Size">
+      <Group
+        title="Brand"
+        defaultOpen={false}
+        badge={BRANDS.find(([s]) => s === current('brand'))?.[1] ?? null}
+      >
+        <ul className="space-y-0.5">
+          {BRANDS.map(([slug, name]) => (
+            <OptionRow
+              key={slug}
+              label={name}
+              selected={current('brand') === slug}
+              onSelect={() => toggle('brand', slug)}
+            />
+          ))}
+        </ul>
+      </Group>
+
+      <Group title="Price" defaultOpen={false} badge={priceBadge}>
+        <PriceRange />
+      </Group>
+
+      <Group title="Size" badge={current('size') ? `Size ${current('size')}` : null}>
         <div className="flex flex-wrap gap-1.5">
           {SIZES.map((size) => {
             const selected = current('size') === size;
@@ -172,7 +328,7 @@ export function FilterPanel() {
         </div>
       </Group>
 
-      <Group title="Colour">
+      <Group title="Colour" defaultOpen={false} badge={current('color')}>
         <ul className="space-y-0.5">
           {COLORS.map(([name, hex]) => {
             const selected = current('color') === name;
@@ -203,7 +359,11 @@ export function FilterPanel() {
         </ul>
       </Group>
 
-      <Group title="Discount">
+      <Group
+        title="Discount"
+        defaultOpen={false}
+        badge={current('minDiscount') ? `${current('minDiscount')}%+` : null}
+      >
         <ul className="space-y-0.5">
           {DISCOUNTS.map(([value, label]) => (
             <OptionRow
@@ -216,7 +376,11 @@ export function FilterPanel() {
         </ul>
       </Group>
 
-      <Group title="Customer rating">
+      <Group
+        title="Customer rating"
+        defaultOpen={false}
+        badge={current('minRating') ? `${current('minRating')}★ & up` : null}
+      >
         <ul className="space-y-0.5">
           {RATINGS.map(([value, label]) => (
             <OptionRow
@@ -229,7 +393,11 @@ export function FilterPanel() {
         </ul>
       </Group>
 
-      <Group title="Audience">
+      <Group
+        title="Audience"
+        defaultOpen={false}
+        badge={GROUPS.find(([v]) => v === current('targetGroup'))?.[1] ?? null}
+      >
         <ul className="space-y-0.5">
           {GROUPS.map(([value, label]) => (
             <OptionRow
@@ -250,23 +418,38 @@ export function ActiveFilters() {
   const { params, setParam, clearAll, activeCount } = useFilters();
   if (activeCount === 0) return null;
 
-  const chips: Array<{ key: string; label: string }> = [];
+  // Each chip carries how to clear itself: a price range is one chip but two
+  // parameters, so a single key would leave half the filter applied.
+  const chips: Array<{ key: string; label: string; remove: () => void }> = [];
+  const chip = (key: string, label: string, keys: string[] = [key]) =>
+    chips.push({ key, label, remove: () => keys.forEach((k) => setParam(k, null)) });
+
+  const brand = params.get('brand');
+  if (brand) chip('brand', BRANDS.find(([s]) => s === brand)?.[1] ?? brand);
   const size = params.get('size');
-  if (size) chips.push({ key: 'size', label: `Size ${size}` });
-  const color = params.get('color');
-  if (color) chips.push({ key: 'color', label: color });
-  const group = params.get('targetGroup');
-  if (group) {
-    chips.push({
-      key: 'targetGroup',
-      label: GROUPS.find(([v]) => v === group)?.[1] ?? group,
-    });
+  if (size) chip('size', `Size ${size}`);
+  const minPrice = params.get('minPrice');
+  const maxPrice = params.get('maxPrice');
+  if (minPrice || maxPrice) {
+    chip(
+      'price',
+      minPrice && maxPrice
+        ? `€${minPrice}–€${maxPrice}`
+        : minPrice
+          ? `From €${minPrice}`
+          : `Up to €${maxPrice}`,
+      ['minPrice', 'maxPrice'],
+    );
   }
+  const color = params.get('color');
+  if (color) chip('color', color);
+  const group = params.get('targetGroup');
+  if (group) chip('targetGroup', GROUPS.find(([v]) => v === group)?.[1] ?? group);
   const discount = params.get('minDiscount');
-  if (discount) chips.push({ key: 'minDiscount', label: `${discount}%+ off` });
+  if (discount) chip('minDiscount', `${discount}%+ off`);
   const rating = params.get('minRating');
-  if (rating) chips.push({ key: 'minRating', label: `${rating}★ & up` });
-  if (params.get('inStock') === 'true') chips.push({ key: 'inStock', label: 'In stock' });
+  if (rating) chip('minRating', `${rating}★ & up`);
+  if (params.get('inStock') === 'true') chip('inStock', 'In stock');
 
   return (
     <div className="flex flex-wrap items-center gap-2 pb-5">
@@ -274,7 +457,7 @@ export function ActiveFilters() {
         <button
           key={chip.key}
           type="button"
-          onClick={() => setParam(chip.key, null)}
+          onClick={chip.remove}
           className="group inline-flex h-7 items-center gap-1.5 rounded bg-ink-100 pl-2.5 pr-2 text-xs font-medium text-ink-800 transition-colors hover:bg-ink-200"
         >
           {chip.label}

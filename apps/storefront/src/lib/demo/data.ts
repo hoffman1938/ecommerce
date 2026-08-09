@@ -23,9 +23,9 @@ import {
   DEFAULT_COUNTRY_OF_ORIGIN,
   PRODUCTS,
   SETTINGS,
-  campaignArtworkDataUri,
+  PRODUCT_VIEWS,
   descriptionFor,
-  productArtworkDataUri,
+  productArtworkAlt,
   quantityFor,
   skuFor,
   type BrandSpec,
@@ -40,6 +40,33 @@ import {
 import type { TargetGroup } from '@outlet/types';
 
 export { CONTENT_PAGES, CURRENCY_CODE, SETTINGS };
+
+/**
+ * Where the generated artwork is served from.
+ *
+ * Real files under `public/`, not inline `data:` URIs. Inlining a ~10 KB SVG
+ * per image put ~350 KB of duplicated URI into every statically exported
+ * product page, and did not survive Next's HTML serialisation intact — the
+ * images arrived corrupted and failed to decode. See
+ * infrastructure/scripts/generate-artwork.mjs, which writes this directory.
+ */
+export const ARTWORK_BASE = '/artwork';
+
+export function productImageUrl(slug: string, color: string, view: string): string {
+  return `${ARTWORK_BASE}/products/${slug}/${color.toLowerCase()}-${view}.svg`;
+}
+
+export function categoryImageUrl(slug: string): string {
+  return `${ARTWORK_BASE}/categories/${slug}.svg`;
+}
+
+export function brandImageUrl(slug: string): string {
+  return `${ARTWORK_BASE}/brands/${slug}.svg`;
+}
+
+export function campaignImageUrl(slug: string): string {
+  return `${ARTWORK_BASE}/campaigns/${slug}.svg`;
+}
 export type DemoBrand = BrandSpec;
 export type DemoCategory = CategorySpec;
 export { BRANDS, CATEGORIES };
@@ -59,6 +86,8 @@ export interface DemoImage {
   id: string;
   url: string;
   altText: string;
+  /** Which colourway this shot belongs to, so picking a colour can drive the gallery. */
+  color: string;
   position: number;
 }
 
@@ -157,17 +186,22 @@ export const PRODUCT_LIST: DemoProduct[] = PRODUCTS.map((spec, productIndex) => 
     }
   }
 
-  const images: DemoImage[] = spec.colors.map((color, position) => ({
-    id: `img_${spec.slug}_${position}`,
-    url: productArtworkDataUri({
-      shape: spec.shape,
-      color,
-      brandName: brand.name,
-      productName: spec.name,
+  // Each colourway ships a front, back and fabric-detail shot, so the gallery
+  // and its zoom viewer have genuine content rather than one image per colour.
+  // Colour order matters: the first colourway's views come first, which is what
+  // the card thumbnail and the PDP's default selection show.
+  const images: DemoImage[] = spec.colors.flatMap((color, colorIndex) =>
+    PRODUCT_VIEWS.map((view, viewIndex) => {
+      const position = colorIndex * PRODUCT_VIEWS.length + viewIndex;
+      return {
+        id: `img_${spec.slug}_${color.toLowerCase()}_${view}`,
+        url: productImageUrl(spec.slug, color, view),
+        altText: productArtworkAlt(spec.name, color, view),
+        color,
+        position,
+      };
     }),
-    altText: `${spec.name} in ${color}`,
-    position,
-  }));
+  );
 
   const generated = generateReviews({
     slug: spec.slug,
@@ -227,7 +261,7 @@ export const CAMPAIGN_LIST: DemoCampaign[] = CAMPAIGNS.map((spec) => {
     slug: spec.slug,
     shortDescription: spec.shortDescription,
     description: `${spec.shortDescription}\n\nCampaign prices apply only while the campaign is running and stocks last.`,
-    coverImageUrl: campaignArtworkDataUri(spec.title),
+    coverImageUrl: campaignImageUrl(spec.slug),
     startsInDays: spec.startsInDays,
     endsInDays: spec.endsInDays,
     position: spec.position,
