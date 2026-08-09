@@ -8,9 +8,21 @@
  */
 const isDemoExport = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
+/**
+ * Serve the panel under a sub-path (`ADMIN_BASE_PATH=/admin`) so the demo build
+ * can be nested inside the storefront's export and share one Pages project and
+ * one domain. Next rewrites its own links, router pushes and asset URLs to
+ * match, so nothing in the app needs to know.
+ *
+ * Unset — the default — the panel owns the domain root, which is what a
+ * standalone deployment wants.
+ */
+const basePath = process.env.ADMIN_BASE_PATH || '';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  ...(basePath ? { basePath } : {}),
   // Cloudflare Pages-compatible choices mirror the storefront app; see
   // /infrastructure/cloudflare/admin-pages.md.
   images: { unoptimized: true },
