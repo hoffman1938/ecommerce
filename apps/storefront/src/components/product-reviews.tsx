@@ -194,6 +194,29 @@ export function ProductReviews({
                       </>
                     ) : null}
                   </p>
+
+                  {/* Shop response, written in the admin panel. Indented and
+                      tinted so it reads as a reply rather than a second review
+                      competing with the customer's. */}
+                  {review.adminReply ? (
+                    <div className="mt-3 border-l-2 border-ink-300 bg-ink-50 py-3 pl-4 pr-3">
+                      <p className="text-2xs font-semibold uppercase tracking-[0.07em] text-ink-500">
+                        Response from Outlet
+                        {review.adminReplyAt ? (
+                          <>
+                            {' '}
+                            <span aria-hidden="true">·</span>{' '}
+                            <span data-numeric className="font-normal normal-case tracking-normal">
+                              {relativeDate(review.adminReplyAt)}
+                            </span>
+                          </>
+                        ) : null}
+                      </p>
+                      <p className="mt-1.5 text-sm leading-relaxed text-ink-700">
+                        {review.adminReply}
+                      </p>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>

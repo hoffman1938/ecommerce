@@ -24,6 +24,10 @@ export const PERMISSION_KEYS = [
   'customers.support',
   'coupons.view',
   'coupons.manage',
+  'reviews.view',
+  'reviews.moderate',
+  'reviews.reply',
+  'reviews.delete',
   'content.manage',
   'settings.update',
   'audit_logs.view',
@@ -70,6 +74,21 @@ export const ROLE_DEFINITIONS: Record<string, readonly string[]> = {
     'customers.support',
     'returns.view',
     'reservations.view',
+    // Support answers reviews as the shop, but does not decide what stays up.
+    'reviews.view',
+    'reviews.reply',
+  ],
+  // Moderation is deliberately its own role: it is the one job that removes
+  // customer-authored content from the storefront, and it needs no access to
+  // orders, money or inventory to do it.
+  Moderator: [
+    'dashboard.view',
+    'products.view',
+    'customers.view',
+    'reviews.view',
+    'reviews.moderate',
+    'reviews.reply',
+    'reviews.delete',
   ],
   'Marketing Manager': [
     'dashboard.view',
@@ -80,6 +99,7 @@ export const ROLE_DEFINITIONS: Record<string, readonly string[]> = {
     'coupons.manage',
     'content.manage',
     'products.view',
+    'reviews.view',
   ],
   'Finance Manager': [
     'dashboard.view',

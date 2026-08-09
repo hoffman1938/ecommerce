@@ -197,6 +197,60 @@ export const createRefundSchema = z.object({
 });
 export type CreateRefundInput = z.infer<typeof createRefundSchema>;
 
+// --- Reviews ---------------------------------------------------------------
+
+export const reviewStatusSchema = z.enum(['PENDING', 'PUBLISHED', 'REJECTED', 'HIDDEN']);
+
+export const adminReviewQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25),
+  q: z.string().trim().max(200).optional(),
+  status: reviewStatusSchema.optional(),
+  productId: z.string().trim().min(1).optional(),
+  rating: z.coerce.number().int().min(1).max(5).optional(),
+  /** "true" narrows to verified purchases, "false" to unverified. */
+  verified: z.enum(['true', 'false']).optional(),
+  /** Only rows shoppers have reported. */
+  reported: z.enum(['true']).optional(),
+  /** Only rows the shop has (not) answered. */
+  replied: z.enum(['true', 'false']).optional(),
+  sort: z
+    .enum(['newest', 'oldest', 'highest', 'lowest', 'reported', 'helpful'])
+    .default('newest'),
+});
+export type AdminReviewQueryInput = z.infer<typeof adminReviewQuerySchema>;
+
+export const reviewModerationSchema = z.object({
+  status: reviewStatusSchema,
+  /** Internal note explaining the decision; never shown to shoppers. */
+  note: z.string().trim().max(1000).optional(),
+});
+export type ReviewModerationInput = z.infer<typeof reviewModerationSchema>;
+
+export const reviewUpdateSchema = z.object({
+  rating: z.coerce.number().int().min(1).max(5).optional(),
+  title: z.string().trim().max(200).nullable().optional(),
+  body: z.string().trim().max(5000).optional(),
+  authorName: z.string().trim().min(1).max(120).optional(),
+});
+export type ReviewUpdateInput = z.infer<typeof reviewUpdateSchema>;
+
+export const reviewReplySchema = z.object({
+  body: z.string().trim().min(1).max(2000),
+});
+export type ReviewReplyInput = z.infer<typeof reviewReplySchema>;
+
+/**
+ * Bulk moderation. `delete` is separated from the status transitions because it
+ * is the only irreversible action and carries its own permission.
+ */
+export const reviewBulkSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(200),
+  action: z.enum(['publish', 'reject', 'hide', 'pending', 'delete', 'clearReports']),
+  note: z.string().trim().max(1000).optional(),
+});
+export type ReviewBulkInput = z.infer<typeof reviewBulkSchema>;
+
 // --- Settings / content ----------------------------------------------------
 
 export const siteSettingsSchema = z.object({

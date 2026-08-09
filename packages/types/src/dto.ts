@@ -139,6 +139,9 @@ export interface ReviewDto {
   isVerifiedPurchase: boolean;
   helpfulCount: number;
   createdAt: string;
+  /** Shop response written in the admin panel; null when unanswered. */
+  adminReply: string | null;
+  adminReplyAt: string | null;
 }
 
 /** Rating breakdown for the histogram on a product page. */

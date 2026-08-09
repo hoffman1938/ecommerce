@@ -405,6 +405,8 @@ export class CatalogService {
       isVerifiedPurchase: r.isVerifiedPurchase,
       helpfulCount: r.helpfulCount,
       createdAt: r.createdAt.toISOString(),
+      adminReply: r.adminReply,
+      adminReplyAt: r.adminReplyAt?.toISOString() ?? null,
     }));
 
     return {

@@ -32,6 +32,8 @@ import { AdminCampaignsController } from './modules/admin/admin-campaigns.contro
 import { AdminOrdersController } from './modules/admin/admin-orders.controller';
 import { AdminCustomersController } from './modules/admin/admin-customers.controller';
 import { AdminCouponsController } from './modules/admin/admin-coupons.controller';
+import { AdminReviewsController } from './modules/admin/admin-reviews.controller';
+import { AdminReviewsService } from './modules/admin/admin-reviews.service';
 import { AdminReturnsController } from './modules/admin/admin-returns.controller';
 import { AdminMiscController } from './modules/admin/admin-misc.controller';
 import { AdminDashboardService } from './modules/admin/admin-dashboard.service';
@@ -70,6 +72,7 @@ const config = loadConfig();
     AdminCustomersController,
     AdminCouponsController,
     AdminReturnsController,
+    AdminReviewsController,
     AdminMiscController,
   ],
   providers: [
@@ -87,6 +90,7 @@ const config = loadConfig();
     AdminCatalogService,
     AdminInventoryService,
     AdminDashboardService,
+    AdminReviewsService,
   ],
 })
 export class AppModule {}
