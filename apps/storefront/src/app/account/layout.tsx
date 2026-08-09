@@ -13,7 +13,8 @@ const NAV = [
   { href: '/account/addresses', label: 'Addresses' },
   { href: '/account/profile', label: 'Personal information' },
   { href: '/account/security', label: 'Password & security' },
-  { href: '/account/notifications', label: 'Notifications' },
+  { href: '/account/inbox', label: 'Notifications & inbox' },
+  { href: '/account/notifications', label: 'Notification settings' },
   { href: '/wishlist', label: 'Wishlist' },
 ];
 

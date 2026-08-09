@@ -24,7 +24,7 @@ export default function OrdersPage() {
           {orders.map((order) => (
             <Link
               key={order.id}
-              href={`/account/orders/${order.id}`}
+              href={`/account/orders/view?id=${order.id}`}
               className="flex items-center justify-between rounded border border-ink-200 bg-ink-25 p-4 hover:shadow-sm"
             >
               <div>

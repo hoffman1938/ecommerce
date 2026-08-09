@@ -81,7 +81,12 @@ export class AdminOrdersController {
     const [orders, total] = await Promise.all([
       this.prisma.order.findMany({
         where,
-        include: { items: true, payments: true, shipments: true },
+        include: {
+          items: true,
+          payments: true,
+          shipments: { include: { events: { orderBy: { occurredAt: 'asc' } } } },
+          statusHistory: { orderBy: { createdAt: 'asc' } },
+        },
         orderBy: { placedAt: 'desc' },
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
@@ -106,7 +111,7 @@ export class AdminOrdersController {
       include: {
         items: true,
         payments: { include: { events: { orderBy: { createdAt: 'asc' } } } },
-        shipments: true,
+        shipments: { include: { events: { orderBy: { occurredAt: 'asc' } } } },
         statusHistory: { orderBy: { createdAt: 'asc' } },
         refunds: true,
         returnRequests: true,

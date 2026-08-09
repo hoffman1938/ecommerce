@@ -754,6 +754,7 @@ model Order {
   placedAt        DateTime       @default(now())
   paidAt          DateTime?
   cancelledAt     DateTime?
+  cancelReason    String?
   version         Int            @default(0)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -870,10 +871,27 @@ model Shipment {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order  Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  events ShipmentEvent[]
 
   @@index([orderId])
   @@map("shipments")
+}
+
+/// A carrier scan. Simulated end to end — no parcel exists and no carrier is
+/// contacted; these rows are what the customer's tracking timeline renders.
+model ShipmentEvent {
+  id         String   @id @default(cuid())
+  shipmentId String
+  code       String
+  label      String
+  location   String?
+  occurredAt DateTime @default(now())
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId, occurredAt])
+  @@map("shipment_events")
 }
 
 // ---------------------------------------------------------------------------

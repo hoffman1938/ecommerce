@@ -13,7 +13,12 @@
  */
 
 const STORE_KEY = 'outlet_demo_state';
-const STORE_VERSION = 1;
+/**
+ * Bumped whenever the shape changes. A mismatch resets to a fresh state rather
+ * than migrating — this is a sandbox, and a clean reset is the behaviour a QA
+ * tester wants from a schema change anyway.
+ */
+const STORE_VERSION = 2;
 
 export interface DemoUser {
   id: string;
@@ -98,14 +103,68 @@ export interface DemoOrder {
   placedAt: string;
   paidAt: string | null;
   createdAt: string;
-  shipments: Array<{
-    id: string;
-    carrier: string | null;
-    trackingNumber: string | null;
-    status: string;
-    shippedAt: string | null;
-    deliveredAt: string | null;
-  }>;
+  /** Every state the order has passed through, oldest first. */
+  timeline: DemoOrderEvent[];
+  shipments: DemoShipment[];
+  cancelledAt: string | null;
+  cancelReason: string | null;
+}
+
+export interface DemoOrderEvent {
+  status: string;
+  at: string;
+  note: string | null;
+}
+
+export interface DemoShipment {
+  id: string;
+  carrier: string | null;
+  trackingNumber: string | null;
+  status: string;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+  /** Carrier scan history shown on the tracking timeline. */
+  events: Array<{ code: string; label: string; at: string; location: string | null }>;
+}
+
+export interface DemoNotification {
+  id: string;
+  /** Null for guest checkouts, which still see their own notifications. */
+  userId: string | null;
+  type: string;
+  title: string;
+  body: string;
+  orderNumber: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+/**
+ * A simulated email. Nothing is ever sent: these exist so a tester can open the
+ * message a real system would have delivered.
+ */
+export interface DemoEmail {
+  id: string;
+  to: string;
+  subject: string;
+  body: string;
+  template: string;
+  orderNumber: string | null;
+  readAt: string | null;
+  sentAt: string;
+}
+
+/** Audit trail. Every state change appends one of these. */
+export interface DemoEvent {
+  id: string;
+  type: string;
+  entityType: string;
+  entityId: string;
+  actor: 'system' | 'customer' | 'qa';
+  previousState: string | null;
+  newState: string | null;
+  metadata: Record<string, unknown> | null;
+  at: string;
 }
 
 export interface DemoPayment {
@@ -171,6 +230,15 @@ export interface DemoState {
   verifyTokens: Record<string, string>;
   newsletterEmails: string[];
   orderSequence: number;
+  notifications: DemoNotification[];
+  emails: DemoEmail[];
+  events: DemoEvent[];
+  /**
+   * Milliseconds added to the real clock. The QA console's time-travel controls
+   * move this, and every demo module reads `simNow()` rather than `Date.now()`
+   * so reservations, campaign windows and fulfilment all shift together.
+   */
+  clockOffsetMs: number;
 }
 
 /**
@@ -230,6 +298,10 @@ function initialState(): DemoState {
     verifyTokens: {},
     newsletterEmails: [],
     orderSequence: 100_001,
+    notifications: [],
+    emails: [],
+    events: [],
+    clockOffsetMs: 0,
   };
 }
 
@@ -289,6 +361,90 @@ export function mutate<T>(fn: (state: DemoState) => T): T {
  */
 export function consumedFor(variantId: string): number {
   return readState().stockConsumed[variantId] ?? 0;
+}
+
+// --- Simulated clock --------------------------------------------------------
+
+/**
+ * The sandbox's notion of "now": real time plus whatever offset the QA console
+ * has travelled. Every demo module uses this instead of `Date.now()`, so
+ * advancing the clock ages reservations, campaigns and fulfilment consistently
+ * rather than only the thing being tested.
+ */
+export function simNow(): number {
+  return Date.now() + readState().clockOffsetMs;
+}
+
+/** Move the simulated clock forward. Negative values are rejected — rewinding
+ *  would put already-recorded timestamps in the future. */
+export function advanceClock(ms: number): number {
+  if (ms < 0) throw new DemoApiError(400, 'The simulated clock cannot run backwards.');
+  return mutate((state) => {
+    state.clockOffsetMs += ms;
+    return state.clockOffsetMs;
+  });
+}
+
+export function resetClock(): void {
+  mutate((state) => {
+    state.clockOffsetMs = 0;
+  });
+}
+
+// --- Audit trail, notifications and simulated email -------------------------
+
+const EVENT_LIMIT = 500;
+
+/** Append to the audit trail. Callers pass the state so this joins their write. */
+export function recordEvent(
+  state: DemoState,
+  event: Omit<DemoEvent, 'id' | 'at'> & { at?: string },
+): DemoEvent {
+  const entry: DemoEvent = {
+    id: newId('evt'),
+    at: event.at ?? new Date(Date.now() + state.clockOffsetMs).toISOString(),
+    type: event.type,
+    entityType: event.entityType,
+    entityId: event.entityId,
+    actor: event.actor,
+    previousState: event.previousState ?? null,
+    newState: event.newState ?? null,
+    metadata: event.metadata ?? null,
+  };
+  state.events.push(entry);
+  // Bounded so a long QA session cannot fill localStorage with history.
+  if (state.events.length > EVENT_LIMIT) {
+    state.events.splice(0, state.events.length - EVENT_LIMIT);
+  }
+  return entry;
+}
+
+export function pushNotification(
+  state: DemoState,
+  notification: Omit<DemoNotification, 'id' | 'createdAt' | 'readAt'>,
+): void {
+  state.notifications.push({
+    ...notification,
+    id: newId('ntf'),
+    readAt: null,
+    createdAt: new Date(Date.now() + state.clockOffsetMs).toISOString(),
+  });
+}
+
+/**
+ * "Send" an email — i.e. drop it in the in-app tester inbox. Nothing leaves the
+ * browser; there is no transport here at all, by design.
+ */
+export function deliverEmail(
+  state: DemoState,
+  email: Omit<DemoEmail, 'id' | 'sentAt' | 'readAt'>,
+): void {
+  state.emails.push({
+    ...email,
+    id: newId('eml'),
+    readAt: null,
+    sentAt: new Date(Date.now() + state.clockOffsetMs).toISOString(),
+  });
 }
 
 export function currentUser(state: DemoState = readState()): DemoUser | null {

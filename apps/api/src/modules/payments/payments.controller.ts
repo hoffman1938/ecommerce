@@ -21,7 +21,21 @@ import { SessionAuthGuard } from '../../common/auth.guard';
 import { OptionalAuth } from '../../common/decorators';
 
 const simulateSchema = z.object({
-  outcome: z.enum(['TEST-SUCCESS', 'TEST-FAIL', 'TEST-CANCEL', 'TEST-DELAYED']),
+  // Mirrors the test cards the mock payment page offers. Failure variants
+  // differ only in the reason shown to the customer.
+  outcome: z.enum([
+    'TEST-SUCCESS',
+    'TEST-DELAYED',
+    'TEST-CANCEL',
+    'TEST-FAIL',
+    'TEST-DECLINED',
+    'TEST-INSUFFICIENT-FUNDS',
+    'TEST-EXPIRED-CARD',
+    'TEST-INVALID-CARD',
+    'TEST-3DS-FAILED',
+    'TEST-PROVIDER-UNAVAILABLE',
+    'TEST-TIMEOUT',
+  ]),
 });
 
 @ApiTags('payments')
@@ -58,7 +72,7 @@ export class PaymentsController {
   @HttpCode(200)
   @ApiOperation({
     summary:
-      'Local test control used by the mock payment page: TEST-SUCCESS | TEST-FAIL | TEST-CANCEL | TEST-DELAYED',
+      'Local test control used by the mock payment page. TEST-SUCCESS, TEST-DELAYED and TEST-CANCEL resolve the payment; every other value fails it with a distinct reason.',
   })
   simulate(
     @Param('paymentId') paymentId: string,

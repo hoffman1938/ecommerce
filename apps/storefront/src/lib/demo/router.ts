@@ -12,7 +12,9 @@
 import * as account from './account';
 import * as auth from './auth';
 import * as cart from './cart';
+import * as inbox from './inbox';
 import * as orders from './orders';
+import * as simulation from './simulation';
 import { DemoApiError } from './store';
 import {
   getCampaign,
@@ -117,6 +119,48 @@ export function demoRequest(method: string, path: string, body?: unknown): unkno
       break;
     }
 
+    /**
+     * QA simulation controls. Demo-only by design: these have no counterpart in
+     * the real API, and a request to /simulation against it would 404.
+     */
+    case 'simulation': {
+      if (rest[0] === 'status' && verb === 'GET') return simulation.simulationStatus();
+      if (rest[0] === 'events' && verb === 'GET') {
+        return inbox.listEvents(Number(query.get('limit')) || 100);
+      }
+      if (rest[0] === 'returns' && verb === 'GET') return simulation.listReturnsForQa();
+      if (rest[0] === 'inventory') {
+        if (verb === 'GET') return simulation.listInventory(query.get('slug') ?? undefined);
+        if (verb === 'POST') {
+          return simulation.setStock(payload.variantId, Number(payload.available));
+        }
+      }
+      if (verb !== 'POST') break;
+      switch (rest[0]) {
+        case 'travel':
+          return simulation.travel(String(payload.amount));
+        case 'reset-time':
+          return simulation.resetTime();
+        case 'advance-order':
+          return simulation.advanceOrder(String(payload.order));
+        case 'set-order-stage':
+          return simulation.setOrderStage(String(payload.order), String(payload.stage));
+        case 'fail-delivery':
+          return simulation.failDelivery(String(payload.order));
+        case 'cancel-order':
+          return simulation.qaCancelOrder(String(payload.order));
+        case 'advance-return':
+          return simulation.advanceReturn(String(payload.rma));
+        case 'reject-return':
+          return simulation.rejectReturn(String(payload.rma));
+        case 'reset':
+          return simulation.resetSimulation(payload.target ?? 'all');
+        default:
+          break;
+      }
+      break;
+    }
+
     // --- Cart --------------------------------------------------------------
     case 'cart': {
       if (rest.length === 0) {
@@ -189,11 +233,23 @@ export function demoRequest(method: string, path: string, body?: unknown): unkno
       }
       if (rest[0] === 'orders') {
         if (verb === 'GET' && rest.length === 1) return orders.listOrders();
+        if (verb === 'POST' && rest[2] === 'cancel') {
+          return orders.cancelOrder(rest[1], payload?.reason);
+        }
         if (verb === 'GET' && rest[1]) return orders.orderById(rest[1]);
       }
       if (rest[0] === 'returns') {
         if (verb === 'GET' && rest.length === 1) return account.listReturns();
         if (verb === 'POST' && rest.length === 1) return account.createReturn(payload);
+      }
+      if (rest[0] === 'notifications') {
+        if (verb === 'GET' && rest.length === 1) return inbox.listNotifications();
+        if (verb === 'POST' && rest[1] === 'read-all') return inbox.markAllNotificationsRead();
+        if (verb === 'POST' && rest[2] === 'read') return inbox.markNotificationRead(rest[1]);
+      }
+      if (rest[0] === 'inbox') {
+        if (verb === 'GET' && rest.length === 1) return inbox.listEmails();
+        if (verb === 'POST' && rest[2] === 'read') return inbox.markEmailRead(rest[1]);
       }
       break;
     }

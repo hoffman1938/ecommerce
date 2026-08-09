@@ -302,9 +302,29 @@ export interface OrderDto {
   items: OrderItemDto[];
   payments: PaymentSummaryDto[];
   shipments: ShipmentDto[];
+  /** Every status the order has passed through, oldest first. */
+  timeline: OrderTimelineEntryDto[];
   placedAt: string;
   paidAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  /** Whether the customer can still cancel from their order page. */
+  isCancellable: boolean;
   createdAt: string;
+}
+
+export interface OrderTimelineEntryDto {
+  status: OrderStatus;
+  at: string;
+  note: string | null;
+}
+
+/** One carrier scan on a shipment's tracking history. */
+export interface ShipmentEventDto {
+  code: string;
+  label: string;
+  at: string;
+  location: string | null;
 }
 
 export interface PaymentSummaryDto {
@@ -324,6 +344,7 @@ export interface ShipmentDto {
   status: ShipmentStatus;
   shippedAt: string | null;
   deliveredAt: string | null;
+  events: ShipmentEventDto[];
 }
 
 export interface ReturnRequestDto {

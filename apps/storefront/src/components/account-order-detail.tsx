@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
-import { formatMoney, formatDate, Badge } from '@outlet/ui';
-import { api } from '@/lib/api';
+import { formatMoney, formatDate, Alert, Badge, Button } from '@outlet/ui';
+import { api, ApiError } from '@/lib/api';
+import { OrderTimeline } from '@/components/order-timeline';
 
 /**
  * Client half of /account/orders/[id]. Split out of page.tsx so the route file
@@ -13,11 +15,33 @@ import { api } from '@/lib/api';
  * 'use client' module cannot do and the static export requires.
  */
 export function AccountOrderDetail() {
-  const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const orderId = searchParams.get('id') ?? '';
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
   const { data: order, isLoading } = useQuery({
-    queryKey: ['account-order', params.id],
-    queryFn: () => api.get<OrderDto>(`/account/orders/${params.id}`),
+    queryKey: ['account-order', orderId],
+    queryFn: () => api.get<OrderDto>(`/account/orders/${orderId}`),
+    // Fulfilment advances on a timer, so the page keeps itself current rather
+    // than leaving a stale status until the customer reloads.
+    refetchInterval: 10_000,
   });
+
+  const cancel = async () => {
+    setCancelError(null);
+    setCancelling(true);
+    try {
+      const updated = await api.post<OrderDto>(`/account/orders/${orderId}/cancel`, {});
+      queryClient.setQueryData(['account-order', orderId], updated);
+      queryClient.invalidateQueries({ queryKey: ['account-orders'] });
+    } catch (err) {
+      setCancelError(err instanceof ApiError ? err.message : 'Could not cancel this order.');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   if (isLoading) return <p className="text-ink-500">Loading order…</p>;
   if (!order) return <p className="text-ink-500">Order not found.</p>;
@@ -41,6 +65,13 @@ export function AccountOrderDetail() {
           {order.status}
         </Badge>
       </div>
+
+      {order.status === 'CANCELLED' && order.cancelReason ? (
+        <Alert tone="warning">This order was cancelled — {order.cancelReason}</Alert>
+      ) : null}
+      {cancelError ? <Alert tone="error">{cancelError}</Alert> : null}
+
+      <OrderTimeline order={order} />
 
       <section className="rounded border border-ink-200 bg-ink-25 p-5">
         <h2 className="mb-3 font-semibold">Items</h2>
@@ -84,15 +115,15 @@ export function AccountOrderDetail() {
             {order.shippingAddress.postalCode} {order.shippingAddress.city},{' '}
             {order.shippingAddress.countryCode}
           </p>
-          {order.shipments.length > 0 ? (
-            <div className="mt-3 border-t border-ink-100 pt-3">
-              <h3 className="mb-1 font-medium">Shipment tracking</h3>
-              {order.shipments.map((s) => (
-                <p key={s.id} className="text-ink-600">
-                  {s.carrier ?? 'Carrier'} · {s.trackingNumber ?? 'tracking pending'} ·{' '}
-                  <Badge tone={s.status === 'DELIVERED' ? 'green' : 'blue'}>{s.status}</Badge>
-                </p>
-              ))}
+          {order.isCancellable ? (
+            <div className="mt-4 border-t border-ink-100 pt-3">
+              <Button variant="secondary" size="sm" onClick={cancel} loading={cancelling}>
+                Cancel this order
+              </Button>
+              <p className="mt-2 text-xs text-ink-500">
+                Cancelling releases the stock back to other customers. Once the parcel ships you
+                will need to request a return instead.
+              </p>
             </div>
           ) : null}
         </section>
