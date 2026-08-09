@@ -32,7 +32,7 @@ export default function AccountOverviewPage() {
                 <tr key={order.id} className="border-t border-ink-100">
                   <td className="py-2">
                     <Link
-                      href={`/account/orders/${order.id}`}
+                      href={`/account/orders/view?id=${order.id}`}
                       className="font-medium hover:underline"
                     >
                       {order.orderNumber}

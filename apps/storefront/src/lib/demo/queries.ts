@@ -32,9 +32,11 @@ import {
   productBySlug,
   type DemoCampaign,
   type DemoProduct,
+  brandImageUrl,
+  categoryImageUrl,
   type DemoVariant,
 } from './data';
-import { consumedFor } from './store';
+import { consumedFor, simNow } from './store';
 
 /** Seeded stock minus whatever paid demo orders have consumed. */
 export function availableFor(variant: DemoVariant): number {
@@ -67,7 +69,7 @@ function resolveCampaign(campaign: DemoCampaign, now: number): ResolvedCampaign 
   };
 }
 
-function resolvedCampaigns(now = Date.now()): ResolvedCampaign[] {
+function resolvedCampaigns(now = simNow()): ResolvedCampaign[] {
   return CAMPAIGN_LIST.map((c) => resolveCampaign(c, now)).sort((a, b) => a.position - b.position);
 }
 
@@ -110,6 +112,10 @@ function toListItem(product: DemoProduct, now: number): ProductListItemDto {
     discountPercent: pricing.discountPercent,
     currencyCode: CURRENCY_CODE,
     imageUrl: product.images[0]?.url ?? null,
+    // The hover shot is the next view of the *same* colourway where one exists,
+    // so hovering shows the garment from the back rather than in another colour.
+    hoverImageUrl: product.images[1]?.url ?? null,
+    colors: [...new Set(product.variants.map((v) => v.color))],
     campaignId: pricing.campaignId,
     campaignSlug: pricing.campaignSlug,
     totalAvailable: totalAvailableFor(product),
@@ -128,8 +134,13 @@ export function listBrands(): BrandDto[] {
     slug: b.slug,
     description: `${b.name} outlet deals.`,
     logoUrl: null,
+    imageUrl: brandImageUrl(b.slug),
     isFeatured: b.isFeatured,
   }));
+}
+
+export function getBrand(slug: string): BrandDto | null {
+  return listBrands().find((brand) => brand.slug === slug) ?? null;
 }
 
 export function listCategories(): CategoryDto[] {
@@ -140,14 +151,30 @@ export function listCategories(): CategoryDto[] {
     slug: c.slug,
     parentId: null,
     position: c.position,
+    imageUrl: categoryImageUrl(c.slug),
     children: CATEGORIES.filter((child) => child.parentSlug === c.slug).map((child) => ({
       id: `cat_${child.slug}`,
       name: child.name,
       slug: child.slug,
       parentId: `cat_${c.slug}`,
       position: child.position,
+      imageUrl: categoryImageUrl(child.slug),
     })),
   }));
+}
+
+/** Flat lookup including child categories, for page headers. */
+export function getCategory(slug: string): CategoryDto | null {
+  const spec = CATEGORIES.find((c) => c.slug === slug);
+  if (!spec) return null;
+  return {
+    id: `cat_${spec.slug}`,
+    name: spec.name,
+    slug: spec.slug,
+    parentId: spec.parentSlug ? `cat_${spec.parentSlug}` : null,
+    position: spec.position,
+    imageUrl: categoryImageUrl(spec.slug),
+  };
 }
 
 /** A category filter matches the category itself and any of its children. */
@@ -179,7 +206,7 @@ export interface ListProductsParams {
 
 export function listProducts(
   params: ListProductsParams = {},
-  now = Date.now(),
+  now = simNow(),
 ): Paginated<ProductListItemDto> {
   let items = PRODUCT_LIST.map((product) => ({ product, dto: toListItem(product, now) }));
 
@@ -295,7 +322,7 @@ export function listProducts(
   };
 }
 
-export function getProduct(slug: string, now = Date.now()): ProductDetailDto | null {
+export function getProduct(slug: string, now = simNow()): ProductDetailDto | null {
   const product = productBySlug.get(slug);
   if (!product) return null;
   const base = toListItem(product, now);
@@ -312,12 +339,15 @@ export function getProduct(slug: string, now = Date.now()): ProductDetailDto | n
     taxClass: 'STANDARD',
     seoTitle: product.seoTitle,
     seoDescription: product.seoDescription,
+    // Each shot is attached to a variant of its own colourway, which is how the
+    // gallery knows to swap when a colour is picked. Any variant of the colour
+    // will do — they share the same imagery.
     images: product.images.map((image) => ({
       id: image.id,
       url: image.url,
       altText: image.altText,
       position: image.position,
-      variantId: null,
+      variantId: product.variants.find((v) => v.color === image.color)?.id ?? null,
     })),
     variants: product.variants.map((variant) => ({
       id: variant.id,
@@ -349,7 +379,7 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 export function getProductReviews(
   slug: string,
   params: { sort?: string; page?: string; pageSize?: string } = {},
-  now = Date.now(),
+  now = simNow(),
 ): ProductReviewsDto | null {
   const product = productBySlug.get(slug);
   if (!product) return null;
@@ -407,7 +437,7 @@ export function getProductReviews(
  * then whatever else is in stock, scored so closer matches win. No ML, no
  * randomness: the same product always recommends the same neighbours.
  */
-export function relatedProducts(slug: string, limit = 4, now = Date.now()): ProductListItemDto[] {
+export function relatedProducts(slug: string, limit = 4, now = simNow()): ProductListItemDto[] {
   const source = productBySlug.get(slug);
   if (!source) return [];
 
@@ -438,7 +468,7 @@ export function relatedProducts(slug: string, limit = 4, now = Date.now()): Prod
 export function recommendedProducts(
   signals: { recentSlugs?: string[]; wishlistSlugs?: string[]; cartSlugs?: string[] } = {},
   limit = 4,
-  now = Date.now(),
+  now = simNow(),
 ): ProductListItemDto[] {
   const seen = new Set([
     ...(signals.recentSlugs ?? []),
@@ -485,7 +515,7 @@ export function recommendedProducts(
 // --- Search suggestions ----------------------------------------------------
 
 /** Prefix-and-substring matching over names, brands, categories and SKUs. */
-export function searchSuggestions(query: string, now = Date.now()): SearchSuggestionsDto {
+export function searchSuggestions(query: string, now = simNow()): SearchSuggestionsDto {
   const needle = query.trim().toLowerCase();
   if (needle.length < 2) return { products: [], brands: [], categories: [] };
 
@@ -546,7 +576,7 @@ function toCampaignDto(campaign: ResolvedCampaign): CampaignDto {
   };
 }
 
-export function listCampaigns(status?: string, now = Date.now()): CampaignDto[] {
+export function listCampaigns(status?: string, now = simNow()): CampaignDto[] {
   return resolvedCampaigns(now)
     .filter((campaign) => {
       if (status === 'active') return campaign.isActive;
@@ -558,7 +588,7 @@ export function listCampaigns(status?: string, now = Date.now()): CampaignDto[] 
 
 export function getCampaign(
   slug: string,
-  now = Date.now(),
+  now = simNow(),
 ): (CampaignDto & { products: ProductListItemDto[] }) | null {
   const base = campaignBySlug.get(slug);
   if (!base) return null;

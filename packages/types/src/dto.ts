@@ -40,6 +40,8 @@ export interface BrandDto {
   slug: string;
   description: string | null;
   logoUrl: string | null;
+  /** Card artwork for brand tiles and the brand page header. */
+  imageUrl: string | null;
   isFeatured: boolean;
 }
 
@@ -49,6 +51,8 @@ export interface CategoryDto {
   slug: string;
   parentId: string | null;
   position: number;
+  /** Tile artwork for visual category navigation. */
+  imageUrl: string | null;
   children?: CategoryDto[];
 }
 
@@ -84,6 +88,13 @@ export interface ProductListItemDto {
   discountPercent: number;
   currencyCode: string;
   imageUrl: string | null;
+  /**
+   * A second shot, revealed when a listing tile is hovered. Null when the
+   * product only has one image.
+   */
+  hoverImageUrl: string | null;
+  /** Colourways offered, so a tile can say "3 colours" without a second call. */
+  colors: string[];
   campaignId: string | null;
   campaignSlug: string | null;
   totalAvailable: number;
@@ -302,9 +313,29 @@ export interface OrderDto {
   items: OrderItemDto[];
   payments: PaymentSummaryDto[];
   shipments: ShipmentDto[];
+  /** Every status the order has passed through, oldest first. */
+  timeline: OrderTimelineEntryDto[];
   placedAt: string;
   paidAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  /** Whether the customer can still cancel from their order page. */
+  isCancellable: boolean;
   createdAt: string;
+}
+
+export interface OrderTimelineEntryDto {
+  status: OrderStatus;
+  at: string;
+  note: string | null;
+}
+
+/** One carrier scan on a shipment's tracking history. */
+export interface ShipmentEventDto {
+  code: string;
+  label: string;
+  at: string;
+  location: string | null;
 }
 
 export interface PaymentSummaryDto {
@@ -324,6 +355,7 @@ export interface ShipmentDto {
   status: ShipmentStatus;
   shippedAt: string | null;
   deliveredAt: string | null;
+  events: ShipmentEventDto[];
 }
 
 export interface ReturnRequestDto {

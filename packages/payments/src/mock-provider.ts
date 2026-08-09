@@ -11,7 +11,34 @@ import {
   WebhookVerificationError,
 } from './types';
 
-export type MockOutcome = 'TEST-SUCCESS' | 'TEST-FAIL' | 'TEST-CANCEL' | 'TEST-DELAYED';
+/**
+ * Outcomes the mock payment page can trigger. Everything other than SUCCESS,
+ * DELAYED and CANCEL is a failure variant that differs only in the reason the
+ * customer is shown.
+ */
+export type MockOutcome =
+  | 'TEST-SUCCESS'
+  | 'TEST-DELAYED'
+  | 'TEST-CANCEL'
+  | 'TEST-FAIL'
+  | 'TEST-DECLINED'
+  | 'TEST-INSUFFICIENT-FUNDS'
+  | 'TEST-EXPIRED-CARD'
+  | 'TEST-INVALID-CARD'
+  | 'TEST-3DS-FAILED'
+  | 'TEST-PROVIDER-UNAVAILABLE'
+  | 'TEST-TIMEOUT';
+
+const FAILURE_REASONS: Partial<Record<MockOutcome, string>> = {
+  'TEST-FAIL': 'Card declined (local test)',
+  'TEST-DECLINED': 'Card declined by issuer (local test)',
+  'TEST-INSUFFICIENT-FUNDS': 'Insufficient funds (local test)',
+  'TEST-EXPIRED-CARD': 'Card expired (local test)',
+  'TEST-INVALID-CARD': 'Invalid card details (local test)',
+  'TEST-3DS-FAILED': '3-D Secure authentication failed (local test)',
+  'TEST-PROVIDER-UNAVAILABLE': 'Provider unavailable (local test)',
+  'TEST-TIMEOUT': 'Provider timed out (local test)',
+};
 
 export interface MockWebhookPayload {
   eventId: string;
@@ -28,7 +55,7 @@ export interface MockWebhookPayload {
 /**
  * Fully local payment provider. The checkout redirects the browser to a
  * local "payment page" (hosted by the storefront) where the tester chooses an
- * outcome (TEST-SUCCESS / TEST-FAIL / TEST-CANCEL / TEST-DELAYED). That page
+ * outcome (see MockOutcome). That page
  * calls the API's simulate endpoint, which uses `buildWebhookEvent` +
  * `signPayload` to produce an HMAC-signed webhook — exercising the exact same
  * verification and processing path a real provider would use, including
@@ -69,10 +96,13 @@ export class MockPaymentProvider implements PaymentProvider {
   }): MockWebhookPayload {
     const typeByOutcome: Record<string, PaymentEventType> = {
       'TEST-SUCCESS': 'payment.succeeded',
-      'TEST-FAIL': 'payment.failed',
       'TEST-CANCEL': 'payment.cancelled',
       'TEST-DELAYED': 'payment.processing',
       'REFUND-SUCCESS': 'refund.succeeded',
+      // Every failure variant lands on the same event type.
+      ...Object.fromEntries(
+        Object.keys(FAILURE_REASONS).map((code) => [code, 'payment.failed' as PaymentEventType]),
+      ),
     };
     return {
       eventId: args.eventId ?? `mockevt_${crypto.randomUUID()}`,
@@ -81,7 +111,7 @@ export class MockPaymentProvider implements PaymentProvider {
       paymentId: args.paymentId,
       amountMinor: args.amountMinor,
       currencyCode: args.currencyCode,
-      failureReason: args.outcome === 'TEST-FAIL' ? 'Card declined (local test)' : undefined,
+      failureReason: FAILURE_REASONS[args.outcome as MockOutcome],
       providerRefundId:
         args.outcome === 'REFUND-SUCCESS' ? `mockref_${crypto.randomUUID()}` : undefined,
       createdAt: new Date().toISOString(),

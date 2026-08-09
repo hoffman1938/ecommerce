@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
 import { formatMoney } from '@outlet/ui';
-import { api } from '@/lib/api';
+import { api, DEMO_MODE } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { useCurrentUser } from '@/lib/hooks';
 
@@ -110,21 +110,36 @@ function ResultInner() {
           {order.totalMinor != null ? (
             <p className="mt-2 text-ink-600">
               We received your payment of{' '}
-              {formatMoney(order.totalMinor, order.currencyCode ?? 'EUR')}. A confirmation email is
-              on its way (check Mailpit at{' '}
-              <a
-                className="underline"
-                href="http://localhost:8025"
-                target="_blank"
-                rel="noreferrer"
-              >
-                localhost:8025
-              </a>{' '}
-              in local development).
+              {formatMoney(order.totalMinor, order.currencyCode ?? 'EUR')}. A confirmation email has
+              been sent.{' '}
+              {DEMO_MODE ? (
+                <>
+                  {/* No mail leaves the sandbox, so point at the simulated
+                      mailbox rather than an SMTP catcher that is not running. */}
+                  Read it in your{' '}
+                  <Link href="/account/inbox" className="underline underline-offset-2">
+                    simulated inbox
+                  </Link>
+                  .
+                </>
+              ) : (
+                <>
+                  In local development it is captured by Mailpit at{' '}
+                  <a
+                    className="underline"
+                    href="http://localhost:8025"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    localhost:8025
+                  </a>
+                  .
+                </>
+              )}
             </p>
           ) : null}
           <Link
-            href={me?.user ? `/account/orders/${orderId}` : '/'}
+            href={me?.user ? `/account/orders/view?id=${orderId}` : '/'}
             className="mt-6 inline-block rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25"
           >
             {me?.user ? 'View your order' : 'Continue shopping'}

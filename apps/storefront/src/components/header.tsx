@@ -14,6 +14,8 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import {
   BagIcon,
+  ChevronDown,
+  ChevronRight,
   CloseIcon,
   HeartIcon,
   MenuIcon,
@@ -28,15 +30,70 @@ import { useCart, useCurrentUser, useLogout } from '@/lib/hooks';
 import { useI18n } from '@/lib/i18n';
 import { LocaleSwitcher } from './locale-switcher';
 import { ThemeToggle } from './theme';
+import { CartDrawer } from './cart-drawer';
 
-const CATEGORY_KEYS = [
+/**
+ * The shop's information architecture, declared once.
+ *
+ * Sub-categories are what turn the desktop rail into a browsable menu rather
+ * than a list of seven links, and they drive the mobile drawer's accordion from
+ * the same source — so the two can never disagree about what the shop sells.
+ */
+const NAV: Array<{
+  key: string;
+  slug: string;
+  children?: Array<{ name: string; slug: string }>;
+}> = [
   { key: 'tShirts', slug: 't-shirts' },
-  { key: 'shoes', slug: 'shoes' },
+  {
+    key: 'shoes',
+    slug: 'shoes',
+    children: [
+      { name: 'Running shoes', slug: 'running-shoes' },
+      { name: 'Sneakers', slug: 'sneakers' },
+      { name: 'Boots', slug: 'boots' },
+    ],
+  },
   { key: 'hoodies', slug: 'hoodies' },
   { key: 'jackets', slug: 'jackets' },
   { key: 'pants', slug: 'pants' },
+  {
+    key: 'bags',
+    slug: 'bags',
+    children: [
+      { name: 'Backpacks', slug: 'backpacks' },
+      { name: 'Shoulder bags', slug: 'shoulder-bags' },
+    ],
+  },
   { key: 'accessories', slug: 'accessories' },
-] as const;
+];
+
+/** Shown in every category panel — real destinations, not invented ones. */
+const QUICK_LINKS = [
+  { label: 'New arrivals', href: '/products?sort=newest' },
+  { label: 'Biggest discounts', href: '/products?sort=discount' },
+  { label: 'Best rated', href: '/products?sort=rating' },
+  { label: 'In stock only', href: '/products?inStock=true' },
+];
+
+const FEATURED_BRANDS = [
+  { name: 'Nike', slug: 'nike' },
+  { name: 'Adidas', slug: 'adidas' },
+  { name: 'Puma', slug: 'puma' },
+  { name: 'New Balance', slug: 'new-balance' },
+  { name: 'The North Face', slug: 'the-north-face' },
+  { name: 'Calvin Klein', slug: 'calvin-klein' },
+];
+
+function categoryLabel(key: string, t: (k: string) => string): string {
+  const translated = t(`categories.${key}`);
+  // Keys added after the locale files were written fall back to a readable name
+  // rather than rendering the raw dotted path.
+  if (translated === `categories.${key}`) {
+    return key === 'bags' ? 'Bags' : key;
+  }
+  return translated;
+}
 
 function Wordmark({ className }: { className?: string }) {
   return (
@@ -315,23 +372,24 @@ function SuggestionRow({
   );
 }
 
-/** Icon + label action used in the desktop utility row. */
+/** Icon + label action used in the utility row. */
 function HeaderAction({
   href,
+  onClick,
   label,
   count,
   icon: Icon,
+  showLabelFrom = 'xl',
 }: {
-  href: string;
+  href?: string;
+  onClick?: () => void;
   label: string;
   count?: number;
   icon: (props: { className?: string }) => ReactElement;
+  showLabelFrom?: 'xl' | 'never';
 }) {
-  return (
-    <Link
-      href={href}
-      className="group relative inline-flex h-9 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950"
-    >
+  const content = (
+    <>
       <span className="relative">
         <Icon className="h-[18px] w-[18px]" />
         {count && count > 0 ? (
@@ -343,7 +401,23 @@ function HeaderAction({
           </span>
         ) : null}
       </span>
-      <span className="hidden xl:inline">{label}</span>
+      {showLabelFrom === 'xl' ? <span className="hidden xl:inline">{label}</span> : null}
+    </>
+  );
+
+  const className =
+    'group relative inline-flex h-10 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950';
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} aria-label={label} className={className}>
+        {content}
+      </button>
+    );
+  }
+  return (
+    <Link href={href!} aria-label={label} className={className}>
+      {content}
     </Link>
   );
 }
@@ -356,12 +430,18 @@ export function Header() {
   const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [openPanel, setOpenPanel] = useState<string | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const closeTimer = useRef<number>();
 
-  // Route changes should never leave the drawer hanging open behind the page.
+  // Route changes should never leave a drawer or panel hanging open.
   useEffect(() => {
     setMenuOpen(false);
     setSearchOpen(false);
+    setCartOpen(false);
+    setOpenPanel(null);
   }, [pathname]);
 
   useEffect(() => {
@@ -377,6 +457,32 @@ export function Header() {
       document.body.style.overflow = '';
     };
   }, [menuOpen]);
+
+  // Escape closes an open category panel and returns focus to its trigger.
+  useEffect(() => {
+    if (!openPanel) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenPanel(null);
+    };
+    const onPointerDown = (e: MouseEvent) => {
+      if (!navRef.current?.contains(e.target as Node)) setOpenPanel(null);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onPointerDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onPointerDown);
+    };
+  }, [openPanel]);
+
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+
+  /** A short grace period so crossing the gap to the panel does not close it. */
+  const scheduleClose = () => {
+    window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setOpenPanel(null), 120);
+  };
+  const cancelClose = () => window.clearTimeout(closeTimer.current);
 
   const itemCount = cart?.itemCount ?? 0;
 
@@ -396,8 +502,9 @@ export function Header() {
 
           <Wordmark />
 
-          {/* Desktop: search takes the free space; the nav sits on its own row. */}
-          <SearchForm className="ml-2 hidden min-w-0 flex-1 lg:block" />
+          {/* From tablet up the search field is inline; only phones collapse it
+              behind an icon, where there genuinely is not room for both. */}
+          <SearchForm className="ml-1 hidden min-w-0 flex-1 md:block lg:ml-2" />
 
           <div className="ml-auto flex items-center gap-0.5 lg:gap-1">
             <button
@@ -405,21 +512,29 @@ export function Header() {
               onClick={() => setSearchOpen((v) => !v)}
               aria-label={t('nav.search')}
               aria-expanded={searchOpen}
-              className="inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 md:hidden"
             >
               {searchOpen ? <CloseIcon className="h-5 w-5" /> : <SearchIcon className="h-5 w-5" />}
             </button>
 
-            <LocaleSwitcher />
-            <ThemeToggle />
+            <div className="hidden items-center gap-0.5 sm:flex">
+              <LocaleSwitcher />
+              <ThemeToggle />
+            </div>
+
             <HeaderAction href="/wishlist" label={t('nav.wishlist')} icon={HeartIcon} />
-            <HeaderAction href="/cart" label={t('nav.cart')} count={itemCount} icon={BagIcon} />
+            <HeaderAction
+              onClick={() => setCartOpen(true)}
+              label={t('nav.cart')}
+              count={itemCount}
+              icon={BagIcon}
+            />
 
             {me?.user ? (
               <div className="hidden items-center lg:flex">
                 <Link
                   href="/account"
-                  className="inline-flex h-9 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950"
+                  className="inline-flex h-10 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950"
                 >
                   <UserIcon className="h-[18px] w-[18px]" />
                   <span className="hidden max-w-24 truncate xl:inline">{me.user.firstName}</span>
@@ -435,7 +550,8 @@ export function Header() {
             ) : (
               <Link
                 href="/login"
-                className="hidden h-9 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 lg:inline-flex"
+                aria-label={t('nav.signIn')}
+                className="hidden h-10 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 lg:inline-flex"
               >
                 <UserIcon className="h-[18px] w-[18px]" />
                 <span className="hidden xl:inline">{t('nav.signIn')}</span>
@@ -444,73 +560,204 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile search drops in below the bar rather than replacing it. */}
+        {/* Phone search drops in below the bar rather than replacing it. */}
         {searchOpen ? (
-          <div className="animate-slide-up pb-3 lg:hidden">
+          <div className="animate-slide-up pb-3 md:hidden">
             <SearchForm autoFocus onSubmitted={() => setSearchOpen(false)} />
           </div>
         ) : null}
       </div>
 
-      {/* Desktop category rail */}
-      <nav aria-label="Categories" className="hidden border-t border-ink-100 lg:block">
+      {/* Category rail. On tablet it scrolls horizontally instead of being
+          hidden behind the hamburger, so browsing stays one tap away. */}
+      <nav
+        ref={navRef}
+        aria-label="Categories"
+        className="relative hidden border-t border-ink-100 md:block"
+        onMouseLeave={scheduleClose}
+      >
         <div className="container-page">
-          <ul className="-mx-2 flex items-center gap-1">
-            <li>
+          <ul className="scrollbar-none -mx-2 flex items-center gap-1 overflow-x-auto lg:overflow-visible">
+            <li className="shrink-0">
               <Link
                 href="/campaigns"
-                className={cx(
-                  'inline-flex h-10 items-center px-2 text-sm font-semibold text-sale-500 transition-colors hover:text-sale-600',
-                )}
+                className="inline-flex h-10 items-center px-2 text-sm font-semibold text-sale-500 transition-colors hover:text-sale-600"
               >
                 {t('nav.campaigns')}
               </Link>
             </li>
-            <li aria-hidden="true" className="mx-1 h-4 w-px bg-ink-200" />
-            <li>
+            <li aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-ink-200" />
+            <li className="shrink-0">
               <NavLink href="/products" active={pathname === '/products'}>
                 {t('nav.allProducts')}
               </NavLink>
             </li>
-            {CATEGORY_KEYS.map((c) => (
-              <li key={c.slug}>
-                <NavLink href={`/category/${c.slug}`} active={pathname === `/category/${c.slug}`}>
-                  {t(`categories.${c.key}`)}
+            {NAV.map((entry) => (
+              <li
+                key={entry.slug}
+                className="shrink-0"
+                onMouseEnter={() => {
+                  cancelClose();
+                  setOpenPanel(entry.slug);
+                }}
+              >
+                <NavLink
+                  href={`/category/${entry.slug}`}
+                  active={pathname === `/category/${entry.slug}`}
+                  expanded={openPanel === entry.slug}
+                  onFocus={() => setOpenPanel(entry.slug)}
+                >
+                  {categoryLabel(entry.key, t)}
                 </NavLink>
               </li>
             ))}
           </ul>
         </div>
+
+        {/* One panel, positioned under the whole rail rather than under each
+            item: a full-width sheet is far easier to aim at than a dropdown
+            that moves as you slide along the row. */}
+        {openPanel ? (
+          <div
+            className="absolute inset-x-0 top-full z-40 hidden animate-slide-up border-b border-ink-200 bg-ink-25 shadow-lg lg:block"
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+          >
+            <CategoryPanel
+              entry={NAV.find((n) => n.slug === openPanel)!}
+              label={categoryLabel(NAV.find((n) => n.slug === openPanel)!.key, t)}
+              onNavigate={() => setOpenPanel(null)}
+            />
+          </div>
+        ) : null}
       </nav>
 
       {menuOpen ? <MobileMenu onClose={() => setMenuOpen(false)} closeRef={closeRef} /> : null}
+      {cartOpen ? <CartDrawer onClose={() => setCartOpen(false)} /> : null}
     </header>
+  );
+}
+
+function CategoryPanel({
+  entry,
+  label,
+  onNavigate,
+}: {
+  entry: (typeof NAV)[number];
+  label: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <div className="container-page grid grid-cols-4 gap-8 py-7">
+      <div>
+        <p className="eyebrow mb-3">Shop {label}</p>
+        <ul className="space-y-2 text-sm">
+          <li>
+            <Link
+              href={`/category/${entry.slug}`}
+              onClick={onNavigate}
+              className="text-ink-800 transition-colors hover:text-ink-950"
+            >
+              All {label.toLowerCase()}
+            </Link>
+          </li>
+          {entry.children?.map((child) => (
+            <li key={child.slug}>
+              <Link
+                href={`/category/${child.slug}`}
+                onClick={onNavigate}
+                className="text-ink-800 transition-colors hover:text-ink-950"
+              >
+                {child.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <p className="eyebrow mb-3">Find fast</p>
+        <ul className="space-y-2 text-sm">
+          {QUICK_LINKS.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={`${link.href}&category=${entry.slug}`}
+                onClick={onNavigate}
+                className="text-ink-800 transition-colors hover:text-ink-950"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <p className="eyebrow mb-3">Brands</p>
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          {FEATURED_BRANDS.map((brand) => (
+            <li key={brand.slug}>
+              <Link
+                href={`/brand/${brand.slug}`}
+                onClick={onNavigate}
+                className="text-ink-800 transition-colors hover:text-ink-950"
+              >
+                {brand.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <Link
+        href="/campaigns"
+        onClick={onNavigate}
+        className="group flex flex-col justify-between rounded bg-ink-950 p-5 text-ink-25"
+      >
+        <div>
+          <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-25/60">
+            Live campaigns
+          </p>
+          <p className="mt-2 text-lg font-bold leading-tight">Short windows, limited stock.</p>
+        </div>
+        <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium">
+          See what’s on
+          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </Link>
+    </div>
   );
 }
 
 function NavLink({
   href,
   active,
+  expanded,
+  onFocus,
   children,
 }: {
   href: string;
   active: boolean;
+  expanded?: boolean;
+  onFocus?: () => void;
   children: ReactNode;
 }) {
   return (
     <Link
       href={href}
+      onFocus={onFocus}
       aria-current={active ? 'page' : undefined}
+      aria-expanded={expanded === undefined ? undefined : expanded}
       className={cx(
-        'relative inline-flex h-10 items-center px-2 text-sm transition-colors',
-        active ? 'text-ink-950' : 'text-ink-600 hover:text-ink-950',
+        'relative inline-flex h-10 items-center whitespace-nowrap px-2 text-sm transition-colors',
+        active || expanded ? 'text-ink-950' : 'text-ink-600 hover:text-ink-950',
       )}
     >
       {children}
       <span
         className={cx(
           'absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-ink-950 transition-opacity',
-          active ? 'opacity-100' : 'opacity-0',
+          active || expanded ? 'opacity-100' : 'opacity-0',
         )}
       />
     </Link>
@@ -527,6 +774,7 @@ function MobileMenu({
   const { data: me } = useCurrentUser();
   const logout = useLogout();
   const { t } = useI18n();
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
@@ -536,7 +784,9 @@ function MobileMenu({
         onClick={onClose}
         className="absolute inset-0 animate-fade-in bg-ink-950/40"
       />
-      <div className="absolute inset-y-0 left-0 flex w-[min(20rem,85vw)] animate-slide-in-right flex-col bg-ink-25 shadow-md">
+      {/* A left-edge drawer must enter from the left: `slide-in-left` starts at
+          translateX(-100%). */}
+      <div className="absolute inset-y-0 left-0 flex w-[min(21rem,88vw)] animate-slide-in-left flex-col bg-ink-25 shadow-md">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-ink-200 px-4">
           <Wordmark />
           <button
@@ -551,17 +801,52 @@ function MobileMenu({
         </div>
 
         <nav className="flex-1 overflow-y-auto overscroll-contain py-2">
-          <MenuLink href="/campaigns" className="text-sale-500">
+          <MenuLink href="/campaigns" className="font-semibold text-sale-500">
             {t('nav.campaigns')}
           </MenuLink>
           <MenuLink href="/products">{t('nav.allProducts')}</MenuLink>
 
           <p className="eyebrow px-4 pb-1 pt-5">{t('nav.shopByCategory')}</p>
-          {CATEGORY_KEYS.map((c) => (
-            <MenuLink key={c.slug} href={`/category/${c.slug}`}>
-              {t(`categories.${c.key}`)}
-            </MenuLink>
-          ))}
+          {NAV.map((entry) =>
+            entry.children ? (
+              <div key={entry.slug}>
+                <button
+                  type="button"
+                  onClick={() => setExpanded((c) => (c === entry.slug ? null : entry.slug))}
+                  aria-expanded={expanded === entry.slug}
+                  className="flex w-full items-center justify-between px-4 py-2.5 text-left text-[15px] text-ink-800 transition-colors hover:bg-ink-50 hover:text-ink-950"
+                >
+                  {categoryLabel(entry.key, t)}
+                  <ChevronDown
+                    className={cx(
+                      'h-4 w-4 text-ink-400 transition-transform',
+                      expanded === entry.slug && 'rotate-180',
+                    )}
+                  />
+                </button>
+                {expanded === entry.slug ? (
+                  <div className="bg-ink-50/60 py-1">
+                    <MenuLink href={`/category/${entry.slug}`} className="pl-8 text-sm">
+                      All {categoryLabel(entry.key, t).toLowerCase()}
+                    </MenuLink>
+                    {entry.children.map((child) => (
+                      <MenuLink
+                        key={child.slug}
+                        href={`/category/${child.slug}`}
+                        className="pl-8 text-sm"
+                      >
+                        {child.name}
+                      </MenuLink>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <MenuLink key={entry.slug} href={`/category/${entry.slug}`}>
+                {categoryLabel(entry.key, t)}
+              </MenuLink>
+            ),
+          )}
 
           <p className="eyebrow px-4 pb-1 pt-5">{t('nav.account')}</p>
           {me?.user ? (
@@ -589,8 +874,9 @@ function MobileMenu({
           )}
         </nav>
 
-        <div className="border-t border-ink-200 p-4">
+        <div className="flex items-center justify-between border-t border-ink-200 p-4">
           <LocaleSwitcher />
+          <ThemeToggle />
         </div>
       </div>
     </div>

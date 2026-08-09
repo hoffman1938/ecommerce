@@ -18,6 +18,9 @@ coverage/
 # prisma
 packages/database/generated/
 
+# generated catalogue artwork (rebuilt by predev/prebuild from packages/catalog)
+apps/storefront/public/artwork/
+
 # playwright
 e2e/test-results/
 e2e/playwright-report/

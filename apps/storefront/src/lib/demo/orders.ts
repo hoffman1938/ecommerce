@@ -11,9 +11,10 @@
  *  - Payment outcomes are applied locally rather than delivered as HMAC-signed
  *    webhooks. TEST-DELAYED stores a confirmation timestamp and settles the
  *    next time the status is read, which is what the polling UI observes.
- *  - Fulfilment advances on elapsed time (see FULFILMENT_STEPS) instead of
- *    being driven by an operator in the admin panel, so returns are reachable
- *    in about a minute rather than never.
+ *  - Fulfilment advances on elapsed simulated time (see lifecycle.ts) rather
+ *    than being driven by an operator in the admin panel, so returns are
+ *    reachable in a couple of minutes — or instantly, via the QA console's
+ *    time-travel controls.
  */
 
 import type {
@@ -28,13 +29,27 @@ import { clearCart, getCart } from './cart';
 import {
   DemoApiError,
   currentUser,
+  deliverEmail,
   mutate,
   newId,
+  pushNotification,
+  recordEvent,
   requireUser,
+  simNow,
   type DemoOrder,
   type DemoPayment,
   type DemoState,
 } from './store';
+import {
+  FULFILMENT_AFTER_SECONDS,
+  FULFILMENT_SEQUENCE,
+  ensureShipment,
+  highestReachedStageIndex,
+  isCancellable,
+  restoreStock,
+  syncShipmentScans,
+  transitionOrder,
+} from './lifecycle';
 
 const SHIPPING_METHODS: ShippingMethodDto[] = [
   {
@@ -51,10 +66,22 @@ const SHIPPING_METHODS: ShippingMethodDto[] = [
   },
 ];
 
-/** Seconds after payment at which an order reaches each state. */
-const FULFILMENT_STEPS = { shipped: 20, delivered: 45 };
-
 const DELAYED_CONFIRMATION_MS = 10_000;
+
+/**
+ * Outcome code -> the reason the customer is shown. Mirrors the test cards in
+ * lib/test-cards.ts; a code absent from here is a non-failure outcome.
+ */
+const FAILURE_REASONS: Record<string, string | undefined> = {
+  'TEST-FAIL': 'The payment was declined by the test provider.',
+  'TEST-DECLINED': 'Your bank declined the payment.',
+  'TEST-INSUFFICIENT-FUNDS': 'The payment was declined for insufficient funds.',
+  'TEST-EXPIRED-CARD': 'The card has expired.',
+  'TEST-INVALID-CARD': 'The card details could not be processed.',
+  'TEST-3DS-FAILED': '3-D Secure authentication was not completed.',
+  'TEST-PROVIDER-UNAVAILABLE': 'The payment provider is temporarily unavailable.',
+  'TEST-TIMEOUT': 'The payment request timed out before the provider responded.',
+};
 
 // --- Checkout --------------------------------------------------------------
 
@@ -152,7 +179,7 @@ export function submitCheckout(body: SubmitCheckoutBody): PaymentSessionDto {
     const orderNumber = `OUT-${state.orderSequence}`;
     state.orderSequence += 1;
 
-    const now = new Date().toISOString();
+    const now = new Date(simNow()).toISOString();
     const order: DemoOrder = {
       id: newId('order'),
       orderNumber,
@@ -188,9 +215,22 @@ export function submitCheckout(body: SubmitCheckoutBody): PaymentSessionDto {
       placedAt: now,
       paidAt: null,
       createdAt: now,
+      timeline: [{ status: 'AWAITING_PAYMENT', at: now, note: 'Order placed.' }],
       shipments: [],
+      cancelledAt: null,
+      cancelReason: null,
     };
     state.orders.push(order);
+
+    recordEvent(state, {
+      type: 'ORDER_CREATED',
+      entityType: 'Order',
+      entityId: order.orderNumber,
+      actor: 'customer',
+      previousState: null,
+      newState: 'AWAITING_PAYMENT',
+      metadata: { totalMinor, itemCount: order.items.length },
+    });
 
     const payment: DemoPayment = {
       id: newId('pay'),
@@ -241,23 +281,30 @@ export function simulatePayment(paymentId: string, body: { outcome: string }) {
     const order = state.orders.find((o) => o.id === payment.orderId);
     if (!order) throw new DemoApiError(404, 'Unknown order.');
 
+    // Failure outcomes differ only in the reason shown; treating them as one
+    // branch keeps the retry behaviour identical across all of them.
+    const failureReason = FAILURE_REASONS[outcome];
+    if (failureReason) {
+      markFailed(state, payment, order, failureReason);
+      return { ok: true, status: payment.status };
+    }
+
     switch (outcome) {
       case 'TEST-SUCCESS':
         markPaid(state, payment, order);
         break;
-      case 'TEST-FAIL':
-        payment.status = 'FAILED';
-        payment.failureReason = 'The payment was declined by the test provider.';
-        order.status = 'AWAITING_PAYMENT';
-        break;
       case 'TEST-CANCEL':
         payment.status = 'CANCELLED';
-        order.status = 'CANCELLED';
+        transitionOrder(state, order, 'CANCELLED', {
+          note: 'Payment cancelled at the provider.',
+          actor: 'customer',
+        });
+        order.cancelledAt = new Date(simNow()).toISOString();
+        order.cancelReason = 'Payment cancelled';
         break;
       case 'TEST-DELAYED':
         payment.status = 'PROCESSING';
-        payment.confirmAt = Date.now() + DELAYED_CONFIRMATION_MS;
-        order.status = 'AWAITING_PAYMENT';
+        payment.confirmAt = simNow() + DELAYED_CONFIRMATION_MS;
         break;
       default:
         throw new DemoApiError(400, `Unknown outcome ${outcome}.`);
@@ -269,14 +316,61 @@ export function simulatePayment(paymentId: string, body: { outcome: string }) {
 function markPaid(state: DemoState, payment: DemoPayment, order: DemoOrder): void {
   if (payment.status === 'PAID') return;
   payment.status = 'PAID';
-  order.status = 'PAID';
-  order.paidAt = new Date().toISOString();
+  payment.failureReason = null;
+  order.paidAt = new Date(simNow()).toISOString();
   // Converting the reservation consumes real stock from the seeded catalog.
   for (const item of order.items) {
     state.stockConsumed[item.variantId] =
       (state.stockConsumed[item.variantId] ?? 0) + item.quantity;
   }
+  recordEvent(state, {
+    type: 'PAYMENT_SUCCEEDED',
+    entityType: 'Payment',
+    entityId: payment.id,
+    actor: 'system',
+    previousState: 'PENDING',
+    newState: 'PAID',
+    metadata: { orderNumber: order.orderNumber, amountMinor: payment.amountMinor },
+  });
+  transitionOrder(state, order, 'PAID', { note: 'Payment confirmed.' });
   clearCart();
+}
+
+/** Shared by every declined-payment path so the tester always sees the same UI. */
+function markFailed(
+  state: DemoState,
+  payment: DemoPayment,
+  order: DemoOrder,
+  reason: string,
+): void {
+  payment.status = 'FAILED';
+  payment.failureReason = reason;
+  payment.confirmAt = null;
+  // The order stays AWAITING_PAYMENT so the tester can retry rather than
+  // having to rebuild the cart.
+  recordEvent(state, {
+    type: 'PAYMENT_FAILED',
+    entityType: 'Payment',
+    entityId: payment.id,
+    actor: 'system',
+    previousState: 'PENDING',
+    newState: 'FAILED',
+    metadata: { orderNumber: order.orderNumber, reason },
+  });
+  pushNotification(state, {
+    userId: order.userId,
+    type: 'payment.failed',
+    title: `Payment failed — ${order.orderNumber}`,
+    body: reason,
+    orderNumber: order.orderNumber,
+  });
+  deliverEmail(state, {
+    to: order.email,
+    subject: `We could not take payment (${order.orderNumber})`,
+    body: `${reason}\n\nYour order is still held. You can retry payment from your order page.`,
+    template: 'payment_failed',
+    orderNumber: order.orderNumber,
+  });
 }
 
 /**
@@ -286,7 +380,7 @@ function markPaid(state: DemoState, payment: DemoPayment, order: DemoOrder): voi
  */
 function reconcile(state: DemoState): boolean {
   let changed = false;
-  const now = Date.now();
+  const now = simNow();
 
   for (const payment of state.payments) {
     if (payment.status !== 'PROCESSING' || !payment.confirmAt || now < payment.confirmAt) continue;
@@ -299,42 +393,81 @@ function reconcile(state: DemoState): boolean {
 
   for (const order of state.orders) {
     if (!order.paidAt) continue;
-    if (['CANCELLED', 'RETURNED', 'PARTIALLY_RETURNED'].includes(order.status)) continue;
+    // Terminal or customer-driven states are never overwritten by the timer.
+    if (
+      ['CANCELLED', 'RETURN_REQUESTED', 'RETURNED', 'PARTIALLY_RETURNED'].includes(order.status)
+    ) {
+      continue;
+    }
+
     const elapsed = (now - Date.parse(order.paidAt)) / 1000;
-    const next =
-      elapsed >= FULFILMENT_STEPS.delivered
-        ? 'DELIVERED'
-        : elapsed >= FULFILMENT_STEPS.shipped
-          ? 'SHIPPED'
-          : 'PROCESSING';
-    if (order.status !== next) {
-      order.status = next;
-      changed = true;
-    }
-    if (next !== 'PROCESSING' && order.shipments.length === 0) {
-      order.shipments.push({
-        id: newId('shp'),
-        carrier: 'Demo Logistics',
-        trackingNumber: `TRK-${order.orderNumber}`,
-        status: 'SHIPPED',
-        shippedAt: new Date(
-          Date.parse(order.paidAt) + FULFILMENT_STEPS.shipped * 1000,
-        ).toISOString(),
-        deliveredAt: null,
-      });
-      changed = true;
-    }
-    const shipment = order.shipments[0];
-    if (shipment && next === 'DELIVERED' && shipment.status !== 'DELIVERED') {
-      shipment.status = 'DELIVERED';
-      shipment.deliveredAt = new Date(
-        Date.parse(order.paidAt) + FULFILMENT_STEPS.delivered * 1000,
+
+    // Advance only past stages already recorded. Walking the whole sequence
+    // every time would re-apply stages the order has left behind.
+    for (
+      let index = highestReachedStageIndex(order) + 1;
+      index < FULFILMENT_SEQUENCE.length;
+      index += 1
+    ) {
+      const status = FULFILMENT_SEQUENCE[index];
+      if (elapsed < FULFILMENT_AFTER_SECONDS[status]) break;
+      const at = new Date(
+        Date.parse(order.paidAt) + FULFILMENT_AFTER_SECONDS[status] * 1000,
       ).toISOString();
-      changed = true;
+      if (transitionOrder(state, order, status, { at })) changed = true;
+
+      if (status === 'SHIPPED') {
+        const shipment = ensureShipment(state, order);
+        if (!shipment.shippedAt) {
+          shipment.shippedAt = at;
+          shipment.status = 'SHIPPED';
+          changed = true;
+        }
+      }
+    }
+
+    const shipment = order.shipments[0];
+    if (shipment?.shippedAt) {
+      const sinceShipped = (now - Date.parse(shipment.shippedAt)) / 1000;
+      if (syncShipmentScans(state, order, shipment, sinceShipped)) changed = true;
     }
   }
 
   return changed;
+}
+
+// --- Customer-driven transitions -------------------------------------------
+
+/** Cancel an order before it ships, releasing the stock it consumed. */
+export function cancelOrder(orderId: string, reason?: string) {
+  return mutate((state) => {
+    const order = state.orders.find((o) => o.id === orderId || o.orderNumber === orderId);
+    if (!order) throw new DemoApiError(404, 'Order not found.');
+    if (!isCancellable(order)) {
+      throw new DemoApiError(
+        409,
+        `An order that is already ${order.status.toLowerCase()} can no longer be cancelled.`,
+      );
+    }
+
+    if (order.paidAt) restoreStock(state, order);
+    for (const payment of state.payments.filter((p) => p.orderId === order.id)) {
+      if (payment.status === 'PAID') {
+        payment.status = 'REFUNDED';
+        payment.refundedAmountMinor = payment.amountMinor;
+      } else if (payment.status !== 'FAILED') {
+        payment.status = 'CANCELLED';
+      }
+    }
+
+    order.cancelledAt = new Date(simNow()).toISOString();
+    order.cancelReason = reason ?? 'Cancelled by customer';
+    transitionOrder(state, order, 'CANCELLED', {
+      note: order.cancelReason,
+      actor: 'customer',
+    });
+    return toOrderDto(order, state);
+  });
 }
 
 export function paymentStatus(paymentId: string) {
@@ -400,9 +533,18 @@ function toOrderDto(order: DemoOrder, state: DemoState): OrderDto {
       status: s.status as OrderDto['shipments'][number]['status'],
       shippedAt: s.shippedAt,
       deliveredAt: s.deliveredAt,
+      events: s.events,
+    })),
+    timeline: order.timeline.map((entry) => ({
+      status: entry.status as OrderDto['status'],
+      at: entry.at,
+      note: entry.note,
     })),
     placedAt: order.placedAt,
     paidAt: order.paidAt,
+    cancelledAt: order.cancelledAt,
+    cancelReason: order.cancelReason,
+    isCancellable: isCancellable(order),
     createdAt: order.createdAt,
   };
 }

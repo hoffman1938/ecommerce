@@ -93,6 +93,9 @@ importers:
       '@outlet/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@outlet/catalog':
+        specifier: workspace:*
+        version: link:../../packages/catalog
       '@outlet/config':
         specifier: workspace:*
         version: link:../../packages/config

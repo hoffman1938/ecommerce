@@ -5,7 +5,20 @@
  */
 
 import type { ReturnRequestDto } from '@outlet/types';
-import { DemoApiError, mutate, newId, readState, requireUser, type DemoAddress } from './store';
+import {
+  DemoApiError,
+  deliverEmail,
+  mutate,
+  newId,
+  pushNotification,
+  readState,
+  recordEvent,
+  requireUser,
+  simNow,
+  type DemoAddress,
+  type DemoReturn,
+} from './store';
+import { transitionOrder } from './lifecycle';
 import { brandBySlug, productBySlug } from './data';
 
 // --- Profile ---------------------------------------------------------------
@@ -261,24 +274,21 @@ export function createReturn(body: {
       return { orderItem, quantity };
     });
 
+    // Quantities are marked as pending-return but NOT refunded yet: a return
+    // that refunds the moment it is requested is not a return workflow, and it
+    // hides every state a tester needs to see.
     let refundMinor = 0;
     for (const { orderItem, quantity } of items) {
-      orderItem.returnedQuantity += quantity;
       refundMinor += orderItem.unitPriceMinor * quantity;
     }
 
-    const fullyReturned = order.items.every((i) => i.returnedQuantity >= i.quantity);
-    order.status = fullyReturned ? 'RETURNED' : 'PARTIALLY_RETURNED';
-
     const sequence = state.returns.length + 1;
-    const request = {
+    const request: DemoReturn = {
       id: newId('ret'),
       rmaNumber: `RMA-${String(100_000 + sequence)}`,
       userId: user.id,
       orderId: order.id,
-      // The real flow waits for an agent to approve and inspect. Nobody is
-      // staffing the demo, so it settles immediately and refunds in full.
-      status: 'COMPLETED',
+      status: 'REQUESTED',
       reason: String(body.reason ?? 'OTHER'),
       customerNote: body.customerNote ?? null,
       items: items.map(({ orderItem, quantity }) => ({
@@ -287,36 +297,45 @@ export function createReturn(body: {
         name: orderItem.name,
         sku: orderItem.sku,
         quantity,
-        receivedQuantity: quantity,
-        restockedQuantity: quantity,
-        condition: 'RESELLABLE',
+        receivedQuantity: 0,
+        restockedQuantity: 0,
+        condition: 'UNINSPECTED',
         reason: null,
       })),
-      refunds: [
-        {
-          id: newId('rfnd'),
-          amountMinor: refundMinor,
-          status: 'SUCCEEDED',
-          reason: 'Return accepted',
-          createdAt: new Date().toISOString(),
-        },
-      ],
-      createdAt: new Date().toISOString(),
+      refunds: [],
+      createdAt: new Date(simNow()).toISOString(),
     };
     state.returns.push(request);
 
-    // Returned stock goes back on the shelf, as RETURN_RESTOCK does for real.
-    for (const { orderItem, quantity } of items) {
-      const consumed = state.stockConsumed[orderItem.variantId] ?? 0;
-      state.stockConsumed[orderItem.variantId] = Math.max(0, consumed - quantity);
-    }
+    transitionOrder(state, order, 'RETURN_REQUESTED', {
+      note: `Return ${request.rmaNumber} requested.`,
+      actor: 'customer',
+    });
 
-    const payment = state.payments.find((p) => p.orderId === order.id && p.status === 'PAID');
-    if (payment) {
-      payment.refundedAmountMinor += refundMinor;
-      payment.status =
-        payment.refundedAmountMinor >= payment.amountMinor ? 'REFUNDED' : 'PARTIALLY_REFUNDED';
-    }
+    recordEvent(state, {
+      type: 'RETURN_REQUESTED',
+      entityType: 'ReturnRequest',
+      entityId: request.rmaNumber,
+      actor: 'customer',
+      previousState: null,
+      newState: 'REQUESTED',
+      metadata: { orderNumber: order.orderNumber, refundMinor },
+    });
+
+    pushNotification(state, {
+      userId: user.id,
+      type: 'return.requested',
+      title: `Return ${request.rmaNumber} received`,
+      body: 'We have your return request and will review it shortly.',
+      orderNumber: order.orderNumber,
+    });
+    deliverEmail(state, {
+      to: order.email,
+      subject: `Return request received (${request.rmaNumber})`,
+      body: 'We have received your return request and will review it shortly. You can follow its progress from your account.',
+      template: 'return_requested',
+      orderNumber: order.orderNumber,
+    });
 
     return { id: request.id, rmaNumber: request.rmaNumber };
   });

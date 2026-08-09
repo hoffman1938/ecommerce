@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 import type { ProductListItemDto } from '@outlet/types';
-import { ImageIcon, Skeleton, StarRating, cx, formatMoney } from '@outlet/ui';
+import { HeartIcon, ImageIcon, Skeleton, StarRating, cx, formatMoney } from '@outlet/ui';
+import { useToggleWishlist } from '@/lib/hooks';
 
 /**
  * Product tile.
@@ -9,6 +13,10 @@ import { ImageIcon, Skeleton, StarRating, cx, formatMoney } from '@outlet/ui';
  * and the metadata sits on the page beneath it, so a grid reads as a rhythm of
  * products rather than a wall of boxes. Only two things earn colour — the
  * reduced price and a genuine scarcity warning.
+ *
+ * The hover state does the work a second visit would otherwise cost: the
+ * alternate shot fades in, and saving becomes possible without opening the
+ * product at all.
  */
 export function ProductCard({
   product,
@@ -21,23 +29,52 @@ export function ProductCard({
   const soldOut = product.totalAvailable <= 0;
   const lastFew = !soldOut && product.totalAvailable <= 3;
   const discounted = product.discountPercent > 0;
+  const wishlist = useToggleWishlist();
+  const [hovered, setHovered] = useState(false);
+
+  const secondary = product.hoverImageUrl ?? null;
 
   return (
-    <article className="group relative">
+    <article
+      className="group relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <div className="relative aspect-[4/5] overflow-hidden rounded bg-ink-50">
         {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.imageUrl}
-            alt=""
-            loading={priority ? 'eager' : 'lazy'}
-            decoding="async"
-            className={cx(
-              'h-full w-full object-cover transition-transform duration-500 ease-out',
-              'group-hover:scale-[1.03]',
-              soldOut && 'opacity-60',
-            )}
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={product.imageUrl}
+              alt=""
+              loading={priority ? 'eager' : 'lazy'}
+              decoding="async"
+              className={cx(
+                'h-full w-full object-cover transition-[transform,opacity] duration-500 ease-out',
+                secondary ? 'group-hover:opacity-0' : 'group-hover:scale-[1.03]',
+                soldOut && 'opacity-60',
+              )}
+            />
+            {secondary ? (
+              // Only fetched once the pointer arrives: a second image per tile
+              // across a 24-tile grid is a lot to download for a hover state
+              // most visitors never trigger.
+              hovered ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={secondary}
+                  alt=""
+                  aria-hidden="true"
+                  decoding="async"
+                  className={cx(
+                    'absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 ease-out',
+                    'group-hover:opacity-100',
+                    soldOut && 'opacity-60',
+                  )}
+                />
+              ) : null
+            ) : null}
+          </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-ink-300">
             <ImageIcon className="h-10 w-10" />
@@ -55,6 +92,32 @@ export function ProductCard({
             −{product.discountPercent}%
           </span>
         ) : null}
+
+        {/* Above the link overlay so it stays clickable. Always visible on
+            touch, where there is no hover to reveal it. */}
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            wishlist.toggle(product.id);
+          }}
+          aria-label={
+            wishlist.contains(product.id)
+              ? `Remove ${product.name} from wishlist`
+              : `Save ${product.name} to wishlist`
+          }
+          aria-pressed={wishlist.contains(product.id)}
+          className={cx(
+            'absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full',
+            'bg-ink-25/85 backdrop-blur transition',
+            'focus-visible:opacity-100 group-hover:opacity-100 lg:opacity-0',
+            wishlist.contains(product.id)
+              ? 'text-sale-500 lg:opacity-100'
+              : 'text-ink-600 hover:text-ink-950',
+          )}
+        >
+          <HeartIcon className={cx('h-4 w-4', wishlist.contains(product.id) && 'fill-current')} />
+        </button>
 
         {soldOut ? (
           <span className="absolute inset-x-0 bottom-0 bg-ink-950/85 py-1.5 text-center text-2xs font-semibold uppercase tracking-[0.08em] text-ink-25">
@@ -99,6 +162,10 @@ export function ProductCard({
               {product.ratingAverage.toFixed(1)} ({product.reviewCount})
             </span>
           </div>
+        ) : null}
+
+        {product.colors && product.colors.length > 1 ? (
+          <p className="mt-1.5 text-xs text-ink-500">{product.colors.length} colours</p>
         ) : null}
 
         {lastFew ? (

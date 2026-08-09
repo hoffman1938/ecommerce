@@ -158,9 +158,9 @@ function ProductListingInner({
             </div>
           </div>
 
-          <div className="hidden lg:block">
-            <ActiveFilters />
-          </div>
+          {/* Chips belong on every screen: on a phone they are the only way to
+              see what is filtered without reopening the drawer. */}
+          <ActiveFilters />
 
           {isError ? (
             <Alert tone="error" title="Could not load products">
@@ -172,34 +172,11 @@ function ProductListingInner({
             <>
               <ProductGrid products={result.items} priorityCount={4} />
               {result.totalPages > 1 ? (
-                <nav
-                  className="mt-12 flex items-center justify-between border-t border-ink-200 pt-6"
-                  aria-label="Pagination"
-                >
-                  {page > 1 ? (
-                    <Link
-                      href={buildPageLink(page - 1)}
-                      className="inline-flex h-9 items-center rounded px-3 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors hover:bg-ink-25 hover:ring-ink-400"
-                    >
-                      ← Previous
-                    </Link>
-                  ) : (
-                    <span />
-                  )}
-                  <span data-numeric className="text-sm text-ink-500">
-                    Page {page} of {result.totalPages}
-                  </span>
-                  {page < result.totalPages ? (
-                    <Link
-                      href={buildPageLink(page + 1)}
-                      className="inline-flex h-9 items-center rounded px-3 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors hover:bg-ink-25 hover:ring-ink-400"
-                    >
-                      Next →
-                    </Link>
-                  ) : (
-                    <span />
-                  )}
-                </nav>
+                <Pagination
+                  page={page}
+                  totalPages={result.totalPages}
+                  buildPageLink={buildPageLink}
+                />
               ) : null}
             </>
           ) : (
@@ -212,6 +189,90 @@ function ProductListingInner({
         <FilterDrawer onClose={() => setDrawerOpen(false)} total={result?.total} />
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Numbered pagination with an ellipsis.
+ *
+ * Prev/next alone gives no sense of how much catalogue is left, and no way to
+ * jump. The window keeps the control a fixed width whatever the page count, so
+ * it does not reflow as you move through the pages.
+ */
+function Pagination({
+  page,
+  totalPages,
+  buildPageLink,
+}: {
+  page: number;
+  totalPages: number;
+  buildPageLink: (target: number) => string;
+}) {
+  const pages: Array<number | 'gap'> = [];
+  const push = (n: number) => {
+    if (n >= 1 && n <= totalPages && !pages.includes(n)) pages.push(n);
+  };
+  push(1);
+  if (page > 3) pages.push('gap');
+  for (let n = page - 1; n <= page + 1; n += 1) push(n);
+  if (page < totalPages - 2) pages.push('gap');
+  push(totalPages);
+
+  const stepClass =
+    'inline-flex h-9 items-center rounded px-3 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors hover:bg-ink-50 hover:ring-ink-400';
+
+  return (
+    <nav
+      className="mt-12 flex items-center justify-between gap-3 border-t border-ink-200 pt-6"
+      aria-label="Pagination"
+    >
+      {page > 1 ? (
+        <Link href={buildPageLink(page - 1)} rel="prev" className={stepClass}>
+          <span aria-hidden="true">←</span>
+          <span className="ml-1.5 hidden sm:inline">Previous</span>
+          <span className="sr-only">Previous page</span>
+        </Link>
+      ) : (
+        <span />
+      )}
+
+      <ul className="flex items-center gap-1">
+        {pages.map((entry, index) =>
+          entry === 'gap' ? (
+            <li key={`gap-${index}`} aria-hidden="true" className="px-1 text-sm text-ink-400">
+              …
+            </li>
+          ) : (
+            <li key={entry}>
+              <Link
+                href={buildPageLink(entry)}
+                aria-current={entry === page ? 'page' : undefined}
+                aria-label={`Page ${entry}`}
+                data-numeric
+                className={cx(
+                  'inline-flex h-9 min-w-9 items-center justify-center rounded px-2 text-sm transition-colors',
+                  entry === page
+                    ? 'bg-ink-950 font-semibold text-ink-25'
+                    : 'text-ink-700 hover:bg-ink-100 hover:text-ink-950',
+                )}
+              >
+                {entry}
+              </Link>
+            </li>
+          ),
+        )}
+      </ul>
+
+      {page < totalPages ? (
+        <Link href={buildPageLink(page + 1)} rel="next" className={stepClass}>
+          <span className="mr-1.5 hidden sm:inline">Next</span>
+          <span aria-hidden="true">→</span>
+          <span className="sr-only">Next page</span>
+        </Link>
+      ) : (
+        <span />
+      )}
+    </nav>
   );
 }
 

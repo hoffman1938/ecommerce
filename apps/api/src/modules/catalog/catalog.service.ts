@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@outlet/database';
+import { brandArtworkDataUri, categoryArtworkDataUri } from '@outlet/catalog';
 import { discountPercent, isCampaignRunning, ratingAverageFrom } from '@outlet/domain';
 import type {
   BrandDto,
@@ -35,6 +36,9 @@ export class CatalogService {
       slug: b.slug,
       description: b.description,
       logoUrl: b.logoUrl,
+      // Generated from the name when no asset has been uploaded, so brand
+      // tiles are never blank.
+      imageUrl: b.logoUrl ?? brandArtworkDataUri(b.name),
       isFeatured: b.isFeatured,
     }));
   }
@@ -53,6 +57,7 @@ export class CatalogService {
           slug: c.slug,
           parentId: c.parentId,
           position: c.position,
+          imageUrl: categoryArtworkDataUri(c.slug, c.name),
           children: [],
         },
       ]),
@@ -238,6 +243,8 @@ export class CatalogService {
           discountPercent: discountPercent(p.originalPriceMinor, currentPrice),
           currencyCode: p.currencyCode,
           imageUrl: p.images[0]?.url ?? null,
+          hoverImageUrl: p.images[1]?.url ?? null,
+          colors: [...new Set(p.variants.map((v) => v.color).filter(Boolean))] as string[],
           campaignId: running?.campaignId ?? null,
           campaignSlug: running ? running.campaign.slug : null,
           totalAvailable,
@@ -293,6 +300,8 @@ export class CatalogService {
       discountPercent: discountPercent(p.originalPriceMinor, currentPrice),
       currencyCode: p.currencyCode,
       imageUrl: p.images[0]?.url ?? null,
+      hoverImageUrl: p.images[1]?.url ?? null,
+      colors: [...new Set(p.variants.map((v) => v.color).filter(Boolean))] as string[],
       campaignId: running?.campaignId ?? null,
       campaignSlug: running ? running.campaign.slug : null,
       totalAvailable: p.variants.reduce(

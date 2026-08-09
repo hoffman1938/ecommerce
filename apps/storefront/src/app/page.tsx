@@ -1,8 +1,10 @@
 import Link from 'next/link';
-import type { BrandDto, Paginated, ProductListItemDto } from '@outlet/types';
+import type { BrandDto, CategoryDto, Paginated, ProductListItemDto } from '@outlet/types';
 import { serverGet } from '@/lib/server-api';
 import { ProductGrid } from '@/components/product-card';
 import { CampaignSections } from '@/components/campaign-sections';
+import { CategoryTiles } from '@/components/category-tiles';
+import { Recommendations } from '@/components/recommendations';
 import { Section, SectionHeader } from '@/components/section';
 import { T } from '@/components/t';
 
@@ -13,8 +15,9 @@ export default async function HomePage() {
     ['03', <T key="p3t" id="home.prop3Title" />, <T key="p3b" id="home.prop3Body" />],
   ];
 
-  const [brands, newest, bestDiscounts] = await Promise.all([
+  const [brands, categories, newest, bestDiscounts] = await Promise.all([
     serverGet<BrandDto[]>('/catalog/brands'),
+    serverGet<CategoryDto[]>('/catalog/categories'),
     serverGet<Paginated<ProductListItemDto>>('/catalog/products?sort=newest&pageSize=8'),
     serverGet<Paginated<ProductListItemDto>>('/catalog/products?sort=discount&pageSize=8'),
   ]);
@@ -89,6 +92,20 @@ export default async function HomePage() {
       ) : null}
 
       <div className="container-page pb-8">
+        {/* Category navigation sits directly under the fold: visitors who
+            arrive without a product in mind need somewhere to go before they
+            need a deal, and recognising a garment is faster than reading a
+            nav label. */}
+        {categories && categories.length > 0 ? (
+          <Section className="reveal">
+            <SectionHeader
+              title="Shop by category"
+              description="Everything in the outlet, sorted the way you would ask for it."
+            />
+            <CategoryTiles categories={categories.slice(0, 8)} />
+          </Section>
+        ) : null}
+
         <CampaignSections limit={3} />
 
         {bestDiscounts && bestDiscounts.items.length > 0 ? (
@@ -151,6 +168,14 @@ export default async function HomePage() {
             <ProductGrid products={newest.items} />
           </Section>
         ) : null}
+
+        {/* Renders nothing until this browser has viewed something, so a first
+            visit is not padded with a section that is really just "more
+            products". */}
+        <Recommendations
+          title="Picked for you"
+          description="Based on what you have been looking at in this browser."
+        />
 
         {/* Service facts, numbered. Stated once, low on the page, where they
             answer a question rather than interrupt the offer. */}

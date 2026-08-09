@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import { CAMPAIGNS } from '@outlet/catalog';
+import { CAMPAIGNS, PRODUCTS } from '@outlet/catalog';
 import { uploadCampaignImage } from './images';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -19,7 +19,10 @@ export async function seedCampaigns(prisma: PrismaClient): Promise<void> {
     let coverImageUrl: string | null = null;
     const existing = await prisma.campaign.findUnique({ where: { slug: spec.slug } });
     if (!existing?.coverImageUrl) {
-      coverImageUrl = await uploadCampaignImage(spec.slug, spec.title);
+      coverImageUrl = await uploadCampaignImage(spec.slug, spec.productSlugs, (slug) => {
+        const found = PRODUCTS.find((p) => p.slug === slug);
+        return found ? { shape: found.shape, colors: found.colors } : undefined;
+      });
     }
 
     const campaign = await prisma.campaign.upsert({

@@ -162,6 +162,17 @@ export class AccountController {
     return this.orders.getOrderForUser(id, user.id);
   }
 
+  @Post('orders/:id/cancel')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Cancel my own order while it has not yet shipped' })
+  cancelOrder(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.orders.cancelOwnOrder(id, user, body?.reason);
+  }
+
   // --- Returns --------------------------------------------------------------
 
   @Get('returns')

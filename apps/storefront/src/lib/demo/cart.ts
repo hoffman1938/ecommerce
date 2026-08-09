@@ -17,7 +17,7 @@ import { deliveryEstimate, freeShippingProgress } from '@outlet/domain';
 import type { CartDto, CartItemDto } from '@outlet/types';
 import { CURRENCY_CODE, SETTINGS, brandBySlug, productBySlug, type DemoProduct } from './data';
 import { availableFor, getProduct } from './queries';
-import { DemoApiError } from './store';
+import { DemoApiError, simNow } from './store';
 
 export { DemoApiError };
 
@@ -186,13 +186,13 @@ function toDto(cart: StoredCart, now: number): CartDto {
 
 // --- Operations ------------------------------------------------------------
 
-export function getCart(now = Date.now()): CartDto {
+export function getCart(now = simNow()): CartDto {
   return toDto(read(), now);
 }
 
 export function addItem(
   input: { variantId: string; quantity: number; campaignId?: string | null },
-  now = Date.now(),
+  now = simNow(),
 ): CartDto {
   const cart = read();
   const product = PRODUCTS_BY_VARIANT.get(input.variantId);
@@ -228,7 +228,7 @@ export function addItem(
   return toDto(cart, now);
 }
 
-export function updateItem(lineId: string, quantity: number, now = Date.now()): CartDto {
+export function updateItem(lineId: string, quantity: number, now = simNow()): CartDto {
   const cart = read();
   const line = cart.lines.find((l) => l.id === lineId);
   if (!line) throw new DemoApiError(404, 'That cart line no longer exists.');
@@ -250,14 +250,14 @@ export function updateItem(lineId: string, quantity: number, now = Date.now()): 
   return toDto(cart, now);
 }
 
-export function removeItem(lineId: string, now = Date.now()): CartDto {
+export function removeItem(lineId: string, now = simNow()): CartDto {
   const cart = read();
   cart.lines = cart.lines.filter((l) => l.id !== lineId);
   write(cart);
   return toDto(cart, now);
 }
 
-export function applyCoupon(code: string | null, now = Date.now()): CartDto {
+export function applyCoupon(code: string | null, now = simNow()): CartDto {
   const cart = read();
   const normalised = code ? code.toUpperCase() : null;
   if (normalised && couponDiscount(normalised, 100_000) === 0) {
@@ -269,7 +269,7 @@ export function applyCoupon(code: string | null, now = Date.now()): CartDto {
 }
 
 /** Park a cart line: releases its reservation, keeps the choice. */
-export function saveForLater(lineId: string, now = Date.now()): CartDto {
+export function saveForLater(lineId: string, now = simNow()): CartDto {
   const cart = read();
   const index = cart.lines.findIndex((l) => l.id === lineId);
   if (index === -1) throw new DemoApiError(404, 'That cart line no longer exists.');
@@ -288,7 +288,7 @@ export function saveForLater(lineId: string, now = Date.now()): CartDto {
 }
 
 /** Move a parked line back into the cart, re-checking stock and re-reserving. */
-export function moveToCart(lineId: string, now = Date.now()): CartDto {
+export function moveToCart(lineId: string, now = simNow()): CartDto {
   const cart = read();
   const index = cart.saved.findIndex((l) => l.id === lineId);
   if (index === -1) throw new DemoApiError(404, 'That saved item no longer exists.');
@@ -321,14 +321,14 @@ export function moveToCart(lineId: string, now = Date.now()): CartDto {
   return toDto(cart, now);
 }
 
-export function removeSaved(lineId: string, now = Date.now()): CartDto {
+export function removeSaved(lineId: string, now = simNow()): CartDto {
   const cart = read();
   cart.saved = cart.saved.filter((l) => l.id !== lineId);
   write(cart);
   return toDto(cart, now);
 }
 
-export function clearCart(now = Date.now()): CartDto {
+export function clearCart(now = simNow()): CartDto {
   const cart = emptyCart();
   write(cart);
   return toDto(cart, now);

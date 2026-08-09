@@ -4,7 +4,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Order, OrderItem, Payment, Prisma, Shipment } from '@outlet/database';
+import type {
+  Order,
+  OrderItem,
+  OrderStatusHistory,
+  Payment,
+  Prisma,
+  Shipment,
+  ShipmentEvent,
+} from '@outlet/database';
 import { assertTransition, CANCELLABLE_ORDER_STATUSES, ORDER_TRANSITIONS } from '@outlet/domain';
 import type { AddressDto, OrderDto } from '@outlet/types';
 import { PrismaService } from '../../common/prisma.service';
@@ -16,13 +24,18 @@ import { QUEUE_CLIENT } from '../../common/tokens';
 type OrderWithRelations = Order & {
   items: OrderItem[];
   payments: Payment[];
-  shipments: Shipment[];
+  shipments: Array<Shipment & { events: ShipmentEvent[] }>;
+  statusHistory: OrderStatusHistory[];
 };
 
 const ORDER_INCLUDE = {
   items: true,
   payments: { orderBy: { createdAt: 'asc' as const } },
-  shipments: { orderBy: { createdAt: 'asc' as const } },
+  shipments: {
+    orderBy: { createdAt: 'asc' as const },
+    include: { events: { orderBy: { occurredAt: 'asc' as const } } },
+  },
+  statusHistory: { orderBy: { createdAt: 'asc' as const } },
 } as const;
 
 @Injectable()
@@ -93,9 +106,23 @@ export class OrdersService {
         status: s.status,
         shippedAt: s.shippedAt?.toISOString() ?? null,
         deliveredAt: s.deliveredAt?.toISOString() ?? null,
+        events: s.events.map((event) => ({
+          code: event.code,
+          label: event.label,
+          at: event.occurredAt.toISOString(),
+          location: event.location,
+        })),
+      })),
+      timeline: order.statusHistory.map((entry) => ({
+        status: entry.toStatus,
+        at: entry.createdAt.toISOString(),
+        note: entry.note,
       })),
       placedAt: order.placedAt.toISOString(),
       paidAt: order.paidAt?.toISOString() ?? null,
+      cancelledAt: order.cancelledAt?.toISOString() ?? null,
+      cancelReason: order.cancelReason,
+      isCancellable: CANCELLABLE_ORDER_STATUSES.includes(order.status),
       createdAt: order.createdAt.toISOString(),
     };
   }
@@ -117,6 +144,34 @@ export class OrdersService {
       take: 100,
     });
     return orders.map((o) => this.toOrderDto(o));
+  }
+
+  /**
+   * Customer-initiated cancellation. Ownership is checked here rather than in
+   * the controller so no caller can cancel someone else's order by id, and the
+   * transition itself reuses the admin path so the state machine, inventory
+   * restock and audit trail behave identically.
+   */
+  async cancelOwnOrder(
+    orderId: string,
+    user: { id: string; email: string },
+    reason?: string | null,
+  ): Promise<OrderDto> {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, userId: user.id },
+      select: { id: true, status: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    if (!CANCELLABLE_ORDER_STATUSES.includes(order.status)) {
+      throw new ConflictException(
+        `An order that is already ${order.status.toLowerCase().replace(/_/g, ' ')} can no longer be cancelled.`,
+      );
+    }
+    return this.updateStatus(
+      orderId,
+      { status: 'CANCELLED', note: reason ?? 'Cancelled by customer' },
+      { userId: user.id, email: user.email },
+    );
   }
 
   /**
@@ -150,6 +205,7 @@ export class OrdersService {
         data: {
           status: input.status,
           cancelledAt: input.status === 'CANCELLED' ? new Date() : undefined,
+          cancelReason: input.status === 'CANCELLED' ? (input.note ?? 'Cancelled') : undefined,
           version: { increment: 1 },
         },
       });
@@ -165,33 +221,52 @@ export class OrdersService {
 
       if (input.status === 'SHIPPED') {
         const existing = await tx.shipment.findFirst({ where: { orderId } });
-        if (existing) {
-          await tx.shipment.update({
-            where: { id: existing.id },
-            data: {
-              status: 'SHIPPED',
-              shippedAt: new Date(),
-              trackingNumber: input.trackingNumber ?? existing.trackingNumber,
-              carrier: input.carrier ?? existing.carrier,
-            },
-          });
-        } else {
-          await tx.shipment.create({
-            data: {
-              orderId,
-              status: 'SHIPPED',
-              shippedAt: new Date(),
-              trackingNumber: input.trackingNumber,
-              carrier: input.carrier ?? 'DHL',
-            },
-          });
-        }
+        const shipment = existing
+          ? await tx.shipment.update({
+              where: { id: existing.id },
+              data: {
+                status: 'SHIPPED',
+                shippedAt: new Date(),
+                trackingNumber: input.trackingNumber ?? existing.trackingNumber,
+                carrier: input.carrier ?? existing.carrier,
+              },
+            })
+          : await tx.shipment.create({
+              data: {
+                orderId,
+                status: 'SHIPPED',
+                shippedAt: new Date(),
+                trackingNumber: input.trackingNumber,
+                carrier: input.carrier ?? 'DHL',
+              },
+            });
+        // The customer's tracking timeline reads these scans, so a shipment
+        // marked shipped with no first scan would render as an empty timeline.
+        await tx.shipmentEvent.create({
+          data: {
+            shipmentId: shipment.id,
+            code: 'HANDED_OVER',
+            label: 'Handed to carrier',
+            location: null,
+          },
+        });
       }
       if (input.status === 'DELIVERED') {
+        const shipments = await tx.shipment.findMany({ where: { orderId } });
         await tx.shipment.updateMany({
           where: { orderId },
           data: { status: 'DELIVERED', deliveredAt: new Date() },
         });
+        for (const shipment of shipments) {
+          await tx.shipmentEvent.create({
+            data: {
+              shipmentId: shipment.id,
+              code: 'DELIVERED',
+              label: 'Delivered',
+              location: null,
+            },
+          });
+        }
       }
 
       // Cancelling a paid-but-unshipped order returns sold units to stock.

@@ -57,11 +57,67 @@ Coupons: `WELCOME10` (10 %, first order), `SAVE20` (20 € off from 100 €), `N
 
 ## Test payments
 
-Checkout redirects to a local mock payment page with four buttons:
-`TEST-SUCCESS`, `TEST-FAIL`, `TEST-CANCEL`, `TEST-DELAYED` (confirms after ~10 s through the
-worker). All outcomes are delivered as HMAC-signed webhooks through the same verification and
-duplicate-suppression path a real provider would use. Set `PAYMENT_PROVIDER=stripe` (with real
-keys) to switch to the Stripe adapter — never required locally.
+Checkout redirects to a simulated payment page with a card form. **No real payment is ever taken,
+no card number is transmitted or stored** — the number is resolved to an outcome in the browser and
+only the outcome code is sent. Use these test cards:
+
+| Card                  | Outcome                      |
+| --------------------- | ---------------------------- |
+| `4242 4242 4242 4242` | Succeeds                     |
+| `4000 0000 0000 0259` | Delayed confirmation (~10 s) |
+| `4000 0000 0000 0002` | Declined                     |
+| `4000 0000 0000 9995` | Insufficient funds           |
+| `4000 0000 0000 0069` | Expired card                 |
+| `4000 0000 0000 3220` | 3-D Secure fails             |
+| `4000 0000 0000 0119` | Provider unavailable         |
+| `4000 0000 0000 0127` | Network timeout              |
+
+Any other well-formed number is rejected as an invalid card. A "force an outcome directly" section
+on the same page skips the form. Against the real API all outcomes are delivered as HMAC-signed
+webhooks through the same verification and duplicate-suppression path a real provider would use.
+Set `PAYMENT_PROVIDER=stripe` (with real keys) to switch to the Stripe adapter — never required
+locally.
+
+## QA simulation sandbox
+
+The storefront ships a control center at **`/qa`** (linked from the sandbox banner) for driving the
+simulated business without waiting. Everything it does is browser-local — no request leaves the
+page, no money moves, nothing is sent to anyone.
+
+- **Time travel** — `+1h / +1d / +3d / +7d`. Ages reservations, campaign windows and fulfilment
+  together, so reservation expiry and campaign endings are reachable instantly.
+- **Orders** — force any fulfilment stage (`PAID → PROCESSING → PACKED → SHIPPED → DELIVERED`),
+  fail a delivery, or cancel. Each transition writes a timeline entry, an audit event, an in-app
+  notification and a simulated email.
+- **Returns & refunds** — walk a return through `REQUESTED → APPROVED → RECEIVED → COMPLETED`, or
+  reject it. The refund, restock and order status change only at the final step. Refund ids look
+  like `SIM-REF-2026-00001`.
+- **Inventory** — set any variant's availability to reproduce low-stock and sold-out states.
+- **Event log** — every state change the sandbox has recorded.
+- **Reset** — clear orders, inventory, inbox, events, cart, wishlist, or everything.
+- **Scenarios** — eight step-by-step routes covering successful purchase, failed payment and retry,
+  selling out mid-session, cancellation, return and refund, failed delivery, promo validation and
+  reservation expiry.
+
+Customers see the simulated notifications and emails at **`/account/inbox`**; tracking numbers look
+like `SIM-GEO-100001` and order numbers like `OUT-100001`.
+
+## Product imagery
+
+The catalogue ships no photography. Every product, category, brand and campaign
+image is generated from `packages/catalog/src/artwork.ts` — a studio still per
+colourway, in three views (`front`, `back` and a fabric `detail` macro), lit and
+framed identically. Two properties are why generated art beats stock
+photography here: each colourway is exactly the colour the variant claims, and
+nothing is licensed from anyone.
+
+`pnpm --filter @outlet/storefront artwork` writes them to
+`apps/storefront/public/artwork/` (gitignored, ~3 MB, 346 files). `predev` and
+`prebuild` run it automatically, so it is not a step you have to remember. The
+API-backed stack uploads the same SVGs to MinIO/S3 during seeding instead.
+
+Swapping in real photography later means replacing the URLs the seed writes —
+nothing downstream cares where an image came from.
 
 ## Commands
 
@@ -84,8 +140,9 @@ pnpm test:e2e             # Playwright end-to-end tests (requires the full stack
 
 ```text
 apps/          api (NestJS) · worker (BullMQ) · storefront (Next.js) · admin (Next.js)
-packages/      database (Prisma) · domain (pure logic) · auth · payments · storage ·
-               email · queue · ui · types · validation · config · eslint/tsconfig presets
+packages/      catalog (shared product data + generated artwork) · database (Prisma) ·
+               domain (pure logic) · auth · payments · storage · email · queue · ui ·
+               types · validation · config · eslint/tsconfig presets
 infrastructure/ docker · cloudflare (future-deployment notes) · scripts
 e2e/           Playwright test suite
 docs/          architecture, local setup, deployment strategies
