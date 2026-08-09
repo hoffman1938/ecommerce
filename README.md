@@ -1,4 +1,5 @@
 ## Demo: ecommerce-135.pages.dev
+
 # Outlet Marketplace — local-first MVP
 
 A production-ready, local-first outlet e-commerce platform (inspired by the business model of
