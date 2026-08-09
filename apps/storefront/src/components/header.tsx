@@ -11,6 +11,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   BagIcon,
@@ -776,7 +777,15 @@ function MobileMenu({
   const { t } = useI18n();
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  return (
+  /*
+   * Portalled to <body> rather than rendered in place. The header carries
+   * `backdrop-blur`, and an element with a backdrop-filter becomes the
+   * containing block for its fixed-position descendants — so `fixed inset-0`
+   * resolved against the 56px-tall header instead of the viewport, collapsing
+   * the drawer to a title bar sitting on top of a scrim that covered only the
+   * header. Outside it, `fixed` means the viewport again.
+   */
+  return createPortal(
     <div className="fixed inset-0 z-50 lg:hidden">
       <button
         type="button"
@@ -879,7 +888,8 @@ function MobileMenu({
           <ThemeToggle />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
