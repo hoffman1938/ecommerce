@@ -18,6 +18,7 @@
     "db:seed": "pnpm --filter @outlet/database build && pnpm --filter @outlet/database seed",
     "build": "pnpm -r --filter \"./packages/**\" build && pnpm -r --filter \"./apps/**\" build",
     "build:cloudflare": "node infrastructure/scripts/build-demo.mjs",
+    "build:admin-demo": "node infrastructure/scripts/build-admin-demo.mjs",
     "dev:api": "pnpm --filter @outlet/api dev",
     "dev:worker": "pnpm --filter @outlet/worker dev",
     "dev:storefront": "pnpm --filter @outlet/storefront dev",

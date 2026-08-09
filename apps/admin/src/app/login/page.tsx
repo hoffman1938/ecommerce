@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, DEMO_MODE } from '@/lib/api';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -78,7 +78,22 @@ export default function AdminLoginPage() {
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-        <p className="mt-4 text-xs text-gray-400">Local seed: admin@example.local / Admin123!</p>
+        {DEMO_MODE ? (
+          /*
+           * The demo accepts any credentials — there is no user table to check
+           * against. Saying so here matters more than anywhere else in the
+           * panel: this is the one screen with a password field, and a
+           * convincing-looking login invites a real password into a store that
+           * is plain localStorage.
+           */
+          <p className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <strong>Demo build — this is not authentication.</strong> Any email and password are
+            accepted, and nothing is checked or encrypted.{' '}
+            <strong>Do not enter a real password.</strong>
+          </p>
+        ) : (
+          <p className="mt-4 text-xs text-gray-400">Local seed: admin@example.local / Admin123!</p>
+        )}
       </div>
     </div>
   );
