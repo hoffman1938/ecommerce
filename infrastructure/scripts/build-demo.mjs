@@ -13,6 +13,8 @@
  * a deploy locally.
  */
 import { execSync } from 'node:child_process';
+import { cpSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 
 const PACKAGES = [
   '@outlet/types',
@@ -21,6 +23,10 @@ const PACKAGES = [
   '@outlet/validation',
   '@outlet/ui',
 ];
+
+const STOREFRONT_OUT = join('apps', 'storefront', 'out');
+const ADMIN_OUT = join('apps', 'admin', 'out');
+const ADMIN_NESTED = join(STOREFRONT_OUT, 'admin');
 
 // Run through a shell: on Windows `pnpm` is a .cmd shim, which Node refuses to
 // spawn directly. Every argument here is a literal from this file, so there is
@@ -36,4 +42,22 @@ for (const name of PACKAGES) {
 
 run('pnpm --filter @outlet/storefront build', { NEXT_PUBLIC_DEMO_MODE: 'true' });
 
-console.log('\nStatic export written to apps/storefront/out');
+/*
+ * The admin panel is built second and nested at /admin inside the storefront's
+ * export, so both ship from one Pages project on one domain.
+ *
+ * `ADMIN_BASE_PATH` makes Next emit every internal link, router push and asset
+ * URL under /admin; without it the nested copy would load the storefront's
+ * chunks and blank out. The two exports have separate `_next` directories and
+ * no overlapping paths, so the copy cannot clobber storefront files.
+ */
+run('pnpm --filter @outlet/admin build', {
+  NEXT_PUBLIC_DEMO_MODE: 'true',
+  ADMIN_BASE_PATH: '/admin',
+});
+
+rmSync(ADMIN_NESTED, { recursive: true, force: true });
+cpSync(ADMIN_OUT, ADMIN_NESTED, { recursive: true });
+
+console.log(`\nStatic export written to ${STOREFRONT_OUT}`);
+console.log(`Admin panel nested at ${ADMIN_NESTED} (served from /admin)`);

@@ -56,8 +56,13 @@ Create a Pages project from the Git repository, then set:
 | Production branch      | the branch holding this work                                                                      |
 | Framework preset       | **None**                                                                                          |
 | Root directory         | _(leave empty — the repo root, where `pnpm-workspace.yaml` lives)_                                |
-| Build command          | `pnpm install --no-frozen-lockfile --filter "@outlet/storefront..." && pnpm run build:cloudflare` |
+| Build command          | `pnpm install --no-frozen-lockfile --filter "@outlet/storefront..." --filter "@outlet/admin..." && pnpm run build:cloudflare` |
 | Build output directory | `apps/storefront/out`                                                                             |
+
+> **Both filters are required.** `build:cloudflare` also builds the admin panel demo and nests it
+> at `/admin` inside the storefront export (see `admin-demo-deploy.md`). `--filter
+> "@outlet/storefront..."` pulls in the storefront and *its* dependencies only — the admin is not
+> one of them, so omitting the second filter fails the build at the admin step.
 
 Environment variables (Production **and** Preview):
 
