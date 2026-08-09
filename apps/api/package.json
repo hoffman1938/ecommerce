@@ -19,6 +19,7 @@
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/throttler": "^6.0.0",
     "@outlet/auth": "workspace:*",
+    "@outlet/catalog": "workspace:*",
     "@outlet/config": "workspace:*",
     "@outlet/database": "workspace:*",
     "@outlet/domain": "workspace:*",

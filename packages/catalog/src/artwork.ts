@@ -319,6 +319,111 @@ export function campaignArtworkSvg(title: string, kicker = 'Limited stock. Limit
   );
 }
 
+// --- Category tiles ---------------------------------------------------------
+
+/**
+ * Which silhouettes stand in for a category, and on what ground.
+ *
+ * Category navigation only works if a tile is recognisable at a glance, so each
+ * one shows the garment the category is actually about — three overlapping
+ * pieces, largest in front — rather than an icon or a colour block.
+ */
+const CATEGORY_ART: Record<string, { shapes: ProductShape[]; colors: string[]; tint: string }> = {
+  't-shirts': { shapes: ['tee', 'polo', 'tee'], colors: ['White', 'Navy', 'Black'], tint: '#eceae6' },
+  shoes: { shapes: ['runner', 'sneaker', 'boot'], colors: ['White', 'Blue', 'Black'], tint: '#e9e7e3' },
+  'running-shoes': { shapes: ['runner', 'runner', 'runner'], colors: ['Blue', 'Black', 'Red'], tint: '#e9e7e3' },
+  sneakers: { shapes: ['sneaker', 'sneaker', 'sneaker'], colors: ['White', 'Red', 'Navy'], tint: '#e9e7e3' },
+  boots: { shapes: ['boot', 'boot', 'boot'], colors: ['Black', 'Green', 'Beige'], tint: '#e7e4df' },
+  hoodies: { shapes: ['hoodie', 'hoodie', 'hoodie'], colors: ['Grey', 'Navy', 'Black'], tint: '#eae8e4' },
+  jackets: { shapes: ['jacket', 'jacket', 'jacket'], colors: ['Navy', 'Green', 'Black'], tint: '#e8e6e2' },
+  pants: { shapes: ['pants', 'shorts', 'pants'], colors: ['Blue', 'Black', 'Beige'], tint: '#eae8e4' },
+  bags: { shapes: ['backpack', 'shoulder-bag', 'backpack'], colors: ['Black', 'Beige', 'Grey'], tint: '#e9e6e2' },
+  backpacks: { shapes: ['backpack', 'backpack', 'backpack'], colors: ['Black', 'Grey', 'Navy'], tint: '#e9e6e2' },
+  'shoulder-bags': { shapes: ['shoulder-bag', 'shoulder-bag', 'shoulder-bag'], colors: ['Black', 'Beige', 'Navy'], tint: '#e9e6e2' },
+  accessories: { shapes: ['cap', 'belt', 'scarf'], colors: ['Black', 'Beige', 'Red'], tint: '#ebe9e5' },
+};
+
+const CATEGORY_FALLBACK = CATEGORY_ART['t-shirts'];
+
+/**
+ * Category tile, 4:3.
+ *
+ * Three silhouettes are staggered back-to-front and scaled down, so the tile
+ * reads as an arrangement of goods rather than one big product — which is what
+ * distinguishes "a category" from "a product" at a glance.
+ */
+export function categoryArtworkSvg(categorySlug: string, categoryName: string): string {
+  const art = CATEGORY_ART[categorySlug] ?? CATEGORY_FALLBACK;
+  const width = 800;
+  const height = 600;
+
+  // Back to front: each layer is larger, lower and more opaque than the last.
+  const layers = [
+    { x: 0.24, y: 0.42, scale: 0.4, opacity: 0.45 },
+    { x: 0.75, y: 0.44, scale: 0.46, opacity: 0.65 },
+    { x: 0.49, y: 0.56, scale: 0.62, opacity: 1 },
+  ];
+
+  const body = layers
+    .map((layer, index) => {
+      const shape = art.shapes[index] ?? art.shapes[0];
+      const draw = SHAPES[shape] ?? SHAPES.tee;
+      const palette = paletteFor(art.colors[index] ?? 'Grey');
+      const tx = width * layer.x;
+      const ty = height * layer.y;
+      return (
+        `<g opacity="${layer.opacity}" transform="translate(${tx} ${ty}) scale(${layer.scale}) translate(-400 -400)">` +
+        draw(palette) +
+        `</g>`
+      );
+    })
+    .join('');
+
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
+    `viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(categoryName)}">` +
+    `<title>${escapeXml(categoryName)}</title>` +
+    `<rect width="${width}" height="${height}" fill="${art.tint}"/>` +
+    // Tight enough to read as the front piece's own contact shadow. A wide one
+    // floats free of the arrangement and looks like a smudge.
+    `<ellipse cx="${width / 2}" cy="${height * 0.85}" rx="${width * 0.2}" ry="18" fill="${SHADOW}"/>` +
+    body +
+    `</svg>`
+  );
+}
+
+// --- Brand cards ------------------------------------------------------------
+
+/**
+ * Brand card, 3:2.
+ *
+ * Set as a plain typographic lockup — the brand's *name*, which the storefront
+ * already shows in text everywhere. Deliberately not an imitation of anyone's
+ * actual logo: reproducing a real mark would be a trademark problem and would
+ * misrepresent this catalogue as officially licensed.
+ */
+export function brandArtworkSvg(brandName: string): string {
+  const width = 600;
+  const height = 400;
+  // Long names need to step down or they overflow the card.
+  const fontSize = brandName.length > 14 ? 46 : brandName.length > 9 ? 58 : 72;
+
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
+    `viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(brandName)}">` +
+    `<title>${escapeXml(brandName)}</title>` +
+    `<rect width="${width}" height="${height}" fill="#1b1d21"/>` +
+    `<rect x="28" y="28" width="${width - 56}" height="${height - 56}" fill="none" stroke="#ffffff" stroke-opacity="0.14"/>` +
+    `<text x="${width / 2}" y="${height / 2 + 6}" text-anchor="middle" dominant-baseline="middle" ` +
+    `font-family="Helvetica, Arial, sans-serif" font-size="${fontSize}" font-weight="700" ` +
+    `letter-spacing="-1" fill="#f6f5f3">${escapeXml(brandName.toUpperCase())}</text>` +
+    `<text x="${width / 2}" y="${height - 62}" text-anchor="middle" ` +
+    `font-family="Helvetica, Arial, sans-serif" font-size="15" letter-spacing="4" ` +
+    `fill="#8d8880">OUTLET</text>` +
+    `</svg>`
+  );
+}
+
 /** `productArtworkSvg` packed as a data URI, for the static demo build. */
 export function productArtworkDataUri(input: ProductArtworkInput): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(productArtworkSvg(input))}`;
@@ -326,4 +431,12 @@ export function productArtworkDataUri(input: ProductArtworkInput): string {
 
 export function campaignArtworkDataUri(title: string): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(campaignArtworkSvg(title))}`;
+}
+
+export function categoryArtworkDataUri(categorySlug: string, categoryName: string): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(categoryArtworkSvg(categorySlug, categoryName))}`;
+}
+
+export function brandArtworkDataUri(brandName: string): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(brandArtworkSvg(brandName))}`;
 }

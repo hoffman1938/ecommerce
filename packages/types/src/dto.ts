@@ -40,6 +40,8 @@ export interface BrandDto {
   slug: string;
   description: string | null;
   logoUrl: string | null;
+  /** Card artwork for brand tiles and the brand page header. */
+  imageUrl: string | null;
   isFeatured: boolean;
 }
 
@@ -49,6 +51,8 @@ export interface CategoryDto {
   slug: string;
   parentId: string | null;
   position: number;
+  /** Tile artwork for visual category navigation. */
+  imageUrl: string | null;
   children?: CategoryDto[];
 }
 

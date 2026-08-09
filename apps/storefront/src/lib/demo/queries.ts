@@ -34,6 +34,7 @@ import {
   type DemoProduct,
   type DemoVariant,
 } from './data';
+import { brandArtworkDataUri, categoryArtworkDataUri } from '@outlet/catalog';
 import { consumedFor, simNow } from './store';
 
 /** Seeded stock minus whatever paid demo orders have consumed. */
@@ -128,8 +129,13 @@ export function listBrands(): BrandDto[] {
     slug: b.slug,
     description: `${b.name} outlet deals.`,
     logoUrl: null,
+    imageUrl: brandArtworkDataUri(b.name),
     isFeatured: b.isFeatured,
   }));
+}
+
+export function getBrand(slug: string): BrandDto | null {
+  return listBrands().find((brand) => brand.slug === slug) ?? null;
 }
 
 export function listCategories(): CategoryDto[] {
@@ -140,14 +146,30 @@ export function listCategories(): CategoryDto[] {
     slug: c.slug,
     parentId: null,
     position: c.position,
+    imageUrl: categoryArtworkDataUri(c.slug, c.name),
     children: CATEGORIES.filter((child) => child.parentSlug === c.slug).map((child) => ({
       id: `cat_${child.slug}`,
       name: child.name,
       slug: child.slug,
       parentId: `cat_${c.slug}`,
       position: child.position,
+      imageUrl: categoryArtworkDataUri(child.slug, child.name),
     })),
   }));
+}
+
+/** Flat lookup including child categories, for page headers. */
+export function getCategory(slug: string): CategoryDto | null {
+  const spec = CATEGORIES.find((c) => c.slug === slug);
+  if (!spec) return null;
+  return {
+    id: `cat_${spec.slug}`,
+    name: spec.name,
+    slug: spec.slug,
+    parentId: spec.parentSlug ? `cat_${spec.parentSlug}` : null,
+    position: spec.position,
+    imageUrl: categoryArtworkDataUri(spec.slug, spec.name),
+  };
 }
 
 /** A category filter matches the category itself and any of its children. */
