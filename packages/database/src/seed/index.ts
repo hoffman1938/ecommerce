@@ -29,6 +29,13 @@ async function main(): Promise<void> {
     console.log(
       'Local credentials -> Super Admin: admin@example.local / Admin123!  Customer: customer@example.local / Customer123!',
     );
+    if (process.env.SEED_SUPERADMIN_EMAIL) {
+      // The password itself is never echoed — it came from the environment and
+      // logs are the last place it should reappear.
+      console.log(
+        `Owner Super Admin seeded from environment -> ${process.env.SEED_SUPERADMIN_EMAIL}`,
+      );
+    }
   } finally {
     await prisma.$disconnect();
   }

@@ -393,6 +393,10 @@ export function getProductReviews(
     isVerifiedPurchase: review.isVerifiedPurchase,
     helpfulCount: review.helpfulCount,
     createdAt: new Date(now - review.daysAgo * DAY_IN_MS).toISOString(),
+    // Shop replies are authored in the admin panel against the real API; the
+    // static demo catalogue carries none.
+    adminReply: null,
+    adminReplyAt: null,
   }));
 
   switch (params.sort) {

@@ -165,6 +165,9 @@ enum ReviewStatus {
   PENDING
   PUBLISHED
   REJECTED
+  /// Was published, then taken down. Distinct from REJECTED so the moderation
+  /// queue can tell "never passed review" from "pulled after the fact".
+  HIDDEN
 }
 
 // ---------------------------------------------------------------------------
@@ -207,6 +210,8 @@ model User {
   returnRequests ReturnRequest[]
   notifications  Notification[]
   reviews        ProductReview[]
+  reviewReplies  ProductReview[]       @relation("ReviewReplyAuthor")
+  moderatedReviews ProductReview[]     @relation("ReviewModerator")
   supportNotes   CustomerSupportNote[] @relation("noteSubject")
   authoredNotes  CustomerSupportNote[] @relation("noteAuthor")
 
@@ -992,17 +997,41 @@ model ProductReview {
   isVerifiedPurchase Boolean      @default(false)
   status             ReviewStatus @default(PUBLISHED)
   helpfulCount       Int          @default(0)
+
+  /// Merchant response. Shown beneath the review on the storefront, so it is
+  /// public text — the moderation note below is not.
+  adminReply         String?
+  adminReplyAt       DateTime?
+  adminReplyByUserId String?
+
+  /// Abuse reports from shoppers. The moderation queue sorts on these, which
+  /// is why the count is denormalised onto the row rather than counted from a
+  /// reports table on every listing.
+  reportCount        Int          @default(0)
+  reportedAt         DateTime?
+
+  /// Why a moderator last changed the status. Internal only.
+  moderationNote     String?
+  moderatedAt        DateTime?
+  moderatedByUserId  String?
+
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  product        Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user           User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  adminReplyBy   User?   @relation("ReviewReplyAuthor", fields: [adminReplyByUserId], references: [id], onDelete: SetNull)
+  moderatedBy    User?   @relation("ReviewModerator", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
 
   // One review per customer per product; anonymous rows are unconstrained.
   @@unique([productId, userId])
   @@index([productId, status])
   @@index([userId])
   @@index([createdAt])
+  // Drives the moderation queue: filter by status, newest first.
+  @@index([status, createdAt])
+  // Reported-first ordering for the abuse queue.
+  @@index([reportCount])
   @@map("product_reviews")
 }
 

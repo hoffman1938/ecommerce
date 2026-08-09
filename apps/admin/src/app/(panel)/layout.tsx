@@ -17,6 +17,7 @@ const NAV: Array<{ href: string; label: string; permission: string }> = [
   { href: '/returns', label: 'Returns', permission: 'returns.view' },
   { href: '/customers', label: 'Customers', permission: 'customers.view' },
   { href: '/coupons', label: 'Coupons', permission: 'coupons.view' },
+  { href: '/reviews', label: 'Reviews', permission: 'reviews.view' },
   { href: '/content', label: 'Content & settings', permission: 'content.manage' },
   { href: '/audit-logs', label: 'Audit logs', permission: 'audit_logs.view' },
   { href: '/admin-users', label: 'Admin users', permission: 'admin_users.manage' },

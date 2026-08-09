@@ -8,6 +8,15 @@ interface SeedUser {
   lastName: string;
   roles: string[];
   verified: boolean;
+  /**
+   * Re-hash and overwrite the password on every seed run.
+   *
+   * The placeholder accounts below deliberately do not do this: once a
+   * developer changes a local password, re-seeding should not silently put it
+   * back. The owner account does, so that rotating the environment variable
+   * and re-running the seed is an actual password rotation.
+   */
+  rotatePassword?: boolean;
 }
 
 // LOCAL SEED CREDENTIALS ONLY. Documented in the README; never use in
@@ -95,8 +104,40 @@ const SEED_USERS: SeedUser[] = [
   },
 ];
 
+/**
+ * The real owner account, supplied by environment rather than source.
+ *
+ * Every account above is a throwaway `*.example.local` placeholder, safe to
+ * commit precisely because it is fake. A genuine administrator credential is
+ * not, so it is read from `.env` — which is gitignored — and the repository
+ * never carries it. Set both variables to enable it:
+ *
+ *   SEED_SUPERADMIN_EMAIL=you@example.com
+ *   SEED_SUPERADMIN_PASSWORD=<a password you use nowhere else>
+ *
+ * Leave either unset and the seed behaves exactly as before.
+ */
+function ownerFromEnv(): SeedUser | null {
+  const email = process.env.SEED_SUPERADMIN_EMAIL?.trim();
+  const password = process.env.SEED_SUPERADMIN_PASSWORD;
+  if (!email || !password) return null;
+
+  return {
+    email: email.toLowerCase(),
+    password,
+    firstName: process.env.SEED_SUPERADMIN_FIRST_NAME?.trim() || 'Super',
+    lastName: process.env.SEED_SUPERADMIN_LAST_NAME?.trim() || 'Admin',
+    roles: ['Super Admin'],
+    verified: true,
+    rotatePassword: true,
+  };
+}
+
 export async function seedUsers(prisma: PrismaClient): Promise<void> {
-  for (const seedUser of SEED_USERS) {
+  const owner = ownerFromEnv();
+  const users = owner ? [...SEED_USERS, owner] : SEED_USERS;
+
+  for (const seedUser of users) {
     const passwordHash = await argon2.hash(seedUser.password);
     const user = await prisma.user.upsert({
       where: { email: seedUser.email },
@@ -108,7 +149,18 @@ export async function seedUsers(prisma: PrismaClient): Promise<void> {
         isEmailVerified: seedUser.verified,
         emailVerifiedAt: seedUser.verified ? new Date() : null,
       },
-      update: {},
+      update: seedUser.rotatePassword
+        ? {
+            passwordHash,
+            isEmailVerified: seedUser.verified,
+            emailVerifiedAt: seedUser.verified ? new Date() : null,
+            // A locked-out owner must be recoverable by re-running the seed.
+            status: 'ACTIVE',
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+            disabledReason: null,
+          }
+        : {},
     });
 
     if (seedUser.roles.length > 0) {
