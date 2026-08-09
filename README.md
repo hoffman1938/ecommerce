@@ -1,4 +1,4 @@
-## Demo: ecommerce-135.pages.dev
+## Demo: https://ecommerce-135.pages.dev/
 
 # Outlet Marketplace — local-first MVP
 
