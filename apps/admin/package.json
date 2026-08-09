@@ -11,6 +11,7 @@
     "test": "echo skip"
   },
   "dependencies": {
+    "@outlet/catalog": "workspace:*",
     "@outlet/types": "workspace:*",
     "@outlet/ui": "workspace:*",
     "@outlet/validation": "workspace:*",

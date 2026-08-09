@@ -5,6 +5,8 @@ Nothing here is required for local development, and no credentials are included.
 
 - `pages-demo-deploy.md` — **working** Pages configuration for the static storefront
   demo (no backend required), including what it does and does not reproduce
+- `admin-demo-deploy.md` — **working** Pages configuration for the static admin panel
+  demo (no backend required); a separate Pages project from the storefront
 - `storefront-pages.md` / `admin-pages.md` — Pages build configuration notes
 - `environment-variables.md` — full variable list per app and environment
 - `headers.example` / `redirects.example` — `_headers` / `_redirects` starting points

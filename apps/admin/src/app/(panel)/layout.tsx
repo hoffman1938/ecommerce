@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminUser, hasPermission } from '@/lib/hooks';
-import { api } from '@/lib/api';
+import { api, DEMO_MODE } from '@/lib/api';
 
 const NAV: Array<{ href: string; label: string; permission: string }> = [
   { href: '/', label: 'Dashboard', permission: 'dashboard.view' },
@@ -75,7 +75,27 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
           </button>
         </nav>
       </aside>
-      <main className="flex-1 overflow-x-auto p-6">{children}</main>
+      <main className="flex-1 overflow-x-auto">
+        <DemoBanner />
+        <div className="p-6">{children}</div>
+      </main>
+    </div>
+  );
+}
+
+/**
+ * States plainly what the static build is, for the same reason the storefront
+ * carries one: someone handed this URL without context would otherwise assume
+ * they are looking at a real back office with real orders behind it.
+ */
+function DemoBanner() {
+  if (!DEMO_MODE) return null;
+  return (
+    <div className="border-b border-amber-200 bg-amber-50 px-6 py-2.5 text-xs text-amber-900">
+      <strong>Demo build.</strong> Sample data only — no server, no database. Changes are saved in
+      this browser and are visible only to you. Review moderation is fully working; most other
+      edits are disabled. Sign-in is not authentication —{' '}
+      <strong>never enter a real password.</strong>
     </div>
   );
 }
