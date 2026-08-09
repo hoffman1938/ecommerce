@@ -60,9 +60,9 @@ Create a Pages project from the Git repository, then set:
 | Build output directory | `apps/storefront/out`                                                                                                         |
 
 > **Both filters are required.** `build:cloudflare` also builds the admin panel demo and nests it
-> at `/admin` inside the storefront export (see `admin-demo-deploy.md`). `--filter
-"@outlet/storefront..."` pulls in the storefront and _its_ dependencies only — the admin is not
-> one of them, so omitting the second filter fails the build at the admin step.
+> at `/admin` inside the storefront export (see `admin-demo-deploy.md`). `--filter "@outlet/storefront..."`
+> pulls in the storefront and _its_ dependencies only — the admin is not one of them, so omitting
+> the second filter fails the build at the admin step.
 
 Environment variables (Production **and** Preview):
 
