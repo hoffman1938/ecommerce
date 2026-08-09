@@ -522,7 +522,8 @@ export default function ReviewsPage() {
       {listQuery.data && listQuery.data.totalPages > 1 ? (
         <div className="mt-3 flex items-center justify-between text-sm">
           <p className="text-gray-500">
-            Page {listQuery.data.page} of {listQuery.data.totalPages} · {listQuery.data.total} review
+            Page {listQuery.data.page} of {listQuery.data.totalPages} · {listQuery.data.total}{' '}
+            review
             {listQuery.data.total === 1 ? '' : 's'}
           </p>
           <div className="flex gap-2">
@@ -553,7 +554,9 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: boo
   return (
     <div>
       <p className="text-xs uppercase tracking-wide text-gray-400">{label}</p>
-      <p className={cx('text-lg font-semibold', tone ? 'text-red-600' : 'text-gray-900')}>{value}</p>
+      <p className={cx('text-lg font-semibold', tone ? 'text-red-600' : 'text-gray-900')}>
+        {value}
+      </p>
     </div>
   );
 }

@@ -214,9 +214,7 @@ export const adminReviewQuerySchema = z.object({
   reported: z.enum(['true']).optional(),
   /** Only rows the shop has (not) answered. */
   replied: z.enum(['true', 'false']).optional(),
-  sort: z
-    .enum(['newest', 'oldest', 'highest', 'lowest', 'reported', 'helpful'])
-    .default('newest'),
+  sort: z.enum(['newest', 'oldest', 'highest', 'lowest', 'reported', 'helpful']).default('newest'),
 });
 export type AdminReviewQueryInput = z.infer<typeof adminReviewQuerySchema>;
 

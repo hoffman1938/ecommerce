@@ -98,11 +98,7 @@ export function resetState(): void {
   if (typeof window !== 'undefined') window.localStorage.removeItem(STORE_KEY);
 }
 
-export function recordAudit(
-  action: string,
-  entityType: string,
-  entityId: string | null,
-): void {
+export function recordAudit(action: string, entityType: string, entityId: string | null): void {
   writeState((state) => {
     state.auditLog.unshift({
       id: `audit_${Date.now()}_${state.auditLog.length}`,
@@ -129,7 +125,10 @@ export function currentReviews(): DemoReview[] {
 
 export function currentCustomers() {
   const state = readState();
-  return DEMO_CUSTOMERS.map((customer) => ({ ...customer, ...(state.customers[customer.id] ?? {}) }));
+  return DEMO_CUSTOMERS.map((customer) => ({
+    ...customer,
+    ...(state.customers[customer.id] ?? {}),
+  }));
 }
 
 export function currentProducts() {

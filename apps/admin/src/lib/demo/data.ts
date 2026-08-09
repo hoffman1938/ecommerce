@@ -226,7 +226,8 @@ export const DEMO_CUSTOMERS: DemoCustomer[] = Array.from({ length: 24 }, (_, ind
   const lastName = pick(LAST_NAMES, `${key}:l`);
   return {
     id: `user_demo_${index}`,
-    email: `${firstName}.${lastName}${index}`.toLowerCase().replace(/[^a-z0-9.]/g, '') + '@example.com',
+    email:
+      `${firstName}.${lastName}${index}`.toLowerCase().replace(/[^a-z0-9.]/g, '') + '@example.com',
     firstName,
     lastName,
     status: hash01(`${key}:status`) > 0.92 ? 'DISABLED' : 'ACTIVE',
@@ -283,7 +284,8 @@ export const DEMO_ORDERS: DemoOrder[] = Array.from({ length: 40 }, (_, index) =>
 
   const items = Array.from({ length: lineCount }, (_, line) => {
     const product = DEMO_PRODUCTS[Math.floor(hash01(`${key}:${line}:p`) * DEMO_PRODUCTS.length)];
-    const variant = product.variants[Math.floor(hash01(`${key}:${line}:v`) * product.variants.length)];
+    const variant =
+      product.variants[Math.floor(hash01(`${key}:${line}:v`) * product.variants.length)];
     const quantity = intBetween(1, 2, `${key}:${line}:q`);
     return {
       id: `item_${index}_${line}`,

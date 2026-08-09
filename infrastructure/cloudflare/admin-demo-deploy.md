@@ -17,8 +17,8 @@ the BullMQ worker. So the demo build swaps the API for a bundled dataset generat
 catalogue spec (`packages/catalog` — the same one the Prisma seed writes to Postgres), with edits
 kept in `localStorage`.
 
-| Works in the demo                                        | Still needs the real backend        |
-| -------------------------------------------------------- | ----------------------------------- |
+| Works in the demo                                          | Still needs the real backend        |
+| ---------------------------------------------------------- | ----------------------------------- |
 | Every screen loads with realistic data                     | Shared data between users           |
 | Dashboard: revenue, AOV, sales by day/brand, low stock     | Real authentication and RBAC        |
 | Products list + detail, variants, stock                    | Editing products, orders, campaigns |
@@ -44,13 +44,13 @@ baseline.
 
 Use the **existing** storefront Pages project. Only the build command changes:
 
-| Setting                | Value                                                                                                                        |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Setting                | Value                                                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Build command          | `pnpm install --no-frozen-lockfile --filter "@outlet/storefront..." --filter "@outlet/admin..." && pnpm run build:cloudflare` |
-| Build output directory | `apps/storefront/out` _(unchanged)_                                                                                          |
+| Build output directory | `apps/storefront/out` _(unchanged)_                                                                                           |
 
 **The second `--filter` is mandatory.** `--filter "@outlet/storefront..."` installs the storefront
-and *its* dependencies; the admin is not one of them, so without `--filter "@outlet/admin..."` the
+and _its_ dependencies; the admin is not one of them, so without `--filter "@outlet/admin..."` the
 build fails at the admin step with missing modules.
 
 No environment variables are required: the build script sets `NEXT_PUBLIC_DEMO_MODE=true` and
@@ -86,11 +86,11 @@ Storefront at `http://localhost:3005`, panel at `http://localhost:3005/admin`.
 
 To give the panel its own domain instead, create a second Pages project with:
 
-| Setting                | Value                                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------------------- |
-| Root directory         | _(empty — the repo root)_                                                                   |
+| Setting                | Value                                                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| Root directory         | _(empty — the repo root)_                                                                    |
 | Build command          | `pnpm install --no-frozen-lockfile --filter "@outlet/admin..." && pnpm run build:admin-demo` |
-| Build output directory | `apps/admin/out`                                                                            |
+| Build output directory | `apps/admin/out`                                                                             |
 
 `build:admin-demo` leaves `ADMIN_BASE_PATH` unset, so the panel serves from the domain root.
 Locally: `pnpm run build:admin-demo && npx serve apps/admin/out -l 3002`.
