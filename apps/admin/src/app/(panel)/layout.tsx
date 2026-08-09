@@ -93,9 +93,8 @@ function DemoBanner() {
   return (
     <div className="border-b border-amber-200 bg-amber-50 px-6 py-2.5 text-xs text-amber-900">
       <strong>Demo build.</strong> Sample data only — no server, no database. Changes are saved in
-      this browser and are visible only to you. Review moderation is fully working; most other
-      edits are disabled. Sign-in is not authentication —{' '}
-      <strong>never enter a real password.</strong>
+      this browser and are visible only to you. Review moderation is fully working; most other edits
+      are disabled. Sign-in is not authentication — <strong>never enter a real password.</strong>
     </div>
   );
 }

@@ -137,13 +137,13 @@ function toOrderDto(order: (typeof DEMO_ORDERS)[number]) {
   // Every status the order has passed through, oldest first.
   const progression = ['AWAITING_PAYMENT', 'PAID', 'PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED'];
   const reachedIndex = progression.indexOf(order.status);
-  const timeline = (reachedIndex >= 0 ? progression.slice(0, reachedIndex + 1) : [order.status]).map(
-    (status, index) => ({
-      status,
-      occurredAt: new Date(Date.parse(order.placedAt) + index * 3600_000).toISOString(),
-      note: null,
-    }),
-  );
+  const timeline = (
+    reachedIndex >= 0 ? progression.slice(0, reachedIndex + 1) : [order.status]
+  ).map((status, index) => ({
+    status,
+    occurredAt: new Date(Date.parse(order.placedAt) + index * 3600_000).toISOString(),
+    note: null,
+  }));
 
   const paid = order.paymentStatus === 'PAID';
   return {
@@ -232,7 +232,8 @@ function listReviews(query: Query) {
   if (query.status) rows = rows.filter((r) => r.status === query.status);
   if (query.productId) rows = rows.filter((r) => r.product.id === query.productId);
   if (query.rating) rows = rows.filter((r) => r.rating === Number(query.rating));
-  if (query.verified) rows = rows.filter((r) => r.isVerifiedPurchase === (query.verified === 'true'));
+  if (query.verified)
+    rows = rows.filter((r) => r.isVerifiedPurchase === (query.verified === 'true'));
   if (query.reported === 'true') rows = rows.filter((r) => r.reportCount > 0);
   if (query.replied === 'true') rows = rows.filter((r) => r.adminReply !== null);
   if (query.replied === 'false') rows = rows.filter((r) => r.adminReply === null);
@@ -697,7 +698,13 @@ export function demoRequest(method: string, path: string, body?: Record<string, 
         id: 'role_moderator',
         name: 'Moderator',
         description: 'Reviews only — no orders, money or inventory.',
-        permissions: ['dashboard.view', 'reviews.view', 'reviews.moderate', 'reviews.reply', 'reviews.delete'],
+        permissions: [
+          'dashboard.view',
+          'reviews.view',
+          'reviews.moderate',
+          'reviews.reply',
+          'reviews.delete',
+        ],
       },
     ];
   }

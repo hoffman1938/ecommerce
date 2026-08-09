@@ -79,9 +79,7 @@ export class AdminReviewsController {
   @Get()
   @RequirePermissions(Permissions.ReviewsView)
   @ApiOperation({ summary: 'Search and filter reviews for moderation' })
-  async list(
-    @Query(new ZodValidationPipe(adminReviewQuerySchema)) query: AdminReviewQueryInput,
-  ) {
+  async list(@Query(new ZodValidationPipe(adminReviewQuerySchema)) query: AdminReviewQueryInput) {
     const where = this.reviews.buildWhere(query);
     const [items, total] = await Promise.all([
       this.prisma.productReview.findMany({
@@ -105,9 +103,7 @@ export class AdminReviewsController {
   @Get('stats')
   @RequirePermissions(Permissions.ReviewsView)
   @ApiOperation({ summary: 'Rating statistics and moderation queue counts' })
-  async stats(
-    @Query(new ZodValidationPipe(adminReviewQuerySchema)) query: AdminReviewQueryInput,
-  ) {
+  async stats(@Query(new ZodValidationPipe(adminReviewQuerySchema)) query: AdminReviewQueryInput) {
     return this.reviews.stats(query);
   }
 

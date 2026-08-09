@@ -75,7 +75,9 @@ export class AdminReviewsService {
     };
   }
 
-  buildOrderBy(sort: AdminReviewQueryInput['sort']): Prisma.ProductReviewOrderByWithRelationInput[] {
+  buildOrderBy(
+    sort: AdminReviewQueryInput['sort'],
+  ): Prisma.ProductReviewOrderByWithRelationInput[] {
     switch (sort) {
       case 'oldest':
         return [{ createdAt: 'asc' }];
