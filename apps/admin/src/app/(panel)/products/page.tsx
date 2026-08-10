@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatMoney, Badge } from '@outlet/ui';
+import { Badge } from '@outlet/ui';
 import { api, API_BASE_URL } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 interface AdminProduct {
   id: string;
@@ -21,6 +22,7 @@ interface AdminProduct {
 }
 
 export default function AdminProductsPage() {
+  const { money } = useI18n();
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
@@ -152,9 +154,9 @@ export default function AdminProductsPage() {
                       </Badge>
                     </td>
                     <td className="text-right">
-                      {formatMoney(product.outletPriceMinor)}
+                      {money(product.outletPriceMinor)}
                       <span className="block text-xs text-gray-400 line-through">
-                        {formatMoney(product.originalPriceMinor)}
+                        {money(product.originalPriceMinor)}
                       </span>
                     </td>
                     <td className="text-right">{product.variants.length}</td>

@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReturnRequestDto } from '@outlet/types';
-import { formatMoney, Badge } from '@outlet/ui';
+import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 export default function ReturnDetailPage() {
+  const { money } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -229,7 +231,7 @@ export default function ReturnDetailPage() {
               <li key={refund.id} className="flex justify-between">
                 <span className="text-gray-600">{refund.reason ?? 'Refund'}</span>
                 <span>
-                  {formatMoney(refund.amountMinor)}{' '}
+                  {money(refund.amountMinor)}{' '}
                   <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>
                     {refund.status}
                   </Badge>

@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Alert, Button, TextField, cx, formatMoney } from '@outlet/ui';
+import { Alert, Button, TextField, cx } from '@outlet/ui';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import {
@@ -12,6 +12,7 @@ import {
   validateCard,
   type CardFormValues,
 } from '@/lib/test-cards';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Simulated payment page.
@@ -35,11 +36,11 @@ const DIRECT_OUTCOMES = [
 const EMPTY_FORM: CardFormValues = { number: '', name: '', expiry: '', cvc: '' };
 
 function MockPaymentInner() {
+  const { money } = useI18n();
   const params = useSearchParams();
   const router = useRouter();
   const paymentId = params.get('paymentId') ?? '';
   const amount = Number(params.get('amount') ?? '0');
-  const currency = params.get('currency') ?? 'EUR';
   const orderNumber = params.get('orderNumber') ?? '';
   const returnUrl = params.get('returnUrl') ?? '/';
 
@@ -122,7 +123,7 @@ function MockPaymentInner() {
 
         <h1 className="mt-3 text-xl font-bold text-ink-950">Order {orderNumber}</h1>
         <p data-numeric className="mt-1 text-3xl font-black text-ink-950">
-          {formatMoney(amount, currency)}
+          {money(amount)}
         </p>
         <p className="mt-2 text-sm text-ink-500">
           No real payment is taken and no card details are stored or transmitted. Use a test card
@@ -182,7 +183,7 @@ function MockPaymentInner() {
           </div>
 
           <Button type="submit" size="lg" fullWidth loading={busy !== null} data-testid="pay-now">
-            Pay {formatMoney(amount, currency)}
+            Pay {money(amount)}
           </Button>
         </form>
 

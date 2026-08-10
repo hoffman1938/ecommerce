@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { CampaignDto, ProductListItemDto } from '@outlet/types';
 import { EmptyState, Skeleton } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import { CampaignCard } from './campaign-card';
 import { ProductGrid, ProductGridSkeleton } from './product-card';
 import { Countdown } from './countdown';
@@ -33,6 +34,7 @@ function CampaignGridSkeleton({ count = 3 }: { count?: number }) {
 }
 
 export function CampaignSections({ limit }: { limit?: number }) {
+  const { t } = useI18n();
   const active = useQuery({
     queryKey: ['campaigns', 'active'],
     queryFn: () => api.get<CampaignDto[]>('/campaigns?status=active'),
@@ -52,9 +54,9 @@ export function CampaignSections({ limit }: { limit?: number }) {
     <>
       <Section>
         <SectionHeader
-          title="Campaigns live now"
-          description="Short windows, limited stock. Prices return to normal when the timer ends."
-          action={limit ? { href: '/campaigns', label: 'All campaigns' } : undefined}
+          title={t('campaign.liveTitle')}
+          description={t('campaign.liveDesc')}
+          action={limit ? { href: '/campaigns', label: t('campaign.allCampaigns') } : undefined}
         />
         {active.isPending ? (
           <CampaignGridSkeleton count={limit ?? 3} />
@@ -66,13 +68,13 @@ export function CampaignSections({ limit }: { limit?: number }) {
           </div>
         ) : (
           <p className="border-t border-line py-10 text-center lg:py-12 text-sm text-ink-500">
-            No campaigns are running right now.
+            {t('campaign.noneActive')}
           </p>
         )}
       </Section>
 
       <Section>
-        <SectionHeader title="Coming soon" />
+        <SectionHeader title={t('campaign.comingSoon')} />
         {upcoming.isPending ? (
           <CampaignGridSkeleton count={limit ?? 2} />
         ) : upcomingItems.length > 0 ? (
@@ -83,7 +85,7 @@ export function CampaignSections({ limit }: { limit?: number }) {
           </div>
         ) : (
           <p className="border-t border-line py-10 text-center lg:py-12 text-sm text-ink-500">
-            Nothing scheduled yet — check back soon.
+            {t('campaign.noneUpcoming')}
           </p>
         )}
       </Section>
@@ -92,6 +94,7 @@ export function CampaignSections({ limit }: { limit?: number }) {
 }
 
 export function CampaignDetail({ slug }: { slug: string }) {
+  const { t, formatDate } = useI18n();
   const {
     data: campaign,
     isPending,
@@ -118,8 +121,8 @@ export function CampaignDetail({ slug }: { slug: string }) {
     return (
       <div className="container-page">
         <EmptyState
-          title="Campaign not found"
-          description="This campaign may have ended or the link is no longer valid."
+          title={t('campaign.notFound')}
+          description={t('campaign.notFoundDesc')}
         />
       </div>
     );
@@ -143,7 +146,7 @@ export function CampaignDetail({ slug }: { slug: string }) {
           />
           <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 lg:p-9">
             <p className="text-2xs font-bold uppercase tracking-[0.09em] text-white/70">
-              {isUpcoming ? 'Upcoming campaign' : 'Live campaign'}
+              {isUpcoming ? t('campaign.upcomingLabel') : t('campaign.liveLabel')}
             </p>
             <h1 className="mt-2 text-3xl font-extrabold leading-[0.96] tracking-[-0.038em] text-white sm:text-5xl lg:text-7xl">
               {campaign.title}
@@ -155,10 +158,10 @@ export function CampaignDetail({ slug }: { slug: string }) {
             ) : null}
             <p className="mt-4 text-sm text-white/85">
               {isUpcoming ? (
-                <>Opens {new Date(campaign.startsAt).toLocaleString()}</>
+                <>{t('campaign.opens', { date: formatDate(campaign.startsAt) })}</>
               ) : (
                 <>
-                  Ends in <Countdown expiresAt={campaign.endsAt} tone="inverse" />
+                  {t('campaign.endsIn')} <Countdown expiresAt={campaign.endsAt} tone="inverse" />
                 </>
               )}
             </p>
@@ -168,15 +171,14 @@ export function CampaignDetail({ slug }: { slug: string }) {
 
       {isUpcoming ? (
         <p className="mt-6 border-l-2 border-ink-950 bg-ink-25 px-4 py-3 text-sm text-ink-700 dark:rounded-r dark:border-l-ink-700 dark:bg-surface-card dark:text-content-secondary">
-          This campaign has not started yet. The prices below are the campaign prices that will
-          apply once it opens.
+          {t('campaign.upcomingNote')}
         </p>
       ) : null}
 
       <Section className="mt-8 lg:mt-10">
         <SectionHeader
-          title={isUpcoming ? 'What will be included' : 'In this campaign'}
-          description={`${campaign.products.length} ${campaign.products.length === 1 ? 'product' : 'products'}`}
+          title={isUpcoming ? t('campaign.willInclude') : t('campaign.inCampaign')}
+          description={t('product.productCount', { count: campaign.products.length })}
         />
         <ProductGrid products={campaign.products} priorityCount={4} />
       </Section>

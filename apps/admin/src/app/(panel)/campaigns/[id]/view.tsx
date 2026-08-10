@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatMoney } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import {
   CampaignForm,
   EMPTY_CAMPAIGN,
@@ -30,6 +30,7 @@ function toLocalInput(iso: string): string {
 }
 
 export default function EditCampaignPage() {
+  const { money } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [values, setValues] = useState<CampaignFormValues>(EMPTY_CAMPAIGN);
@@ -111,9 +112,9 @@ export default function EditCampaignPage() {
                   {cp.product.name}
                   <span className="block text-xs text-gray-400">{cp.product.brand.name}</span>
                 </td>
-                <td className="text-right">{formatMoney(cp.product.outletPriceMinor)}</td>
+                <td className="text-right">{money(cp.product.outletPriceMinor)}</td>
                 <td className="text-right font-semibold text-red-600">
-                  {cp.campaignPriceMinor != null ? formatMoney(cp.campaignPriceMinor) : '—'}
+                  {cp.campaignPriceMinor != null ? money(cp.campaignPriceMinor) : '—'}
                 </td>
                 <td className="text-right">
                   <button

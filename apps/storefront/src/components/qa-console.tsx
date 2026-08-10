@@ -4,12 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
-import { Alert, Badge, Button, SelectField, cx, formatMoney } from '@outlet/ui';
+import { Alert, Badge, Button, SelectField, cx } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
 import type { EventDto } from '@/lib/demo/inbox';
 import type { InventoryRowDto, ReturnRowDto, SimulationStatusDto } from '@/lib/demo/simulation';
 import { RETURN_STATUS_LABELS } from '@/lib/demo/simulation';
 import { SCENARIOS } from '@/lib/scenarios';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Simulation control center.
@@ -39,6 +40,7 @@ const RESET_TARGETS = [
 ] as const;
 
 export function QaConsole() {
+  const { money } = useI18n();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
@@ -209,7 +211,7 @@ export function QaConsole() {
                     </Badge>
                   </p>
                   <p data-numeric className="text-xs text-ink-500">
-                    {formatMoney(order.totalMinor, order.currencyCode)} · {order.items.length}{' '}
+                    {money(order.totalMinor)} · {order.items.length}{' '}
                     {order.items.length === 1 ? 'item' : 'items'}
                   </p>
                 </div>
@@ -301,7 +303,7 @@ export function QaConsole() {
                   <p data-numeric className="text-xs text-ink-500">
                     {request.orderNumber} · {request.itemCount}{' '}
                     {request.itemCount === 1 ? 'item' : 'items'} ·{' '}
-                    {formatMoney(request.refundMinor, 'EUR')}
+                    {money(request.refundMinor)}
                   </p>
                 </div>
                 <div className="flex gap-2">

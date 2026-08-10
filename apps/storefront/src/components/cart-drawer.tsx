@@ -5,11 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import type { CartItemDto } from '@outlet/types';
-import { BagIcon, Button, CloseIcon, TruckIcon, cx, formatMoney } from '@outlet/ui';
+import { BagIcon, Button, CloseIcon, TruckIcon, cx } from '@outlet/ui';
 import { useCart } from '@/lib/hooks';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { FreeShippingBar } from './free-shipping-bar';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Mini bag.
@@ -21,6 +22,7 @@ import { FreeShippingBar } from './free-shipping-bar';
  * check out.
  */
 export function CartDrawer({ onClose }: { onClose: () => void }) {
+  const { money } = useI18n();
   const { data: cart, isLoading, refetch } = useCart();
   const queryClient = useQueryClient();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -176,7 +178,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
               <div className="flex items-baseline justify-between">
                 <span className="text-sm text-ink-600">Subtotal</span>
                 <span data-numeric className="text-lg font-bold text-ink-950">
-                  {formatMoney(cart?.subtotalMinor ?? 0, currency)}
+                  {money(cart?.subtotalMinor ?? 0)}
                 </span>
               </div>
               <p className="mt-1 text-xs text-ink-500">
@@ -206,7 +208,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
 
 function DrawerLine({
   item,
-  currency,
+  
   onClose,
   onRemove,
   onQuantity,
@@ -217,6 +219,7 @@ function DrawerLine({
   onRemove: () => void;
   onQuantity: (quantity: number) => void;
 }) {
+  const { money } = useI18n();
   return (
     <li className="flex gap-3 py-4">
       <Link
@@ -277,7 +280,7 @@ function DrawerLine({
               item.originalUnitPriceMinor > item.unitPriceMinor ? 'text-sale-500' : 'text-ink-950',
             )}
           >
-            {formatMoney(item.lineTotalMinor, currency)}
+            {money(item.lineTotalMinor)}
           </span>
         </div>
       </div>

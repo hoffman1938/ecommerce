@@ -23,11 +23,11 @@ import {
   SearchIcon,
   UserIcon,
   cx,
-  formatMoney,
 } from '@outlet/ui';
 import { api } from '@/lib/api';
 import type { SearchSuggestionsDto } from '@outlet/types';
 import { useCart, useCurrentUser, useLogout } from '@/lib/hooks';
+import { AUDIENCES } from '@/lib/audience';
 import { useI18n } from '@/lib/i18n';
 import { LocaleSwitcher } from './locale-switcher';
 import { ThemeToggle } from './theme';
@@ -152,7 +152,7 @@ function SearchForm({
   className?: string;
 }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, money } = useI18n();
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
   const [open, setOpen] = useState(false);
@@ -312,7 +312,7 @@ function SearchForm({
                         ) : null}
                         <span className="min-w-0 flex-1 truncate">{product.name}</span>
                         <span data-numeric className="shrink-0 text-xs text-ink-500">
-                          {formatMoney(product.currentPriceMinor, 'EUR')}
+                          {money(product.currentPriceMinor)}
                         </span>
                       </SuggestionRow>
                     );
@@ -650,6 +650,20 @@ export function Header() {
               </Link>
             </li>
             <li aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-ink-200 dark:bg-ink-300" />
+            {/* Audience before category: "who is it for" is the first question a
+                fashion shopper answers, and it narrows the catalogue far more
+                than a garment type does. */}
+            {AUDIENCES.map((audience) => (
+              <li key={audience.slug} className="shrink-0">
+                <NavLink
+                  href={`/shop/${audience.slug}`}
+                  active={pathname === `/shop/${audience.slug}`}
+                >
+                  {t(`audience.${audience.key}`)}
+                </NavLink>
+              </li>
+            ))}
+            <li aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-ink-200 dark:bg-ink-300" />
             <li className="shrink-0">
               <NavLink href="/products" active={pathname === '/products'}>
                 {t('nav.allProducts')}
@@ -880,6 +894,13 @@ function MobileMenu({
             {t('nav.campaigns')}
           </MenuLink>
           <MenuLink href="/products">{t('nav.allProducts')}</MenuLink>
+
+          <p className="eyebrow px-4 pb-1 pt-5">{t('nav.shopFor')}</p>
+          {AUDIENCES.map((audience) => (
+            <MenuLink key={audience.slug} href={`/shop/${audience.slug}`}>
+              {t(`audience.${audience.key}`)}
+            </MenuLink>
+          ))}
 
           <p className="eyebrow px-4 pb-1 pt-5">{t('nav.shopByCategory')}</p>
           {NAV.map((entry) =>

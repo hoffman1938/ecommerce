@@ -4,15 +4,17 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { CartItemDto, FreeShippingProgressDto } from '@outlet/types';
-import { Alert, Button, EmptyState, Skeleton, cx, formatMoney } from '@outlet/ui';
+import { Alert, Button, EmptyState, Skeleton, cx } from '@outlet/ui';
 import { useCart } from '@/lib/hooks';
 import { api, ApiError } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { Countdown } from '@/components/countdown';
 import { Recommendations } from '@/components/recommendations';
 import { PageHeader } from '@/components/section';
+import { useI18n } from '@/lib/i18n';
 
 export default function CartPage() {
+  const { money } = useI18n();
   const { data: cart, isLoading, refetch } = useCart();
   const queryClient = useQueryClient();
   const [couponCode, setCouponCode] = useState('');
@@ -85,7 +87,7 @@ export default function CartPage() {
           />
         ) : null}
 
-        <Recommendations title="Popular in the outlet" />
+        <Recommendations />
       </div>
     );
   }
@@ -162,13 +164,13 @@ export default function CartPage() {
             <div className="flex justify-between">
               <dt className="text-ink-600">Subtotal</dt>
               <dd data-numeric className="text-ink-900">
-                {formatMoney(cart.subtotalMinor, cart.currencyCode)}
+                {money(cart.subtotalMinor)}
               </dd>
             </div>
             {cart.discountMinor > 0 ? (
               <div className="flex justify-between text-success-700">
                 <dt>Coupon ({cart.couponCode})</dt>
-                <dd data-numeric>−{formatMoney(cart.discountMinor, cart.currencyCode)}</dd>
+                <dd data-numeric>−{money(cart.discountMinor)}</dd>
               </div>
             ) : null}
             <div className="flex justify-between">
@@ -176,17 +178,17 @@ export default function CartPage() {
               <dd data-numeric className="text-ink-900">
                 {cart.shippingMinor === 0
                   ? 'Free'
-                  : formatMoney(cart.shippingMinor, cart.currencyCode)}
+                  : money(cart.shippingMinor)}
               </dd>
             </div>
             <div className="flex items-baseline justify-between border-t border-line pt-3">
               <dt className="text-base font-semibold text-ink-950">Total</dt>
               <dd data-numeric data-testid="cart-total" className="text-lg font-bold text-ink-950">
-                {formatMoney(cart.totalMinor, cart.currencyCode)}
+                {money(cart.totalMinor)}
               </dd>
             </div>
             <p data-numeric className="text-xs text-ink-500">
-              Includes {formatMoney(cart.taxMinor, cart.currencyCode)} VAT
+              Includes {money(cart.taxMinor)} VAT
             </p>
           </dl>
 
@@ -289,7 +291,7 @@ export default function CartPage() {
           <div>
             <p className="text-xs text-ink-500">Total</p>
             <p data-numeric className="text-lg font-bold text-ink-950">
-              {formatMoney(cart.totalMinor, cart.currencyCode)}
+              {money(cart.totalMinor)}
             </p>
           </div>
           <Link
@@ -314,13 +316,14 @@ export default function CartPage() {
  */
 function FreeShippingProgress({
   progress,
-  currency,
+  
   subtotalAfterDiscount,
 }: {
   progress: FreeShippingProgressDto;
   currency: string;
   subtotalAfterDiscount: number;
 }) {
+  const { money } = useI18n();
   if (progress.thresholdMinor <= 0) return null;
 
   const percent = Math.min(
@@ -340,7 +343,7 @@ function FreeShippingProgress({
           <>
             Add{' '}
             <span data-numeric className="font-semibold text-ink-950">
-              {formatMoney(progress.remainingMinor, currency)}
+              {money(progress.remainingMinor)}
             </span>{' '}
             more to unlock free standard shipping.
           </>
@@ -394,6 +397,7 @@ function SavedForLater({
   onRestore: (id: string) => void;
   onDiscard: (id: string) => void;
 }) {
+  const { money } = useI18n();
   return (
     <section className="mt-10 border-t border-line pt-6 lg:mt-12 lg:pt-8">
       <h2 className="text-lg font-bold tracking-[-0.02em] text-ink-950">
@@ -438,7 +442,7 @@ function SavedForLater({
               </div>
               <div className="flex items-center gap-4">
                 <p data-numeric className="text-sm font-semibold text-ink-950">
-                  {formatMoney(item.unitPriceMinor, currency)}
+                  {money(item.unitPriceMinor)}
                 </p>
                 <Button
                   variant="secondary"
@@ -482,6 +486,7 @@ function CartRow({
   onSave: () => void;
   onExpired: () => void;
 }) {
+  const { money } = useI18n();
   return (
     <li
       className={cx('flex gap-4 py-5 transition-opacity', busy && 'opacity-50')}
@@ -517,7 +522,7 @@ function CartRow({
             ) : null}
           </div>
           <p data-numeric className="shrink-0 text-sm font-semibold text-ink-950">
-            {formatMoney(item.lineTotalMinor, currency)}
+            {money(item.lineTotalMinor)}
           </p>
         </div>
 

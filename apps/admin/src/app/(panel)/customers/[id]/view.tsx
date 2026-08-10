@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatMoney, formatDate, Badge } from '@outlet/ui';
+import { formatDate, Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 interface CustomerDetail {
   id: string;
@@ -42,6 +43,7 @@ interface CustomerDetail {
 }
 
 export default function CustomerDetailPage() {
+  const { money } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [note, setNote] = useState('');
@@ -121,7 +123,7 @@ export default function CustomerDetailPage() {
                   <Badge tone={order.status === 'CANCELLED' ? 'red' : 'blue'}>{order.status}</Badge>
                 </td>
                 <td className="text-right font-medium">
-                  {formatMoney(order.totalMinor, order.currencyCode)}
+                  {money(order.totalMinor)}
                 </td>
               </tr>
             ))}
@@ -156,7 +158,7 @@ export default function CustomerDetailPage() {
           ))}
           {customer.refunds.map((refund) => (
             <p key={refund.id} className="text-gray-600">
-              Refund {formatMoney(refund.amountMinor)} · {refund.status}
+              Refund {money(refund.amountMinor)} · {refund.status}
             </p>
           ))}
           {customer.returnRequests.length === 0 && customer.refunds.length === 0 ? (

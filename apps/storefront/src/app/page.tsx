@@ -99,8 +99,8 @@ export default async function HomePage() {
         {categories && categories.length > 0 ? (
           <Section className="reveal">
             <SectionHeader
-              title="Shop by category"
-              description="Everything in the outlet, sorted the way you would ask for it."
+              title={<T id="home.shopByCategory" />}
+              description={<T id="home.shopByCategoryDesc" />}
             />
             <CategoryTiles categories={categories.slice(0, 8)} />
           </Section>
@@ -172,10 +172,7 @@ export default async function HomePage() {
         {/* Renders nothing until this browser has viewed something, so a first
             visit is not padded with a section that is really just "more
             products". */}
-        <Recommendations
-          title="Picked for you"
-          description="Based on what you have been looking at in this browser."
-        />
+        <Recommendations />
 
         {/* Service facts, numbered. Stated once, low on the page, where they
             answer a question rather than interrupt the offer. */}

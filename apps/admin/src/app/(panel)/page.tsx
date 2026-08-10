@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import type { DashboardStatsDto } from '@outlet/types';
-import { formatMoney, formatDate, Badge } from '@outlet/ui';
+import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 function StatCard({ label, value, href }: { label: string; value: string; href?: string }) {
   const content = (
@@ -17,6 +18,7 @@ function StatCard({ label, value, href }: { label: string; value: string; href?:
 }
 
 export default function DashboardPage() {
+  const { money } = useI18n();
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get<DashboardStatsDto>('/admin/dashboard'),
@@ -30,9 +32,9 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Revenue" value={formatMoney(stats.revenueMinor)} />
+        <StatCard label="Revenue" value={money(stats.revenueMinor)} />
         <StatCard label="Orders" value={String(stats.orderCount)} href="/orders" />
-        <StatCard label="Avg. order value" value={formatMoney(stats.averageOrderValueMinor)} />
+        <StatCard label="Avg. order value" value={money(stats.averageOrderValueMinor)} />
         <StatCard label="Low stock SKUs" value={String(stats.lowStockCount)} href="/inventory" />
         <StatCard
           label="Active reservations"
@@ -83,7 +85,7 @@ export default function DashboardPage() {
                       {order.status}
                     </Badge>
                   </td>
-                  <td className="text-right font-medium">{formatMoney(order.totalMinor)}</td>
+                  <td className="text-right font-medium">{money(order.totalMinor)}</td>
                 </tr>
               ))}
             </tbody>
@@ -138,7 +140,7 @@ export default function DashboardPage() {
                 <tr key={row.day}>
                   <td>{row.day}</td>
                   <td className="text-right">{row.orderCount}</td>
-                  <td className="text-right font-medium">{formatMoney(row.revenueMinor)}</td>
+                  <td className="text-right font-medium">{money(row.revenueMinor)}</td>
                 </tr>
               ))}
               {stats.salesByDay.length === 0 ? (
@@ -167,7 +169,7 @@ export default function DashboardPage() {
                 <tr key={row.brandName}>
                   <td>{row.brandName}</td>
                   <td className="text-right">{row.unitsSold}</td>
-                  <td className="text-right font-medium">{formatMoney(row.revenueMinor)}</td>
+                  <td className="text-right font-medium">{money(row.revenueMinor)}</td>
                 </tr>
               ))}
             </tbody>
@@ -186,7 +188,7 @@ export default function DashboardPage() {
                   <tr key={row.campaignTitle}>
                     <td>{row.campaignTitle}</td>
                     <td className="text-right">{row.unitsSold}</td>
-                    <td className="text-right font-medium">{formatMoney(row.revenueMinor)}</td>
+                    <td className="text-right font-medium">{money(row.revenueMinor)}</td>
                   </tr>
                 ))}
               </tbody>

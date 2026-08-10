@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { EmptyState, Skeleton, cx, formatMoney } from '@outlet/ui';
+import { EmptyState, Skeleton, cx } from '@outlet/ui';
 import { api } from '@/lib/api';
 import { useCurrentUser } from '@/lib/hooks';
 import { PageHeader } from '@/components/section';
+import { useI18n } from '@/lib/i18n';
 
 interface WishlistItem {
   id: string;
@@ -19,6 +20,7 @@ interface WishlistItem {
 }
 
 export default function WishlistPage() {
+  const { money } = useI18n();
   const { data: me, isLoading: meLoading } = useCurrentUser();
   const queryClient = useQueryClient();
   const { data: items, isLoading } = useQuery({
@@ -133,11 +135,11 @@ export default function WishlistPage() {
                           discounted ? 'text-sale-500' : 'text-ink-900',
                         )}
                       >
-                        {formatMoney(item.outletPriceMinor)}
+                        {money(item.outletPriceMinor)}
                       </span>
                       {discounted ? (
                         <span data-numeric className="text-xs text-ink-400 line-through">
-                          {formatMoney(item.originalPriceMinor)}
+                          {money(item.originalPriceMinor)}
                         </span>
                       ) : null}
                     </p>

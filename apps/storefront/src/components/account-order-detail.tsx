@@ -5,9 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
-import { formatMoney, formatDate, Alert, Badge, Button } from '@outlet/ui';
+import { formatDate, Alert, Badge, Button } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
 import { OrderTimeline } from '@/components/order-timeline';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Client half of /account/orders/[id]. Split out of page.tsx so the route file
@@ -15,6 +16,7 @@ import { OrderTimeline } from '@/components/order-timeline';
  * 'use client' module cannot do and the static export requires.
  */
 export function AccountOrderDetail() {
+  const { money } = useI18n();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const orderId = searchParams.get('id') ?? '';
@@ -98,7 +100,7 @@ export function AccountOrderDetail() {
                   {item.returnedQuantity > 0 ? ` · ${item.returnedQuantity} returned` : ''}
                 </p>
               </div>
-              <p className="font-medium">{formatMoney(item.totalMinor, order.currencyCode)}</p>
+              <p className="font-medium">{money(item.totalMinor)}</p>
             </div>
           ))}
         </div>
@@ -133,21 +135,21 @@ export function AccountOrderDetail() {
           <dl className="space-y-1">
             <div className="flex justify-between">
               <dt className="text-ink-500">Subtotal</dt>
-              <dd>{formatMoney(order.subtotalMinor, order.currencyCode)}</dd>
+              <dd>{money(order.subtotalMinor)}</dd>
             </div>
             {order.discountMinor > 0 ? (
               <div className="flex justify-between text-success-700">
                 <dt>Discount {order.couponCode ? `(${order.couponCode})` : ''}</dt>
-                <dd>-{formatMoney(order.discountMinor, order.currencyCode)}</dd>
+                <dd>-{money(order.discountMinor)}</dd>
               </div>
             ) : null}
             <div className="flex justify-between">
               <dt className="text-ink-500">Shipping</dt>
-              <dd>{formatMoney(order.shippingMinor, order.currencyCode)}</dd>
+              <dd>{money(order.shippingMinor)}</dd>
             </div>
             <div className="flex justify-between border-t border-line pt-1 font-bold">
               <dt>Total</dt>
-              <dd>{formatMoney(order.totalMinor, order.currencyCode)}</dd>
+              <dd>{money(order.totalMinor)}</dd>
             </div>
           </dl>
           <div className="mt-3 border-t border-ink-100 pt-3">
@@ -160,7 +162,7 @@ export function AccountOrderDetail() {
                   {p.status}
                 </Badge>
                 {p.refundedAmountMinor > 0
-                  ? ` · refunded ${formatMoney(p.refundedAmountMinor, order.currencyCode)}`
+                  ? ` · refunded ${money(p.refundedAmountMinor)}`
                   : ''}
               </p>
             ))}

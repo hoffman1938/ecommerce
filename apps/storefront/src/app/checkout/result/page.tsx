@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
-import { formatMoney } from '@outlet/ui';
 import { api, DEMO_MODE } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { useCurrentUser } from '@/lib/hooks';
+import { useI18n } from '@/lib/i18n';
 
 interface OrderStatusView {
   status: string;
@@ -19,6 +19,7 @@ interface OrderStatusView {
 }
 
 function ResultInner() {
+  const { money } = useI18n();
   const params = useSearchParams();
   const orderId = params.get('orderId');
   const queryClient = useQueryClient();
@@ -110,7 +111,7 @@ function ResultInner() {
           {order.totalMinor != null ? (
             <p className="mt-2 text-ink-600">
               We received your payment of{' '}
-              {formatMoney(order.totalMinor, order.currencyCode ?? 'EUR')}. A confirmation email has
+              {money(order.totalMinor)}. A confirmation email has
               been sent.{' '}
               {DEMO_MODE ? (
                 <>

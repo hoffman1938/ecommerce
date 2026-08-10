@@ -7,11 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { addressSchema } from '@outlet/validation';
 import type { CheckoutQuoteDto, PaymentSessionDto } from '@outlet/types';
-import { formatMoney } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { useCurrentUser } from '@/lib/hooks';
 import { Countdown } from '@/components/countdown';
+import { useI18n } from '@/lib/i18n';
 
 const checkoutFormSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -24,6 +24,7 @@ const checkoutFormSchema = z.object({
 type CheckoutForm = z.infer<typeof checkoutFormSchema>;
 
 export default function CheckoutPage() {
+  const { money } = useI18n();
   const router = useRouter();
   const { data: me } = useCurrentUser();
   const [quote, setQuote] = useState<CheckoutQuoteDto | null>(null);
@@ -235,7 +236,7 @@ export default function CheckoutPage() {
                   <span>
                     {method.id === 'STANDARD' && quote.cart.shippingMinor === 0
                       ? 'Free'
-                      : formatMoney(method.priceMinor, quote.cart.currencyCode)}
+                      : money(method.priceMinor)}
                   </span>
                 </label>
               ))}
@@ -259,7 +260,7 @@ export default function CheckoutPage() {
                 <span className="text-ink-600">
                   {item.productName} × {item.quantity}
                 </span>
-                <span>{formatMoney(item.lineTotalMinor, quote.cart.currencyCode)}</span>
+                <span>{money(item.lineTotalMinor)}</span>
               </li>
             ))}
           </ul>
@@ -267,12 +268,12 @@ export default function CheckoutPage() {
             <dl className="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-ink-500">Subtotal</dt>
-                <dd>{formatMoney(totals.subtotal, quote.cart.currencyCode)}</dd>
+                <dd>{money(totals.subtotal)}</dd>
               </div>
               {totals.discount > 0 ? (
                 <div className="flex justify-between text-success-700">
                   <dt>Discount</dt>
-                  <dd>-{formatMoney(totals.discount, quote.cart.currencyCode)}</dd>
+                  <dd>-{money(totals.discount)}</dd>
                 </div>
               ) : null}
               <div className="flex justify-between">
@@ -280,7 +281,7 @@ export default function CheckoutPage() {
                 <dd>
                   {totals.shipping === 0
                     ? 'Free'
-                    : formatMoney(totals.shipping, quote.cart.currencyCode)}
+                    : money(totals.shipping)}
                 </dd>
               </div>
               {/* The figure the whole page exists to state. It gets its own
@@ -293,7 +294,7 @@ export default function CheckoutPage() {
                   data-testid="checkout-total"
                   className="text-lg font-bold tracking-[-0.01em] text-ink-950"
                 >
-                  {formatMoney(totals.total, quote.cart.currencyCode)}
+                  {money(totals.total)}
                 </dd>
               </div>
             </dl>

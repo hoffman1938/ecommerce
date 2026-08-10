@@ -9,6 +9,7 @@
  * missed endpoint surfaces as a visible error instead of an empty screen.
  */
 
+import type { TargetGroup } from '@outlet/types';
 import * as account from './account';
 import * as auth from './auth';
 import * as cart from './cart';
@@ -85,6 +86,7 @@ export function demoRequest(method: string, path: string, body?: unknown): unkno
             recentSlugs: splitSlugs(query.get('recent')),
             wishlistSlugs: splitSlugs(query.get('wishlist')),
             cartSlugs: splitSlugs(query.get('cart')),
+            audience: (query.get('audience') as TargetGroup | null) ?? undefined,
           },
           Number(query.get('limit')) || 4,
         );

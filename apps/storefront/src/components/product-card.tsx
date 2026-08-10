@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import type { ProductListItemDto } from '@outlet/types';
-import { HeartIcon, ImageIcon, Skeleton, StarRating, cx, formatMoney } from '@outlet/ui';
+import { HeartIcon, ImageIcon, Skeleton, StarRating, cx } from '@outlet/ui';
 import { useToggleWishlist } from '@/lib/hooks';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Product tile.
@@ -40,6 +41,7 @@ export function ProductCard({
   /** Skips lazy-loading for above-the-fold tiles. */
   priority?: boolean;
 }) {
+  const { money } = useI18n();
   const soldOut = product.totalAvailable <= 0;
   const lastFew = !soldOut && product.totalAvailable <= 3;
   const discounted = product.discountPercent > 0;
@@ -176,13 +178,13 @@ export function ProductCard({
             data-numeric
             className={cx('price-now text-sm', discounted && 'price-now--reduced')}
           >
-            {formatMoney(product.currentPriceMinor, product.currencyCode)}
+            {money(product.currentPriceMinor)}
           </span>
           {/* No percentage here — the badge on the image already states it, and
               saying it twice per tile is how a grid turns into a wall of red. */}
           {discounted ? (
             <span data-numeric className="price-was text-xs">
-              {formatMoney(product.originalPriceMinor, product.currencyCode)}
+              {money(product.originalPriceMinor)}
             </span>
           ) : null}
         </div>

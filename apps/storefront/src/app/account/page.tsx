@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
-import { formatMoney, formatDate, Badge } from '@outlet/ui';
+import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 export default function AccountOverviewPage() {
+  const { money } = useI18n();
   const { data: orders } = useQuery({
     queryKey: ['account-orders'],
     queryFn: () => api.get<OrderDto[]>('/account/orders'),
@@ -53,7 +55,7 @@ export default function AccountOverviewPage() {
                     </Badge>
                   </td>
                   <td className="py-2 text-right font-medium">
-                    {formatMoney(order.totalMinor, order.currencyCode)}
+                    {money(order.totalMinor)}
                   </td>
                 </tr>
               ))}

@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatMoney, Badge } from '@outlet/ui';
+import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 interface Coupon {
   id: string;
@@ -29,6 +30,7 @@ const EMPTY = {
 };
 
 export default function CouponsPage() {
+  const { money } = useI18n();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState<string | null>(null);
@@ -148,11 +150,11 @@ export default function CouponsPage() {
               <tr key={coupon.id}>
                 <td className="font-mono text-xs font-semibold">{coupon.code}</td>
                 <td>
-                  {coupon.type === 'PERCENTAGE' ? `${coupon.value}%` : formatMoney(coupon.value)}
-                  {coupon.maxDiscountMinor ? ` (max ${formatMoney(coupon.maxDiscountMinor)})` : ''}
+                  {coupon.type === 'PERCENTAGE' ? `${coupon.value}%` : money(coupon.value)}
+                  {coupon.maxDiscountMinor ? ` (max ${money(coupon.maxDiscountMinor)})` : ''}
                 </td>
                 <td className="text-xs text-gray-500">
-                  {coupon.minOrderMinor ? `Min ${formatMoney(coupon.minOrderMinor)}. ` : ''}
+                  {coupon.minOrderMinor ? `Min ${money(coupon.minOrderMinor)}. ` : ''}
                   {coupon.firstOrderOnly ? 'First order only.' : ''}
                 </td>
                 <td className="text-right">

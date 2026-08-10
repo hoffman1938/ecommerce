@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatMoney, Badge } from '@outlet/ui';
+import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 import {
   EMPTY_PRODUCT,
   ProductForm,
@@ -30,6 +31,7 @@ interface AdminProductDetail extends ProductFormValues {
 }
 
 export default function EditProductPage() {
+  const { money } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [values, setValues] = useState<ProductFormValues>(EMPTY_PRODUCT);
@@ -282,8 +284,8 @@ export default function EditProductPage() {
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-500">
-        Outlet price {formatMoney(product.outletPriceMinor)} vs original{' '}
-        {formatMoney(product.originalPriceMinor)}.
+        Outlet price {money(product.outletPriceMinor)} vs original{' '}
+        {money(product.originalPriceMinor)}.
       </section>
     </div>
   );

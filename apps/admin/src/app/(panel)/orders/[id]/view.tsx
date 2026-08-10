@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
-import { formatMoney, formatDate, Badge } from '@outlet/ui';
+import { formatDate, Badge } from '@outlet/ui';
 import { api, API_BASE_URL, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 interface AdminOrderDetail extends OrderDto {
   internalNote: string | null;
@@ -28,6 +29,7 @@ interface AdminOrderDetail extends OrderDto {
 }
 
 export default function AdminOrderDetailPage() {
+  const { money } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -127,20 +129,20 @@ export default function AdminOrderDetailPage() {
                 </td>
                 <td className="text-right">{item.quantity}</td>
                 <td className="text-right">
-                  {formatMoney(item.unitPriceMinor, order.currencyCode)}
+                  {money(item.unitPriceMinor)}
                 </td>
                 <td className="text-right font-medium">
-                  {formatMoney(item.totalMinor, order.currencyCode)}
+                  {money(item.totalMinor)}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
         <p className="mt-3 text-right text-sm">
-          Subtotal {formatMoney(order.subtotalMinor, order.currencyCode)} · Discount{' '}
-          {formatMoney(order.discountMinor, order.currencyCode)} · Shipping{' '}
-          {formatMoney(order.shippingMinor, order.currencyCode)} ·{' '}
-          <strong>Total {formatMoney(order.totalMinor, order.currencyCode)}</strong>
+          Subtotal {money(order.subtotalMinor)} · Discount{' '}
+          {money(order.discountMinor)} · Shipping{' '}
+          {money(order.shippingMinor)} ·{' '}
+          <strong>Total {money(order.totalMinor)}</strong>
         </p>
       </section>
 
@@ -215,7 +217,7 @@ export default function AdminOrderDetailPage() {
                 <li key={refund.id} className="flex justify-between">
                   <span className="text-gray-600">{refund.reason ?? 'Refund'}</span>
                   <span>
-                    {formatMoney(refund.amountMinor, order.currencyCode)}{' '}
+                    {money(refund.amountMinor)}{' '}
                     <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>
                       {refund.status}
                     </Badge>
@@ -244,7 +246,7 @@ export default function AdminOrderDetailPage() {
               }}
             >
               <p className="text-sm text-gray-500">
-                Refundable: {formatMoney(refundableMinor, order.currencyCode)}
+                Refundable: {money(refundableMinor)}
               </p>
               <input
                 type="number"

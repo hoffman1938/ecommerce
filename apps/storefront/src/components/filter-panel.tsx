@@ -5,23 +5,24 @@ import { useCallback, useEffect, useState } from 'react';
 import { COLOR_HEX } from '@outlet/catalog';
 import { CheckIcon, ChevronDown, CloseIcon, cx } from '@outlet/ui';
 import { track } from '@/lib/analytics';
+import { useI18n } from '@/lib/i18n';
 
 export const SORTS = [
-  ['recommended', 'Recommended'],
-  ['newest', 'Newest'],
-  ['price_asc', 'Price: low to high'],
-  ['price_desc', 'Price: high to low'],
-  ['discount', 'Highest discount'],
-  ['rating', 'Best rated'],
-  ['popularity', 'Popularity'],
+  ['recommended', 'filters.sort.recommended'],
+  ['newest', 'filters.sort.newest'],
+  ['price_asc', 'filters.sort.priceAsc'],
+  ['price_desc', 'filters.sort.priceDesc'],
+  ['discount', 'filters.sort.discount'],
+  ['rating', 'filters.sort.rating'],
+  ['popularity', 'filters.sort.popularity'],
 ] as const;
 
 const SIZES = ['S', 'M', 'L', 'XL', '30', '32', '34', '36', '40', '41', '42', '43', '44'];
 const GROUPS = [
-  ['MEN', 'Men'],
-  ['WOMEN', 'Women'],
-  ['KIDS', 'Kids'],
-  ['UNISEX', 'Unisex'],
+  ['MEN', 'audience.men'],
+  ['WOMEN', 'audience.women'],
+  ['KIDS', 'audience.kids'],
+  ['UNISEX', 'audience.unisex'],
 ] as const;
 const DISCOUNTS = [
   ['20', '20% or more'],
@@ -191,6 +192,7 @@ function OptionRow({
  * "120", and each push would fight the cursor.
  */
 function PriceRange() {
+  const { t } = useI18n();
   const { params, setParam } = useFilters();
   const min = params.get('minPrice') ?? '';
   const max = params.get('maxPrice') ?? '';
@@ -219,12 +221,12 @@ function PriceRange() {
       className="flex items-center gap-2"
     >
       <label className="flex-1">
-        <span className="sr-only">Minimum price</span>
+        <span className="sr-only">{t('filters.minPrice')}</span>
         <input
           type="number"
           inputMode="numeric"
           min={0}
-          placeholder="Min"
+          placeholder={t('filters.min')}
           value={draft.min}
           onChange={(e) => setDraft((d) => ({ ...d, min: e.target.value }))}
           onBlur={commit}
@@ -235,12 +237,12 @@ function PriceRange() {
         –
       </span>
       <label className="flex-1">
-        <span className="sr-only">Maximum price</span>
+        <span className="sr-only">{t('filters.maxPrice')}</span>
         <input
           type="number"
           inputMode="numeric"
           min={0}
-          placeholder="Max"
+          placeholder={t('filters.max')}
           value={draft.max}
           onChange={(e) => setDraft((d) => ({ ...d, max: e.target.value }))}
           onBlur={commit}
@@ -248,7 +250,7 @@ function PriceRange() {
         />
       </label>
       <button type="submit" className="sr-only">
-        Apply price range
+        {t('filters.applyPrice')}
       </button>
     </form>
   );
@@ -256,6 +258,7 @@ function PriceRange() {
 
 export function FilterPanel() {
   const { params, setParam } = useFilters();
+  const { t } = useI18n();
   const current = (key: string) => params.get(key);
   const toggle = (key: string, value: string) =>
     setParam(key, current(key) === value ? null : value);
@@ -273,7 +276,7 @@ export function FilterPanel() {
 
   return (
     <div>
-      <Group title="Availability">
+      <Group title={t('filters.availability')}>
         <label className="flex cursor-pointer items-center gap-2.5 px-2 py-1.5 text-sm text-ink-700">
           <input
             type="checkbox"
@@ -281,12 +284,12 @@ export function FilterPanel() {
             onChange={(e) => setParam('inStock', e.target.checked ? 'true' : null)}
             className="h-4 w-4 shrink-0 cursor-pointer rounded-xs border-ink-300 accent-ink-950 text-ink-950 focus:ring-ink-950"
           />
-          In stock only
+          {t('filters.inStockOnly')}
         </label>
       </Group>
 
       <Group
-        title="Brand"
+        title={t('filters.brand')}
         defaultOpen={false}
         badge={BRANDS.find(([s]) => s === current('brand'))?.[1] ?? null}
       >
@@ -302,11 +305,11 @@ export function FilterPanel() {
         </ul>
       </Group>
 
-      <Group title="Price" defaultOpen={false} badge={priceBadge}>
+      <Group title={t('filters.price')} defaultOpen={false} badge={priceBadge}>
         <PriceRange />
       </Group>
 
-      <Group title="Size" badge={current('size') ? `Size ${current('size')}` : null}>
+      <Group title={t('filters.size')} badge={current('size') ?? null}>
         <div className="flex flex-wrap gap-1.5">
           {SIZES.map((size) => {
             const selected = current('size') === size;
@@ -330,7 +333,7 @@ export function FilterPanel() {
         </div>
       </Group>
 
-      <Group title="Colour" defaultOpen={false} badge={current('color')}>
+      <Group title={t('filters.colour')} defaultOpen={false} badge={current('color')}>
         <ul className="space-y-0.5">
           {COLORS.map(([name, hex]) => {
             const selected = current('color') === name;
@@ -362,7 +365,7 @@ export function FilterPanel() {
       </Group>
 
       <Group
-        title="Discount"
+        title={t('filters.discount')}
         defaultOpen={false}
         badge={current('minDiscount') ? `${current('minDiscount')}%+` : null}
       >
@@ -379,7 +382,7 @@ export function FilterPanel() {
       </Group>
 
       <Group
-        title="Customer rating"
+        title={t('filters.rating')}
         defaultOpen={false}
         badge={current('minRating') ? `${current('minRating')}★ & up` : null}
       >
@@ -396,15 +399,19 @@ export function FilterPanel() {
       </Group>
 
       <Group
-        title="Audience"
+        title={t('filters.audience')}
         defaultOpen={false}
-        badge={GROUPS.find(([v]) => v === current('targetGroup'))?.[1] ?? null}
+        badge={
+          GROUPS.find(([v]) => v === current('targetGroup'))?.[1]
+            ? t(GROUPS.find(([v]) => v === current('targetGroup'))![1])
+            : null
+        }
       >
         <ul className="space-y-0.5">
-          {GROUPS.map(([value, label]) => (
+          {GROUPS.map(([value, labelKey]) => (
             <OptionRow
               key={value}
-              label={label}
+              label={t(labelKey)}
               selected={current('targetGroup') === value}
               onSelect={() => toggle('targetGroup', value)}
             />
@@ -417,6 +424,7 @@ export function FilterPanel() {
 
 /** Removable chips summarising what is currently filtered. */
 export function ActiveFilters() {
+  const { t } = useI18n();
   const { params, setParam, clearAll, activeCount } = useFilters();
   if (activeCount === 0) return null;
 
@@ -446,7 +454,10 @@ export function ActiveFilters() {
   const color = params.get('color');
   if (color) chip('color', color);
   const group = params.get('targetGroup');
-  if (group) chip('targetGroup', GROUPS.find(([v]) => v === group)?.[1] ?? group);
+  if (group) {
+    const key = GROUPS.find(([v]) => v === group)?.[1];
+    chip('targetGroup', key ? t(key) : group);
+  }
   const discount = params.get('minDiscount');
   if (discount) chip('minDiscount', `${discount}%+ off`);
   const rating = params.get('minRating');
@@ -479,6 +490,7 @@ export function ActiveFilters() {
 }
 
 export function SortSelect() {
+  const { t } = useI18n();
   const { params, setParam } = useFilters();
   return (
     <label className="flex items-center gap-2 text-sm">
@@ -488,9 +500,9 @@ export function SortSelect() {
         onChange={(e) => setParam('sort', e.target.value === 'recommended' ? null : e.target.value)}
         className="h-9 cursor-pointer rounded bg-ink-25 pl-2.5 pr-8 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow duration-150 hover:ring-ink-400 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600"
       >
-        {SORTS.map(([value, label]) => (
+        {SORTS.map(([value, labelKey]) => (
           <option key={value} value={value}>
-            {label}
+            {t(labelKey)}
           </option>
         ))}
       </select>

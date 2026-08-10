@@ -6,24 +6,26 @@ import { useEffect, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminUser, hasPermission } from '@/lib/hooks';
 import { api, DEMO_MODE } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
-const NAV: Array<{ href: string; label: string; permission: string }> = [
-  { href: '/', label: 'Dashboard', permission: 'dashboard.view' },
-  { href: '/products', label: 'Products', permission: 'products.view' },
-  { href: '/inventory', label: 'Inventory', permission: 'inventory.view' },
-  { href: '/reservations', label: 'Reservations', permission: 'reservations.view' },
-  { href: '/campaigns', label: 'Campaigns', permission: 'campaigns.view' },
-  { href: '/orders', label: 'Orders', permission: 'orders.view' },
-  { href: '/returns', label: 'Returns', permission: 'returns.view' },
-  { href: '/customers', label: 'Customers', permission: 'customers.view' },
-  { href: '/coupons', label: 'Coupons', permission: 'coupons.view' },
-  { href: '/reviews', label: 'Reviews', permission: 'reviews.view' },
-  { href: '/content', label: 'Content & settings', permission: 'content.manage' },
-  { href: '/audit-logs', label: 'Audit logs', permission: 'audit_logs.view' },
-  { href: '/admin-users', label: 'Admin users', permission: 'admin_users.manage' },
+const NAV: Array<{ href: string; labelKey: string; permission: string }> = [
+  { href: '/', labelKey: 'admin.dashboard', permission: 'dashboard.view' },
+  { href: '/products', labelKey: 'admin.products', permission: 'products.view' },
+  { href: '/inventory', labelKey: 'admin.inventory', permission: 'inventory.view' },
+  { href: '/reservations', labelKey: 'admin.reservations', permission: 'reservations.view' },
+  { href: '/campaigns', labelKey: 'admin.campaigns', permission: 'campaigns.view' },
+  { href: '/orders', labelKey: 'admin.orders', permission: 'orders.view' },
+  { href: '/returns', labelKey: 'admin.returns', permission: 'returns.view' },
+  { href: '/customers', labelKey: 'admin.customers', permission: 'customers.view' },
+  { href: '/coupons', labelKey: 'admin.coupons', permission: 'coupons.view' },
+  { href: '/reviews', labelKey: 'admin.reviews', permission: 'reviews.view' },
+  { href: '/content', labelKey: 'admin.content', permission: 'content.manage' },
+  { href: '/audit-logs', labelKey: 'admin.auditLogs', permission: 'audit_logs.view' },
+  { href: '/admin-users', labelKey: 'admin.adminUsers', permission: 'admin_users.manage' },
 ];
 
 export default function PanelLayout({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const { data: me, isLoading } = useAdminUser();
   const pathname = usePathname();
   const router = useRouter();
@@ -59,7 +61,7 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
                 pathname === item.href ? 'bg-gray-100 font-semibold' : 'text-gray-600'
               }`}
             >
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
           <button

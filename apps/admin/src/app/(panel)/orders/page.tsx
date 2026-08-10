@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
-import { formatMoney, formatDate, Badge } from '@outlet/ui';
+import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
 
 const STATUSES = [
   '',
@@ -22,6 +23,7 @@ const STATUSES = [
 ];
 
 export default function OrdersAdminPage() {
+  const { money } = useI18n();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -119,7 +121,7 @@ export default function OrdersAdminPage() {
                   )}
                 </td>
                 <td className="text-right font-medium">
-                  {formatMoney(order.totalMinor, order.currencyCode)}
+                  {money(order.totalMinor)}
                 </td>
               </tr>
             ))}

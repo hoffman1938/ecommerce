@@ -1,6 +1,6 @@
 'use client';
 
-import type { Paginated, ProductListItemDto } from '@outlet/types';
+import type { Paginated, ProductListItemDto, TargetGroup } from '@outlet/types';
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -11,6 +11,7 @@ import { track } from '@/lib/analytics';
 import { ProductGrid, ProductGridSkeleton } from './product-card';
 import { Recommendations } from './recommendations';
 import { ActiveFilters, FilterPanel, SortSelect, useFilters } from './filter-panel';
+import { useI18n } from '@/lib/i18n';
 
 const ALLOWED_FILTERS = [
   'q',
@@ -60,13 +61,17 @@ function ProductListingInner({
   fixedFilters = {},
   basePath,
   titleFromQueryParam,
+  audience,
 }: {
   title: string;
   fixedFilters?: Record<string, string>;
   basePath: string;
   titleFromQueryParam?: string;
+  /** Scopes the no-results suggestions to this listing's audience. */
+  audience?: TargetGroup;
 }) {
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   const { activeCount } = useFilters();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const queryString = toQueryString(searchParams, fixedFilters);
@@ -117,13 +122,13 @@ function ProductListingInner({
         <h1 className="display text-4xl sm:text-5xl lg:text-6xl">
           {term ? (
             <span className="block text-base font-semibold uppercase tracking-[0.12em] text-ink-500">
-              Results for
+              {t('product.results')}
             </span>
           ) : null}
           {resolvedTitle}
         </h1>
         <p data-numeric className="pb-1.5 text-sm text-ink-500">
-          {isPending ? 'Loading…' : `${result?.total ?? 0} products`}
+          {isPending ? t('common.loading') : t('product.productCount', { count: result?.total ?? 0 })}
         </p>
       </div>
 
@@ -143,7 +148,7 @@ function ProductListingInner({
               className="lg:hidden"
               onClick={() => setDrawerOpen(true)}
             >
-              Filters
+              {t('filters.title')}
               {activeCount > 0 ? (
                 <span
                   data-numeric
@@ -163,8 +168,8 @@ function ProductListingInner({
           <ActiveFilters />
 
           {isError ? (
-            <Alert tone="error" title="Could not load products">
-              The catalog request failed. Check that the API is reachable and try again.
+            <Alert tone="error" title={t('common.error')}>
+              {t('filters.noResultsDesc')}
             </Alert>
           ) : isPending ? (
             <ProductGridSkeleton count={12} />
@@ -180,7 +185,7 @@ function ProductListingInner({
               ) : null}
             </>
           ) : (
-            <NoResults />
+            <NoResults audience={audience} />
           )}
         </div>
       </div>
@@ -281,25 +286,22 @@ function Pagination({
  * ways back in — drop the filters, jump to a category, or take a
  * recommendation — instead of just reporting the empty result.
  */
-function NoResults() {
-  const { params, activeCount } = useFilters();
+function NoResults({ audience }: { audience?: TargetGroup }) {
+  const { t } = useI18n();
+  const { params } = useFilters();
   const term = params.get('q');
 
   return (
     <div>
       <EmptyState
-        title={term ? `We couldn’t find anything for “${term}”` : 'No products match those filters'}
-        description={
-          activeCount > 0
-            ? 'Try removing a filter, widening the price range, or checking the spelling.'
-            : 'Try a different search term, or browse a category below.'
-        }
+        title={term ? `${t('product.results')} “${term}”` : t('filters.noResults')}
+        description={t('filters.noResultsDesc')}
         action={<ClearFiltersButton />}
       />
 
       <div className="mt-8 border-t border-line pt-6">
         <p className="text-2xs font-semibold uppercase tracking-[0.07em] text-ink-500">
-          Browse categories
+          {t('common.browseOutlet')}
         </p>
         <ul className="mt-3 flex flex-wrap gap-2">
           {SUGGESTED_CATEGORIES.map((category) => (
@@ -315,7 +317,7 @@ function NoResults() {
         </ul>
       </div>
 
-      <Recommendations title="You might like these instead" limit={4} />
+      <Recommendations limit={4} audience={audience} />
     </div>
   );
 }
@@ -391,6 +393,7 @@ export function ProductListing(props: {
   fixedFilters?: Record<string, string>;
   basePath: string;
   titleFromQueryParam?: string;
+  audience?: TargetGroup;
 }) {
   return (
     <Suspense
@@ -400,7 +403,7 @@ export function ProductListing(props: {
             <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
               {props.title}
             </h1>
-            <p className="mt-1.5 text-sm text-ink-500">Loading…</p>
+            <p className="mt-1.5 text-sm text-ink-500">…</p>
           </div>
           <div className="pt-6 lg:pt-8">
             <ProductGridSkeleton count={12} />

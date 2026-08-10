@@ -1,7 +1,8 @@
 'use client';
 
 import type { FreeShippingProgressDto } from '@outlet/types';
-import { CheckIcon, TruckIcon, formatMoney } from '@outlet/ui';
+import { CheckIcon, TruckIcon } from '@outlet/ui';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Progress toward free delivery.
@@ -13,11 +14,12 @@ import { CheckIcon, TruckIcon, formatMoney } from '@outlet/ui';
  */
 export function FreeShippingBar({
   progress,
-  currency,
+  
 }: {
   progress: FreeShippingProgressDto;
   currency: string;
 }) {
+  const { money } = useI18n();
   const percent = progress.qualified
     ? 100
     : Math.max(
@@ -45,7 +47,7 @@ export function FreeShippingBar({
             <TruckIcon className="h-4 w-4 shrink-0 text-ink-500" />
             <span className="text-ink-600">
               <span data-numeric className="font-semibold text-ink-950">
-                {formatMoney(progress.remainingMinor, currency)}
+                {money(progress.remainingMinor)}
               </span>{' '}
               away from free standard delivery
             </span>

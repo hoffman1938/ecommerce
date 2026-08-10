@@ -107,6 +107,14 @@ const WAIST_SIZES = ['30', '32', '34', '36'];
 const ONE_SIZE = ['One Size'];
 
 /**
+ * Childrenswear is sized by age, and footwear by EU number in a range that
+ * cannot overlap the adult one — otherwise a "34" in the size filter would mean
+ * two different feet depending on which product you were looking at.
+ */
+const KIDS_CLOTHING_SIZES = ['4Y', '6Y', '8Y', '10Y', '12Y'];
+const KIDS_SHOE_SIZES = ['28', '30', '32', '34'];
+
+/**
  * Discounts are deliberately uneven — roughly a third sit under 30% — so the
  * catalogue does not read as uniformly half-price, which is the fastest way to
  * make an outlet look fake.
@@ -968,6 +976,125 @@ export const PRODUCTS: ProductSpec[] = [
     shape: 'scarf',
     shortDescription: 'Chunky ribbed scarf in a soft acrylic blend.',
     materials: '100% acrylic',
+  },
+
+  // --- Kids -----------------------------------------------------------------
+  // Sized in years and in the 28–34 EU shoe range, so kids' sizes can never be
+  // confused with the adult scale in a shared size filter.
+  {
+    name: 'Adidas Kids Essentials T-Shirt',
+    slug: 'adidas-kids-essentials-t-shirt',
+    skuCode: 'ADI-KID-TS',
+    brand: 'adidas',
+    category: 't-shirts',
+    targetGroup: 'KIDS',
+    originalPriceMinor: 1999,
+    outletPriceMinor: 1199,
+    sizes: KIDS_CLOTHING_SIZES,
+    colors: ['White', 'Blue'],
+    stock: 'high',
+    shape: 'tee',
+    shortDescription: 'Soft cotton tee cut for everyday play, with a printed logo.',
+    materials: '100% cotton',
+  },
+  {
+    name: 'Nike Kids Sportswear Hoodie',
+    slug: 'nike-kids-sportswear-hoodie',
+    skuCode: 'NIK-KID-HD',
+    brand: 'nike',
+    category: 'hoodies',
+    targetGroup: 'KIDS',
+    originalPriceMinor: 4499,
+    outletPriceMinor: 2699,
+    sizes: KIDS_CLOTHING_SIZES,
+    colors: ['Grey', 'Navy'],
+    stock: 'normal',
+    shape: 'hoodie',
+    shortDescription: 'Brushed-back fleece hoodie with a roomy kangaroo pocket.',
+    materials: '80% cotton, 20% polyester',
+  },
+  {
+    name: 'Puma Kids Trainer',
+    slug: 'puma-kids-trainer',
+    skuCode: 'PUM-KID-SH',
+    brand: 'puma',
+    category: 'sneakers',
+    targetGroup: 'KIDS',
+    originalPriceMinor: 4999,
+    outletPriceMinor: 2999,
+    sizes: KIDS_SHOE_SIZES,
+    colors: ['White', 'Black'],
+    stock: 'normal',
+    shape: 'sneaker',
+    shortDescription: 'Lightweight trainer with a hook-and-loop strap for quick fastening.',
+    materials: 'Synthetic upper, rubber outsole',
+  },
+  {
+    name: 'The North Face Kids Puffer Jacket',
+    slug: 'the-north-face-kids-puffer-jacket',
+    skuCode: 'TNF-KID-JK',
+    brand: 'the-north-face',
+    category: 'jackets',
+    targetGroup: 'KIDS',
+    originalPriceMinor: 9999,
+    outletPriceMinor: 5999,
+    sizes: KIDS_CLOTHING_SIZES,
+    colors: ['Black', 'Red'],
+    stock: 'low',
+    shape: 'jacket',
+    shortDescription: 'Insulated puffer with a fixed hood and elasticated cuffs.',
+    materials: 'Recycled polyester shell, synthetic insulation',
+    careInstructions: 'Machine wash cold on a gentle cycle. Tumble dry low to reloft.',
+  },
+  {
+    name: 'Levi’s Kids Slim Jeans',
+    slug: 'levis-kids-slim-jeans',
+    skuCode: 'LEV-KID-PT',
+    brand: 'levis',
+    category: 'pants',
+    targetGroup: 'KIDS',
+    originalPriceMinor: 4499,
+    outletPriceMinor: 2699,
+    sizes: KIDS_CLOTHING_SIZES,
+    colors: ['Blue', 'Black'],
+    stock: 'normal',
+    shape: 'pants',
+    shortDescription: 'Slim-leg stretch denim with an adjustable inner waistband.',
+    materials: '98% cotton, 2% elastane',
+  },
+  {
+    name: 'Nike Kids Mini Backpack',
+    slug: 'nike-kids-mini-backpack',
+    skuCode: 'NIK-KID-BP',
+    brand: 'nike',
+    category: 'backpacks',
+    targetGroup: 'KIDS',
+    originalPriceMinor: 2999,
+    outletPriceMinor: 1799,
+    sizes: ONE_SIZE,
+    colors: ['Blue', 'Red'],
+    stock: 'high',
+    shape: 'backpack',
+    shortDescription: 'Compact daypack sized for school books, with padded straps.',
+    materials: '100% polyester',
+  },
+
+  // --- Womenswear top-up ----------------------------------------------------
+  {
+    name: 'Puma Women’s Running Shoe',
+    slug: 'puma-womens-running-shoe',
+    skuCode: 'PUM-WMN-SH',
+    brand: 'puma',
+    category: 'running-shoes',
+    targetGroup: 'WOMEN',
+    originalPriceMinor: 7999,
+    outletPriceMinor: 4499,
+    sizes: ['36', '37', '38', '39', '40'],
+    colors: ['White', 'Pink'],
+    stock: 'normal',
+    shape: 'runner',
+    shortDescription: 'Cushioned road runner on a lightweight foam midsole.',
+    materials: 'Engineered mesh upper, rubber outsole',
   },
 ];
 
