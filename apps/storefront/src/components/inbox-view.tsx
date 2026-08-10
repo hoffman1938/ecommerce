@@ -6,6 +6,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Badge, Button, EmptyState, cx } from '@outlet/ui';
 import { api } from '@/lib/api';
 import type { EmailDto, NotificationDto } from '@/lib/demo/inbox';
+import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Notification centre and simulated mailbox.
@@ -19,6 +21,7 @@ import type { EmailDto, NotificationDto } from '@/lib/demo/inbox';
 type Tab = 'notifications' | 'emails';
 
 export function InboxView() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('notifications');
   const [openEmailId, setOpenEmailId] = useState<string | null>(null);
@@ -50,42 +53,32 @@ export function InboxView() {
               await api.post('/account/notifications/read-all', {});
               refresh();
             }}
-          >
-            Mark all read
-          </Button>
+          ><T id="ui.markAllRead" /></Button>
         ) : null}
       </div>
 
-      <Alert tone="info">
-        This is a sandbox mailbox. Messages are generated locally and never sent to a real address.
-      </Alert>
+      <Alert tone="info"><T id="ui.thisSandboxMailboxMessagesGenerated" /></Alert>
 
       <div role="tablist" className="flex gap-1 border-b border-line">
         <TabButton
           active={tab === 'notifications'}
           onClick={() => setTab('notifications')}
           count={notifications.data?.unreadCount ?? 0}
-        >
-          In-app
-        </TabButton>
+        ><T id="ui.app" /></TabButton>
         <TabButton
           active={tab === 'emails'}
           onClick={() => setTab('emails')}
           count={emails.data?.unreadCount ?? 0}
-        >
-          Email inbox
-        </TabButton>
+        ><T id="ui.emailInbox" /></TabButton>
       </div>
 
       {tab === 'notifications' ? (
         (notifications.data?.items ?? []).length === 0 ? (
           <EmptyState
-            title="No notifications yet"
-            description="Order updates appear here as your order moves through fulfilment."
+            title={t('ui.noNotificationsYet')}
+            description={t('ui.orderUpdatesAppearHereAs')}
             action={
-              <Link href="/products" className="text-sm underline underline-offset-2">
-                Browse the outlet
-              </Link>
+              <Link href="/products" className="text-sm underline underline-offset-2"><T id="ui.browseOutlet" /></Link>
             }
           />
         ) : (
@@ -121,9 +114,7 @@ export function InboxView() {
                         refresh();
                       }}
                       className="shrink-0 text-xs text-ink-500 underline underline-offset-2 hover:text-ink-950"
-                    >
-                      Mark read
-                    </button>
+                    ><T id="ui.markRead" /></button>
                   ) : null}
                 </div>
               </li>
@@ -132,8 +123,8 @@ export function InboxView() {
         )
       ) : (emails.data?.items ?? []).length === 0 ? (
         <EmptyState
-          title="No emails yet"
-          description="Order confirmations and shipping updates land here instead of a real inbox."
+          title={t('ui.noEmailsYet')}
+          description={t('ui.orderConfirmationsShippingUpdatesLand')}
         />
       ) : (
         <ul className="divide-y divide-ink-100 dark:divide-line border-t border-line">
@@ -186,9 +177,7 @@ export function InboxView() {
                       <Link
                         href="/account/orders"
                         className="mt-3 inline-block text-sm underline underline-offset-2"
-                      >
-                        View order
-                      </Link>
+                      ><T id="ui.viewOrder" /></Link>
                     ) : null}
                   </div>
                 ) : null}

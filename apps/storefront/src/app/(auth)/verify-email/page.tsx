@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { T } from '@/components/t';
 
 function VerifyInner() {
   const params = useSearchParams();
@@ -30,7 +31,7 @@ function VerifyInner() {
   }, [token]);
 
   return (
-    <div className="mx-auto max-w-sm py-16 text-center">
+    <div className="mx-auto max-w-sm py-12 text-center lg:py-16">
       <h1 className="text-2xl font-bold" data-testid="verify-result">
         {state === 'working'
           ? 'One moment…'
@@ -43,9 +44,7 @@ function VerifyInner() {
         <Link
           href="/login"
           className="mt-6 inline-block rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25"
-        >
-          Go to sign in
-        </Link>
+        ><T id="ui.goSign" /></Link>
       ) : null}
     </div>
   );

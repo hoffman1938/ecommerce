@@ -1,7 +1,9 @@
 'use client';
 
 import type { FreeShippingProgressDto } from '@outlet/types';
-import { CheckIcon, TruckIcon, formatMoney } from '@outlet/ui';
+import { CheckIcon, TruckIcon } from '@outlet/ui';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 /**
  * Progress toward free delivery.
@@ -13,11 +15,12 @@ import { CheckIcon, TruckIcon, formatMoney } from '@outlet/ui';
  */
 export function FreeShippingBar({
   progress,
-  currency,
+  
 }: {
   progress: FreeShippingProgressDto;
   currency: string;
 }) {
+  const { t, money  } = useI18n();
   const percent = progress.qualified
     ? 100
     : Math.max(
@@ -36,16 +39,14 @@ export function FreeShippingBar({
         {progress.qualified ? (
           <>
             <CheckIcon className="h-4 w-4 shrink-0 text-success-600" />
-            <span className="font-medium text-success-600">
-              Standard delivery is free on this order
-            </span>
+            <span className="font-medium text-success-600"><T id="ui.standardDeliveryFreeThisOrder" /></span>
           </>
         ) : (
           <>
             <TruckIcon className="h-4 w-4 shrink-0 text-ink-500" />
             <span className="text-ink-600">
               <span data-numeric className="font-semibold text-ink-950">
-                {formatMoney(progress.remainingMinor, currency)}
+                {money(progress.remainingMinor)}
               </span>{' '}
               away from free standard delivery
             </span>
@@ -58,7 +59,7 @@ export function FreeShippingBar({
         aria-valuenow={percent}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label="Progress toward free delivery"
+        aria-label={t('ui.progressTowardFreeDelivery')}
       >
         <div
           className={`h-full rounded-full transition-[width] duration-500 ease-out ${

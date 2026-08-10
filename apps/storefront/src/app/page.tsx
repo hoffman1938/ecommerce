@@ -30,7 +30,7 @@ export default async function HomePage() {
           immediately below carries the photography, so competing with it would
           only crowd the fold. */}
       <section className="masthead-wash container-page">
-        <div className="grid items-end gap-8 border-b border-line pb-10 pt-10 lg:grid-cols-12 lg:pb-14 lg:pt-16 dark:lg:pb-16 dark:lg:pt-20">
+        <div className="grid items-end gap-8 border-b border-line pb-8 pt-8 lg:grid-cols-12 lg:pb-14 lg:pt-16 dark:lg:pb-16 dark:lg:pt-20">
           <div className="lg:col-span-8">
             <p className="eyebrow">
               <T id="home.eyebrow" />
@@ -99,8 +99,8 @@ export default async function HomePage() {
         {categories && categories.length > 0 ? (
           <Section className="reveal">
             <SectionHeader
-              title="Shop by category"
-              description="Everything in the outlet, sorted the way you would ask for it."
+              title={<T id="home.shopByCategory" />}
+              description={<T id="home.shopByCategoryDesc" />}
             />
             <CategoryTiles categories={categories.slice(0, 8)} />
           </Section>
@@ -119,7 +119,7 @@ export default async function HomePage() {
           </Section>
         ) : (
           <Section>
-            <p className="border-t border-line py-16 text-center text-sm text-ink-500">
+            <p className="border-t border-line py-10 text-center lg:py-16 text-sm text-ink-500">
               <T id="product.noCatalog" />
             </p>
           </Section>
@@ -172,10 +172,7 @@ export default async function HomePage() {
         {/* Renders nothing until this browser has viewed something, so a first
             visit is not padded with a section that is really just "more
             products". */}
-        <Recommendations
-          title="Picked for you"
-          description="Based on what you have been looking at in this browser."
-        />
+        <Recommendations />
 
         {/* Service facts, numbered. Stated once, low on the page, where they
             answer a question rather than interrupt the offer. */}

@@ -2,6 +2,7 @@
 
 import type { OrderDto, ShipmentDto } from '@outlet/types';
 import { cx } from '@outlet/ui';
+import { T } from '@/components/t';
 
 /**
  * Order progress and carrier tracking.
@@ -37,8 +38,8 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
   // stages as "still to come" would be a lie.
   if (order.status === 'CANCELLED') {
     return (
-      <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5">
-        <h2 className="mb-3 font-semibold text-ink-950">Order progress</h2>
+      <section className="rounded border border-line bg-ink-25 p-4 dark:bg-surface-card sm:p-5">
+        <h2 className="mb-3 font-semibold text-ink-950"><T id="ui.orderProgress" /></h2>
         <ol className="space-y-3">
           {order.timeline.map((entry, index) => (
             <li key={`${entry.status}-${index}`} className="flex gap-3 text-sm">
@@ -66,8 +67,8 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
   const shipment = order.shipments[0];
 
   return (
-    <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5">
-      <h2 className="mb-4 font-semibold text-ink-950">Order progress</h2>
+    <section className="rounded border border-line bg-ink-25 p-4 dark:bg-surface-card sm:p-5">
+      <h2 className="mb-4 font-semibold text-ink-950"><T id="ui.orderProgress" /></h2>
 
       <ol className="relative space-y-4 border-l border-line pl-5">
         {ORDER_STAGES.map((stage) => {
@@ -90,7 +91,7 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
                   {formatStamp(at)}
                 </p>
               ) : (
-                <p className="text-xs text-ink-400">Not yet</p>
+                <p className="text-xs text-ink-400"><T id="ui.notYet" /></p>
               )}
             </li>
           );
@@ -113,9 +114,7 @@ function TrackingTimeline({ shipment }: { shipment: ShipmentDto }) {
       </div>
 
       {shipment.events.length === 0 ? (
-        <p className="mt-2 text-sm text-ink-500">
-          No carrier scans yet. The first update appears once the parcel is collected.
-        </p>
+        <p className="mt-2 text-sm text-ink-500"><T id="ui.noCarrierScansYetFirst" /></p>
       ) : (
         <ol className="relative mt-4 space-y-3.5 border-l border-line pl-5">
           {/* Newest first: the current whereabouts is what people open this for. */}

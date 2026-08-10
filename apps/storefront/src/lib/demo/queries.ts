@@ -18,6 +18,7 @@ import type {
   ProductReviewsDto,
   ReviewDto,
   SearchSuggestionsDto,
+  TargetGroup,
 } from '@outlet/types';
 import {
   BRANDS,
@@ -470,7 +471,19 @@ export function relatedProducts(slug: string, limit = 4, now = simNow()): Produc
  * nothing. Falls back to best-rated in-stock products for a cold visitor.
  */
 export function recommendedProducts(
-  signals: { recentSlugs?: string[]; wishlistSlugs?: string[]; cartSlugs?: string[] } = {},
+  signals: {
+    recentSlugs?: string[];
+    wishlistSlugs?: string[];
+    cartSlugs?: string[];
+    /**
+     * Restricts the pool to one audience. Menswear must never be suggested
+     * under a women's listing, and nothing adult-sized belongs beneath a kids'
+     * product — so this is a hard filter on the candidate set, not a scoring
+     * nudge. `UNISEX` stock is admissible alongside MEN and WOMEN, because
+     * that is what unisex means; KIDS is kept deliberately separate.
+     */
+    audience?: TargetGroup;
+  } = {},
   limit = 4,
   now = simNow(),
 ): ProductListItemDto[] {
@@ -480,12 +493,25 @@ export function recommendedProducts(
     ...(signals.cartSlugs ?? []),
   ]);
 
+  const audience = signals.audience;
+  const inAudience = (p: DemoProduct): boolean => {
+    if (!audience) return true;
+    if (audience === 'KIDS') return p.targetGroup === 'KIDS';
+    if (audience === 'UNISEX') return p.targetGroup === 'UNISEX';
+    return p.targetGroup === audience || p.targetGroup === 'UNISEX';
+  };
+
+  const pool = PRODUCT_LIST.filter((p) => inAudience(p) && totalAvailableFor(p) > 0);
+
   const sources = [...seen]
     .map((s) => productBySlug.get(s))
-    .filter((p): p is DemoProduct => Boolean(p));
+    .filter((p): p is DemoProduct => Boolean(p))
+    .filter(inAudience);
 
+  // No usable signal — or none inside this audience — so fall back to what is
+  // simply doing well: best rated, then deepest reduction.
   if (sources.length === 0) {
-    return PRODUCT_LIST.filter((p) => totalAvailableFor(p) > 0)
+    return pool
       .map((product) => ({ product, dto: toListItem(product, now) }))
       .sort(
         (a, b) =>
@@ -501,7 +527,8 @@ export function recommendedProducts(
   const averagePrice =
     sources.reduce((sum, p) => sum + p.outletPriceMinor, 0) / Math.max(1, sources.length);
 
-  return PRODUCT_LIST.filter((p) => !seen.has(p.slug) && totalAvailableFor(p) > 0)
+  return pool
+    .filter((p) => !seen.has(p.slug))
     .map((candidate) => {
       let score = 0;
       if (categories.has(candidate.categorySlug)) score += 80;

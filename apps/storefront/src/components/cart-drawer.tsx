@@ -5,11 +5,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import type { CartItemDto } from '@outlet/types';
-import { BagIcon, Button, CloseIcon, TruckIcon, cx, formatMoney } from '@outlet/ui';
+import { BagIcon, Button, CloseIcon, TruckIcon, cx } from '@outlet/ui';
 import { useCart } from '@/lib/hooks';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { FreeShippingBar } from './free-shipping-bar';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 /**
  * Mini bag.
@@ -21,6 +23,7 @@ import { FreeShippingBar } from './free-shipping-bar';
  * check out.
  */
 export function CartDrawer({ onClose }: { onClose: () => void }) {
+  const { t, money } = useI18n();
   const { data: cart, isLoading, refetch } = useCart();
   const queryClient = useQueryClient();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -78,10 +81,10 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
   const currency = cart?.currencyCode ?? 'EUR';
 
   return createPortal(
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Your bag">
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={t('ui.bag')}>
       <button
         type="button"
-        aria-label="Close bag"
+        aria-label={t('ui.closeBag')}
         onClick={onClose}
         className="absolute inset-0 animate-fade-in bg-scrim-950/50 dark:bg-scrim-950/70"
       />
@@ -104,7 +107,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
             ref={closeRef}
             type="button"
             onClick={onClose}
-            aria-label="Close bag"
+            aria-label={t('ui.closeBag')}
             className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950"
           >
             <CloseIcon className="h-5 w-5" />
@@ -121,18 +124,14 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
               <BagIcon className="h-6 w-6" />
             </span>
             <div>
-              <p className="text-base font-semibold text-ink-950">Your bag is empty</p>
-              <p className="mt-1 text-sm text-ink-500">
-                Items you reserve are held for 20 minutes while you decide.
-              </p>
+              <p className="text-base font-semibold text-ink-950"><T id="ui.bagEmpty" /></p>
+              <p className="mt-1 text-sm text-ink-500"><T id="ui.itemsYouReserveHeld20" /></p>
             </div>
             <Link
               href="/products"
               onClick={onClose}
               className="inline-flex h-10 items-center rounded bg-accent px-5 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover"
-            >
-              Browse the outlet
-            </Link>
+            ><T id="ui.browseOutlet" /></Link>
           </div>
         ) : (
           <>
@@ -176,12 +175,10 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
               <div className="flex items-baseline justify-between">
                 <span className="text-sm text-ink-600">Subtotal</span>
                 <span data-numeric className="text-lg font-bold text-ink-950">
-                  {formatMoney(cart?.subtotalMinor ?? 0, currency)}
+                  {money(cart?.subtotalMinor ?? 0)}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-ink-500">
-                Shipping and any discounts are calculated at checkout.
-              </p>
+              <p className="mt-1 text-xs text-ink-500"><T id="ui.shippingAnyDiscountsCalculatedAt" /></p>
 
               <Link href="/checkout" onClick={onClose} className="mt-3 block">
                 <Button size="lg" className="w-full">
@@ -192,9 +189,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
                 href="/cart"
                 onClick={onClose}
                 className="mt-2 block text-center text-sm text-ink-600 underline underline-offset-2 transition-colors hover:text-ink-950"
-              >
-                View full bag
-              </Link>
+              ><T id="ui.viewFullBag" /></Link>
             </div>
           </>
         )}
@@ -206,7 +201,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
 
 function DrawerLine({
   item,
-  currency,
+  
   onClose,
   onRemove,
   onQuantity,
@@ -217,6 +212,7 @@ function DrawerLine({
   onRemove: () => void;
   onQuantity: (quantity: number) => void;
 }) {
+  const { t, money  } = useI18n();
   return (
     <li className="flex gap-3 py-4">
       <Link
@@ -263,7 +259,7 @@ function DrawerLine({
             <button
               type="button"
               onClick={() => onQuantity(item.quantity + 1)}
-              aria-label="Increase quantity"
+              aria-label={t('ui.increaseQuantity')}
               className="h-full w-7 text-ink-600 transition-colors hover:text-ink-950"
             >
               +
@@ -277,7 +273,7 @@ function DrawerLine({
               item.originalUnitPriceMinor > item.unitPriceMinor ? 'text-sale-500' : 'text-ink-950',
             )}
           >
-            {formatMoney(item.lineTotalMinor, currency)}
+            {money(item.lineTotalMinor)}
           </span>
         </div>
       </div>

@@ -9,6 +9,7 @@ import { DemoBanner } from '@/components/demo-banner';
 import { ThemeScript } from '@/components/theme';
 import { Reveal } from '@/lib/use-reveal';
 import { organizationJsonLd, SITE_NAME, SITE_URL } from '@/lib/structured-data';
+import { T } from '@/components/t';
 
 /**
  * Self-hosted at build time by next/font, so there is no third-party request
@@ -64,9 +65,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <a
             href="#main"
             className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-ink-950 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-ink-25"
-          >
-            Skip to content
-          </a>
+          ><T id="ui.skipContent" /></a>
           <DemoBanner />
           <Header />
           <main id="main" className="flex-1">

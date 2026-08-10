@@ -415,7 +415,7 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cx('mx-auto max-w-sm py-16 text-center', className)}>
+    <div className={cx('mx-auto max-w-sm py-12 text-center lg:py-16', className)}>
       <p className="text-lg font-semibold text-ink-950">{title}</p>
       {description ? (
         <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-ink-500">

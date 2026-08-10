@@ -1,109 +1,66 @@
 'use client';
 
-import { useState } from 'react';
-import { CloseIcon } from '@outlet/ui';
+import { useEffect, useMemo, useState } from 'react';
+import type { TargetGroup } from '@outlet/types';
+import { CloseIcon, cx } from '@outlet/ui';
+import { AUDIENCES } from '@/lib/audience';
+import { CHARTS_BY_AUDIENCE, chartKindForSizes, type ChartKind } from '@/lib/size-charts';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Size guide.
  *
- * Sizing is the single biggest reason clothing gets returned, so the table is
- * one click from the size selector rather than buried in a tab. Which table to
- * show is inferred from the sizes the product actually has, so a shoe never
- * offers a chest measurement.
+ * Sizing is the single biggest reason clothing gets returned, so the guide is
+ * one tap from the size selector rather than buried in a tab, and it converts
+ * between the three systems a European outlet actually gets asked about —
+ * EU, UK and US — with a body or foot measurement in centimetres as the
+ * tie-breaker. UK and US womenswear disagree by two full sizes, so a chart that
+ * offered only one of them was giving half an answer.
+ *
+ * Two levels of navigation, both of which change the table live:
+ *   audience  Men / Women / Kids / Unisex
+ *   chart     Clothing / Footwear / Trousers / Belts, filtered to that audience
+ *
+ * Both open on the product being viewed — its target group and the scale its
+ * own sizes are drawn on — so the common case costs no clicks, while the rest
+ * of the catalogue's sizing stays one tap away.
  */
-
-type GuideKind = 'clothing' | 'shoes' | 'waist' | 'belt' | 'none';
-
-interface GuideTable {
-  title: string;
-  note: string;
-  columns: string[];
-  rows: string[][];
-}
-
-const CLOTHING: GuideTable = {
-  title: 'Clothing — regular fit',
-  note: 'Measure across the body, not over other clothing. If you are between sizes, size up for a relaxed fit.',
-  columns: ['Size', 'Chest (cm)', 'Waist (cm)', 'Length (cm)'],
-  rows: [
-    ['XS', '86–91', '71–76', '68'],
-    ['S', '91–97', '76–81', '70'],
-    ['M', '97–102', '81–87', '72'],
-    ['L', '102–107', '87–92', '74'],
-    ['XL', '107–112', '92–97', '76'],
-    ['XXL', '112–122', '97–107', '78'],
-  ],
-};
-
-const SHOES: GuideTable = {
-  title: 'Footwear',
-  note: 'Measure your foot from heel to longest toe while standing. Sizes run true; wide feet may prefer a half size up.',
-  columns: ['EU', 'UK', 'US (M)', 'Foot length (cm)'],
-  rows: [
-    ['39', '6', '6.5', '24.5'],
-    ['40', '6.5', '7.5', '25.0'],
-    ['41', '7.5', '8', '25.5'],
-    ['42', '8', '9', '26.5'],
-    ['43', '9', '10', '27.5'],
-    ['44', '9.5', '10.5', '28.0'],
-    ['45', '10.5', '11.5', '29.0'],
-  ],
-};
-
-const WAIST: GuideTable = {
-  title: 'Trousers & jeans',
-  note: 'Sizes are the waist measurement in inches. Measure around your natural waistline.',
-  columns: ['Size (in)', 'Waist (cm)', 'Hip (cm)', 'Inseam (cm)'],
-  rows: [
-    ['28', '71', '88', '81'],
-    ['30', '76', '93', '81'],
-    ['32', '81', '98', '82'],
-    ['34', '87', '104', '82'],
-    ['36', '92', '109', '83'],
-    ['38', '97', '114', '83'],
-  ],
-};
-
-const BELT: GuideTable = {
-  title: 'Belts',
-  note: 'Belt size is the length in centimetres to the middle hole. Choose roughly 10 cm above your trouser waist size.',
-  columns: ['Size', 'Trouser waist (in)', 'Total length (cm)'],
-  rows: [
-    ['85', '30–32', '100'],
-    ['90', '32–34', '105'],
-    ['95', '34–36', '110'],
-    ['100', '36–38', '115'],
-  ],
-};
-
-const TABLES: Record<Exclude<GuideKind, 'none'>, GuideTable> = {
-  clothing: CLOTHING,
-  shoes: SHOES,
-  waist: WAIST,
-  belt: BELT,
-};
-
-/** Picks the right table from the sizes the product is actually sold in. */
-export function guideKindForSizes(sizes: Array<string | null>): GuideKind {
-  const values = sizes.filter((s): s is string => Boolean(s));
-  if (values.length === 0) return 'none';
-  if (values.every((s) => s === 'One Size')) return 'none';
-  if (values.some((s) => /^(XS|S|M|L|XL|XXL)$/i.test(s))) return 'clothing';
-
-  const numeric = values.map(Number).filter((n) => Number.isFinite(n));
-  if (numeric.length === 0) return 'none';
-  if (numeric.every((n) => n >= 80)) return 'belt';
-  if (numeric.every((n) => n >= 36 && n <= 50)) return 'shoes';
-  if (numeric.every((n) => n >= 24 && n <= 44)) return 'waist';
-  return 'none';
-}
-
-export function SizeGuide({ sizes }: { sizes: Array<string | null> }) {
+export function SizeGuide({
+  sizes,
+  targetGroup = 'UNISEX',
+}: {
+  sizes: Array<string | null>;
+  targetGroup?: TargetGroup;
+}) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const kind = guideKindForSizes(sizes);
-  if (kind === 'none') return null;
 
-  const table = TABLES[kind];
+  const productKind = useMemo(() => chartKindForSizes(sizes, targetGroup), [sizes, targetGroup]);
+
+  const [audience, setAudience] = useState<TargetGroup>(targetGroup);
+  const [kind, setKind] = useState<ChartKind>(productKind ?? 'clothing');
+
+  // Reopening after switching colourway or product should land on that
+  // product's chart again, not on wherever the last visit was left.
+  useEffect(() => {
+    if (!open) return;
+    setAudience(targetGroup);
+    setKind(productKind ?? 'clothing');
+  }, [open, targetGroup, productKind]);
+
+  const charts = CHARTS_BY_AUDIENCE[audience];
+  // Kids have no trouser or belt chart, so a kind carried over from another
+  // audience has to fall back rather than render an empty table.
+  const chart = charts.find((c) => c.kind === kind) ?? charts[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  if (!productKind && sizes.filter(Boolean).length === 0) return null;
 
   return (
     <>
@@ -112,7 +69,7 @@ export function SizeGuide({ sizes }: { sizes: Array<string | null> }) {
         onClick={() => setOpen(true)}
         className="text-sm text-ink-600 underline underline-offset-2 transition-colors hover:text-ink-950"
       >
-        Size guide
+        {t('sizeGuide.open')}
       </button>
 
       {open ? (
@@ -125,64 +82,136 @@ export function SizeGuide({ sizes }: { sizes: Array<string | null> }) {
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="max-h-[85vh] w-full max-w-xl animate-slide-up overflow-y-auto rounded-t bg-ink-25 p-6 shadow-xl dark:border dark:border-line dark:bg-surface-raised dark:shadow-lg sm:rounded">
-            <div className="flex items-start justify-between gap-4">
-              <h2 id="size-guide-title" className="text-lg font-bold text-ink-950">
-                {table.title}
-              </h2>
+          <div className="flex max-h-[90vh] w-full max-w-2xl animate-slide-up flex-col overflow-hidden rounded-t-xl bg-ink-25 shadow-xl dark:border dark:border-line dark:bg-surface-raised dark:shadow-lg sm:rounded-xl">
+            <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
+              <div className="min-w-0">
+                <h2 id="size-guide-title" className="text-lg font-bold text-ink-950">
+                  {t('sizeGuide.title')}
+                </h2>
+                <p className="mt-0.5 text-sm text-ink-500">{t('sizeGuide.subtitle')}</p>
+              </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Close size guide"
-                className="-m-1.5 p-1.5 text-ink-500 transition-colors hover:text-ink-950"
+                aria-label={t('sizeGuide.close')}
+                className="-m-1.5 shrink-0 rounded p-1.5 text-ink-500 transition-colors hover:bg-surface-hover hover:text-ink-950"
               >
                 <CloseIcon className="h-5 w-5" />
               </button>
             </div>
 
-            <p className="mt-2 text-sm leading-relaxed text-ink-600">{table.note}</p>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
+              {/* Audience */}
+              <div
+                role="tablist"
+                aria-label={t('sizeGuide.audienceLabel')}
+                className="scrollbar-none -mx-1 flex gap-1 overflow-x-auto px-1 pb-1"
+              >
+                {AUDIENCES.map((a) => {
+                  const active = audience === a.group;
+                  return (
+                    <button
+                      key={a.slug}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setAudience(a.group)}
+                      className={cx(
+                        'shrink-0 rounded px-3 py-2 text-sm font-medium transition-colors duration-150',
+                        active
+                          ? 'bg-accent text-accent-contrast'
+                          : 'text-ink-600 hover:bg-surface-hover hover:text-ink-950',
+                      )}
+                    >
+                      {t(`audience.${a.key}`)}
+                    </button>
+                  );
+                })}
+              </div>
 
-            <div className="mt-5 overflow-x-auto">
-              <table className="w-full min-w-[22rem] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-ink-300 dark:border-line-strong">
-                    {table.columns.map((column) => (
-                      <th
-                        key={column}
-                        scope="col"
-                        className="py-2 pr-4 text-left text-2xs font-semibold uppercase tracking-[0.06em] text-ink-500"
+              {/* Chart within the audience */}
+              {charts.length > 1 ? (
+                <div
+                  role="tablist"
+                  aria-label={t('sizeGuide.chartLabel')}
+                  className="scrollbar-none -mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1"
+                >
+                  {charts.map((c) => {
+                    const active = chart.kind === c.kind;
+                    return (
+                      <button
+                        key={c.kind}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setKind(c.kind)}
+                        className={cx(
+                          'shrink-0 rounded px-2.5 py-1.5 text-xs font-medium ring-1 ring-inset transition-colors duration-150',
+                          active
+                            ? 'bg-surface-active text-ink-950 ring-line-strong'
+                            : 'text-ink-600 ring-line hover:bg-surface-hover hover:text-ink-950',
+                        )}
                       >
-                        {column}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {table.rows.map((row) => (
-                    <tr key={row[0]} className="border-b border-ink-100 dark:border-line">
-                      {row.map((cell, i) => (
-                        <td
-                          key={i}
-                          data-numeric
-                          className={
-                            i === 0
-                              ? 'py-2 pr-4 font-semibold text-ink-950'
-                              : 'py-2 pr-4 text-ink-700'
-                          }
+                        {t(`sizeGuide.kind.${c.kind}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {/* The table scrolls inside its own container so a six-column
+                  chart never forces the dialog itself sideways on a phone. */}
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[30rem] border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-line-strong">
+                      {chart.columns.map((column) => (
+                        <th
+                          key={column}
+                          scope="col"
+                          className="whitespace-nowrap py-2 pr-4 text-left text-2xs font-semibold uppercase tracking-[0.06em] text-ink-500"
                         >
-                          {cell}
-                        </td>
+                          {t(`sizeGuide.columns.${column}`)}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {chart.rows.map((row) => {
+                      // Highlight the rows this product is actually sold in.
+                      const owned = sizes.filter(Boolean).includes(row[0]);
+                      return (
+                        <tr
+                          key={row.join('-')}
+                          className={cx(
+                            'border-b border-line last:border-b-0',
+                            owned && 'bg-surface-hover',
+                          )}
+                        >
+                          {row.map((cell, i) => (
+                            <td
+                              key={i}
+                              data-numeric
+                              className={cx(
+                                'whitespace-nowrap py-2 pr-4',
+                                i === 0 ? 'font-semibold text-ink-950' : 'text-ink-700',
+                              )}
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-            <p className="mt-5 text-xs leading-relaxed text-ink-500">
-              Still unsure? Order two sizes and return the one that does not fit — returns are free
-              within 30 days.
-            </p>
+              <p className="mt-4 text-xs leading-relaxed text-ink-500">
+                {t(`sizeGuide.notes.${chart.noteKey}`)}
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-ink-500">{t('sizeGuide.returns')}</p>
+            </div>
           </div>
         </div>
       ) : null}

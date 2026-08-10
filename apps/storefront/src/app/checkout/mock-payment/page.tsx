@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Alert, Button, TextField, cx, formatMoney } from '@outlet/ui';
+import { Alert, Button, TextField, cx } from '@outlet/ui';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import {
@@ -12,6 +12,8 @@ import {
   validateCard,
   type CardFormValues,
 } from '@/lib/test-cards';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 /**
  * Simulated payment page.
@@ -35,11 +37,11 @@ const DIRECT_OUTCOMES = [
 const EMPTY_FORM: CardFormValues = { number: '', name: '', expiry: '', cvc: '' };
 
 function MockPaymentInner() {
+  const { t, money  } = useI18n();
   const params = useSearchParams();
   const router = useRouter();
   const paymentId = params.get('paymentId') ?? '';
   const amount = Number(params.get('amount') ?? '0');
-  const currency = params.get('currency') ?? 'EUR';
   const orderNumber = params.get('orderNumber') ?? '';
   const returnUrl = params.get('returnUrl') ?? '/';
 
@@ -105,7 +107,7 @@ function MockPaymentInner() {
   };
 
   if (!paymentId) {
-    return <p className="py-10 text-center text-ink-500">Missing payment reference.</p>;
+    return <p className="py-8 text-center lg:py-10 text-ink-500"><T id="ui.missingPaymentReference" /></p>;
   }
 
   return (
@@ -115,14 +117,12 @@ function MockPaymentInner() {
           <span className="rounded-xs bg-warning-100 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-[0.06em] text-warning-700">
             Sandbox
           </span>
-          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-400">
-            Simulated payment provider
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-400"><T id="ui.simulatedPaymentProvider" /></p>
         </div>
 
         <h1 className="mt-3 text-xl font-bold text-ink-950">Order {orderNumber}</h1>
         <p data-numeric className="mt-1 text-3xl font-black text-ink-950">
-          {formatMoney(amount, currency)}
+          {money(amount)}
         </p>
         <p className="mt-2 text-sm text-ink-500">
           No real payment is taken and no card details are stored or transmitted. Use a test card
@@ -131,7 +131,7 @@ function MockPaymentInner() {
 
         {error ? (
           <div className="mt-5" data-testid="payment-error">
-            <Alert tone="error" title="Payment declined">
+            <Alert tone="error" title={t('ui.paymentDeclined')}>
               {error}
             </Alert>
           </div>
@@ -140,7 +140,7 @@ function MockPaymentInner() {
         <form onSubmit={paySubmit} className="mt-6 space-y-4">
           <TextField
             id="card-number"
-            label="Card number"
+            label={t('ui.cardNumber')}
             inputMode="numeric"
             autoComplete="off"
             placeholder="4242 4242 4242 4242"
@@ -151,9 +151,9 @@ function MockPaymentInner() {
           />
           <TextField
             id="card-name"
-            label="Name on card"
+            label={t('ui.nameCard')}
             autoComplete="off"
-            placeholder="QA Tester"
+            placeholder={t('ui.qaTester')}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             error={fieldError?.field === 'name' ? fieldError.message : undefined}
@@ -161,17 +161,17 @@ function MockPaymentInner() {
           <div className="grid grid-cols-2 gap-4">
             <TextField
               id="card-expiry"
-              label="Expiry"
+              label={t('ui.expiry')}
               inputMode="numeric"
               autoComplete="off"
-              placeholder="MM/YY"
+              placeholder={t('ui.mmYy')}
               value={form.expiry}
               onChange={(e) => setForm({ ...form, expiry: e.target.value })}
               error={fieldError?.field === 'expiry' ? fieldError.message : undefined}
             />
             <TextField
               id="card-cvc"
-              label="Security code"
+              label={t('ui.securityCode')}
               inputMode="numeric"
               autoComplete="off"
               placeholder="123"
@@ -182,7 +182,7 @@ function MockPaymentInner() {
           </div>
 
           <Button type="submit" size="lg" fullWidth loading={busy !== null} data-testid="pay-now">
-            Pay {formatMoney(amount, currency)}
+            Pay {money(amount)}
           </Button>
         </form>
 
@@ -220,9 +220,7 @@ function MockPaymentInner() {
         </div>
 
         <details className="mt-5 border-t border-line pt-5">
-          <summary className="cursor-pointer text-sm font-medium text-ink-700 hover:text-ink-950">
-            Force an outcome directly
-          </summary>
+          <summary className="cursor-pointer text-sm font-medium text-ink-700 hover:text-ink-950"><T id="ui.forceOutcomeDirectly" /></summary>
           <div className="mt-3 space-y-2">
             {DIRECT_OUTCOMES.map((outcome) => (
               <button
@@ -249,7 +247,7 @@ function MockPaymentInner() {
 
 export default function MockPaymentPage() {
   return (
-    <Suspense fallback={<p className="py-10 text-center text-ink-500">Loading…</p>}>
+    <Suspense fallback={<p className="py-8 text-center lg:py-10 text-ink-500"><T id="ui.loading" /></p>}>
       <MockPaymentInner />
     </Suspense>
   );

@@ -30,13 +30,13 @@ export default async function ContentPage({ params }: { params: { key: string } 
   if (!page) notFound();
 
   return (
-    <div className="container-page py-10 lg:py-16">
+    <div className="container-page py-8 lg:py-16">
       {/* Measured column: long-form copy should not run the full page width. */}
       <article className="mx-auto max-w-prose">
         <h1 className="text-3xl font-bold tracking-[-0.025em] text-ink-950 lg:text-4xl">
           {page.title}
         </h1>
-        <div className="mt-8 space-y-4 border-t border-line pt-8 text-base leading-relaxed text-ink-700">
+        <div className="mt-6 space-y-4 border-t border-line pt-6 text-base leading-relaxed text-ink-700 lg:mt-8 lg:pt-8">
           {page.body.split('\n\n').map((paragraph, i) => (
             <p key={i} className="whitespace-pre-line">
               {paragraph}

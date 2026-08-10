@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { ReturnRequestDto } from '@outlet/types';
 import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { T } from '@/components/t';
 
 const STATUSES = ['', 'REQUESTED', 'APPROVED', 'REJECTED', 'RECEIVED', 'COMPLETED', 'CANCELLED'];
 const TONE: Record<string, 'gray' | 'green' | 'red' | 'yellow' | 'blue'> = {
@@ -27,7 +28,7 @@ export default function ReturnsAdminPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">Return requests</h1>
+      <h1 className="mb-4 text-2xl font-bold"><T id="ui.returnRequests" /></h1>
       <div className="mb-4 flex gap-2">
         {STATUSES.map((s) => (
           <button
@@ -47,10 +48,10 @@ export default function ReturnsAdminPage() {
           <thead>
             <tr>
               <th>RMA</th>
-              <th>Order</th>
-              <th>Status</th>
+              <th><T id="ui.order" /></th>
+              <th><T id="ui.status" /></th>
               <th>Reason</th>
-              <th>Items</th>
+              <th><T id="ui.items" /></th>
               <th>Created</th>
             </tr>
           </thead>

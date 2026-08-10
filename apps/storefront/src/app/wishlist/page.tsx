@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { EmptyState, Skeleton, cx, formatMoney } from '@outlet/ui';
+import { EmptyState, Skeleton, cx } from '@outlet/ui';
 import { api } from '@/lib/api';
 import { useCurrentUser } from '@/lib/hooks';
 import { PageHeader } from '@/components/section';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 interface WishlistItem {
   id: string;
@@ -19,6 +21,7 @@ interface WishlistItem {
 }
 
 export default function WishlistPage() {
+  const { t, money  } = useI18n();
   const { data: me, isLoading: meLoading } = useCurrentUser();
   const queryClient = useQueryClient();
   const { data: items, isLoading } = useQuery({
@@ -29,7 +32,7 @@ export default function WishlistPage() {
 
   if (meLoading) {
     return (
-      <div className="container-page py-8 lg:py-12">
+      <div className="container-page py-6 lg:py-12">
         <Skeleton className="h-8 w-48" />
       </div>
     );
@@ -37,18 +40,16 @@ export default function WishlistPage() {
 
   if (!me?.user) {
     return (
-      <div className="container-page py-8 lg:py-12">
-        <PageHeader title="Your wishlist" />
+      <div className="container-page py-6 lg:py-12">
+        <PageHeader title={t('ui.wishlist')} />
         <EmptyState
-          title="Sign in to see your wishlist"
-          description="Saved products stay with your account across devices."
+          title={t('ui.signSeeWishlist')}
+          description={t('ui.savedProductsStayWithAccount')}
           action={
             <Link
               href="/login?next=/wishlist"
               className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
-            >
-              Sign in
-            </Link>
+            ><T id="ui.sign" /></Link>
           }
         />
       </div>
@@ -56,9 +57,9 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="container-page py-8 lg:py-12">
+    <div className="container-page py-6 lg:py-12">
       <PageHeader
-        title="Your wishlist"
+        title={t('ui.wishlist')}
         meta={
           items && items.length > 0 ? (
             <span data-numeric className="text-sm text-ink-500">
@@ -80,15 +81,13 @@ export default function WishlistPage() {
           </div>
         ) : !items || items.length === 0 ? (
           <EmptyState
-            title="Nothing saved yet"
-            description="Tap the heart on any product page to keep it here."
+            title={t('ui.nothingSavedYet')}
+            description={t('ui.tapHeartAnyProductPage')}
             action={
               <Link
                 href="/products"
                 className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
-              >
-                Browse the outlet
-              </Link>
+              ><T id="ui.browseOutlet" /></Link>
             }
           />
         ) : (
@@ -133,11 +132,11 @@ export default function WishlistPage() {
                           discounted ? 'text-sale-500' : 'text-ink-900',
                         )}
                       >
-                        {formatMoney(item.outletPriceMinor)}
+                        {money(item.outletPriceMinor)}
                       </span>
                       {discounted ? (
                         <span data-numeric className="text-xs text-ink-400 line-through">
-                          {formatMoney(item.originalPriceMinor)}
+                          {money(item.originalPriceMinor)}
                         </span>
                       ) : null}
                     </p>
@@ -148,9 +147,7 @@ export default function WishlistPage() {
                         queryClient.invalidateQueries({ queryKey: ['wishlist'] });
                       }}
                       className="relative z-10 mt-2 text-xs text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
-                    >
-                      Remove
-                    </button>
+                    ><T id="ui.remove" /></button>
                   </div>
                 </li>
               );

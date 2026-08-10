@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatMoney, Badge } from '@outlet/ui';
+import { Badge } from '@outlet/ui';
 import { api, API_BASE_URL } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 interface AdminProduct {
   id: string;
@@ -21,6 +23,7 @@ interface AdminProduct {
 }
 
 export default function AdminProductsPage() {
+  const { t, money  } = useI18n();
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
@@ -38,21 +41,17 @@ export default function AdminProductsPage() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Products</h1>
+        <h1 className="text-2xl font-bold"><T id="ui.products" /></h1>
         <div className="flex flex-wrap items-center gap-2">
           <a
             href={`${API_BASE_URL}/admin/products/export/csv`}
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
-          >
-            Export CSV
-          </a>
+          ><T id="ui.exportCsv" /></a>
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
-          >
-            Import CSV
-          </button>
+          ><T id="ui.importCsv" /></button>
           <input
             ref={fileInput}
             type="file"
@@ -79,9 +78,7 @@ export default function AdminProductsPage() {
             href="/products/new"
             data-testid="new-product"
             className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-          >
-            New product
-          </Link>
+          ><T id="ui.newProduct" /></Link>
         </div>
       </div>
       {importResult ? <p className="mb-3 text-sm text-gray-600">{importResult}</p> : null}
@@ -92,7 +89,7 @@ export default function AdminProductsPage() {
           setQ(e.target.value);
           setPage(1);
         }}
-        placeholder="Search by name, slug, or SKU…"
+        placeholder={t('ui.searchByNameSlugSku')}
         className="mb-4 w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
 
@@ -100,10 +97,10 @@ export default function AdminProductsPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Product</th>
+              <th><T id="ui.product" /></th>
               <th>Brand</th>
-              <th>Status</th>
-              <th className="text-right">Price</th>
+              <th><T id="ui.status" /></th>
+              <th className="text-right"><T id="ui.price" /></th>
               <th className="text-right">Variants</th>
               <th className="text-right">Available</th>
             </tr>
@@ -111,9 +108,7 @@ export default function AdminProductsPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="text-gray-400">
-                  Loading…
-                </td>
+                <td colSpan={6} className="text-gray-400"><T id="ui.loading" /></td>
               </tr>
             ) : (
               (data?.items ?? []).map((product) => {
@@ -152,9 +147,9 @@ export default function AdminProductsPage() {
                       </Badge>
                     </td>
                     <td className="text-right">
-                      {formatMoney(product.outletPriceMinor)}
+                      {money(product.outletPriceMinor)}
                       <span className="block text-xs text-gray-400 line-through">
-                        {formatMoney(product.originalPriceMinor)}
+                        {money(product.originalPriceMinor)}
                       </span>
                     </td>
                     <td className="text-right">{product.variants.length}</td>
@@ -186,9 +181,7 @@ export default function AdminProductsPage() {
             disabled={page >= data.totalPages}
             onClick={() => setPage((p) => p + 1)}
             className="rounded border px-3 py-1.5 disabled:opacity-40"
-          >
-            Next →
-          </button>
+          ><T id="ui.next2" /></button>
         </div>
       ) : null}
     </div>

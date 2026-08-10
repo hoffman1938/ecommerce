@@ -16,8 +16,11 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { ChevronDown, cx } from '@outlet/ui';
+import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 export function DemoBanner() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   if (process.env.NEXT_PUBLIC_DEMO_MODE !== 'true') return null;
@@ -29,11 +32,9 @@ export function DemoBanner() {
             above every page; the fuller wording returns as soon as there is
             room for it. */}
         <span>
-          <strong className="font-semibold">Sandbox.</strong>{' '}
-          <span className="sm:hidden">Nothing here is real.</span>
-          <span className="hidden sm:inline">
-            Everything works, nothing is real — payments are simulated and no order is placed.
-          </span>
+          <strong className="font-semibold"><T id="ui.sandbox" /></strong>{' '}
+          <span className="sm:hidden"><T id="ui.nothingHereReal" /></span>
+          <span className="hidden sm:inline"><T id="ui.everythingWorksNothingRealPayments" /></span>
         </span>
         <button
           type="button"
@@ -41,7 +42,7 @@ export function DemoBanner() {
           aria-expanded={open}
           className="inline-flex items-center gap-1 font-semibold underline decoration-warning-600/40 underline-offset-2 transition-colors hover:text-warning-600"
         >
-          {open ? 'Hide details' : 'Details'}
+          {open ? t('ui.hideDetails') : t('ui.details')}
           <ChevronDown className={cx('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />
         </button>
       </div>
@@ -49,16 +50,12 @@ export function DemoBanner() {
       {open ? (
         <div className="container-page animate-slide-up border-t border-warning-100 py-2.5 text-[13px] leading-relaxed">
           <p>
-            Browsing, accounts, cart, checkout, orders, returns and refunds all run entirely in your
-            browser, with no server behind them.
+            <T id="ui.demoRunsInBrowser" />
           </p>
-          <p className="mt-1.5">
-            Sign in with <code className="rounded bg-warning-100 px-1">customer@example.local</code>{' '}
-            / <code className="rounded bg-warning-100 px-1">Customer123!</code>, or register any
-            address.{' '}
-            <Link href="/qa" className="font-semibold underline underline-offset-2">
-              Open the QA control center
-            </Link>
+          <p className="mt-1.5"><T id="ui.signWith" /><code className="rounded bg-warning-100 px-1">customer@example.local</code>{' '}
+            / <code className="rounded bg-warning-100 px-1">Customer123!</code>
+            <T id="ui.orRegisterAnyAddress" />{' '}
+            <Link href="/qa" className="font-semibold underline underline-offset-2"><T id="ui.openQaControlCenter" /></Link>
           </p>
         </div>
       ) : null}

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { T } from '@/components/t';
 
 interface AdminCampaign {
   id: string;
@@ -51,9 +52,7 @@ export default function CampaignsAdminPage() {
           href="/campaigns/new"
           data-testid="new-campaign"
           className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-        >
-          New campaign
-        </Link>
+        ><T id="ui.newCampaign" /></Link>
       </div>
       {error ? <p className="mb-3 text-sm text-red-600">{error}</p> : null}
 
@@ -63,8 +62,8 @@ export default function CampaignsAdminPage() {
             <tr>
               <th>Campaign</th>
               <th>Window</th>
-              <th>Status</th>
-              <th className="text-right">Products</th>
+              <th><T id="ui.status" /></th>
+              <th className="text-right"><T id="ui.products" /></th>
               <th>Actions</th>
             </tr>
           </thead>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { T } from '@/components/t';
 
 export interface ProductFormValues {
   name: string;
@@ -153,7 +154,7 @@ export function ProductForm({
             className="w-full rounded-md border border-gray-300 px-3 py-2"
             required
           >
-            <option value="">Select…</option>
+            <option value=""><T id="ui.select" /></option>
             {(brands ?? []).map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -177,7 +178,7 @@ export function ProductForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Target group</span>
+          <span className="mb-1 block font-medium"><T id="ui.targetGroup" /></span>
           <select
             value={values.targetGroup}
             onChange={(e) => set('targetGroup', e.target.value as ProductFormValues['targetGroup'])}
@@ -189,7 +190,7 @@ export function ProductForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Status</span>
+          <span className="mb-1 block font-medium"><T id="ui.status" /></span>
           <select
             value={values.status}
             onChange={(e) => set('status', e.target.value as ProductFormValues['status'])}
@@ -201,7 +202,7 @@ export function ProductForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Original price (minor units, e.g. 2995)</span>
+          <span className="mb-1 block font-medium"><T id="ui.originalPriceMinorUnitsE" /></span>
           <input
             type="number"
             min={1}
@@ -212,7 +213,7 @@ export function ProductForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Outlet price (minor units)</span>
+          <span className="mb-1 block font-medium"><T id="ui.outletPriceMinorUnits" /></span>
           <input
             type="number"
             min={1}
@@ -237,7 +238,7 @@ export function ProductForm({
         {text('careInstructions', 'Care instructions')}
         {text('countryOfOrigin', 'Country of origin')}
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Tax class</span>
+          <span className="mb-1 block font-medium"><T id="ui.taxClass" /></span>
           <select
             value={values.taxClass}
             onChange={(e) => set('taxClass', e.target.value as ProductFormValues['taxClass'])}

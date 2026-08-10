@@ -4,10 +4,13 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReturnRequestDto } from '@outlet/types';
-import { formatMoney, Badge } from '@outlet/ui';
+import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 export default function ReturnDetailPage() {
+  const { money } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +25,7 @@ export default function ReturnDetailPage() {
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-return', params.id] });
-  if (!request) return <p className="text-gray-500">Loading return…</p>;
+  if (!request) return <p className="text-gray-500"><T id="ui.loadingReturn" /></p>;
 
   const run = async (fn: () => Promise<unknown>) => {
     setError(null);
@@ -69,9 +72,7 @@ export default function ReturnDetailPage() {
               run(() => api.post(`/admin/returns/${request.id}/decision`, { decision: 'APPROVED' }))
             }
             className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500"
-          >
-            Approve return
-          </button>
+          ><T id="ui.approveReturn" /></button>
           <button
             type="button"
             onClick={() => {
@@ -91,11 +92,11 @@ export default function ReturnDetailPage() {
       ) : null}
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Items</h2>
+        <h2 className="mb-3 font-semibold"><T id="ui.items" /></h2>
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Item</th>
+              <th><T id="ui.item" /></th>
               <th className="text-right">Requested</th>
               <th className="text-right">Received</th>
               <th>Condition</th>
@@ -205,9 +206,7 @@ export default function ReturnDetailPage() {
               )
             }
             className="mt-4 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-          >
-            Record received items
-          </button>
+          ><T id="ui.recordReceivedItems" /></button>
         ) : null}
         {request.status === 'RECEIVED' ? (
           <button
@@ -215,21 +214,19 @@ export default function ReturnDetailPage() {
             data-testid="complete-return"
             onClick={() => run(() => api.post(`/admin/returns/${request.id}/complete`))}
             className="mt-4 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-          >
-            Complete return
-          </button>
+          ><T id="ui.completeReturn" /></button>
         ) : null}
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Refunds for this return</h2>
+        <h2 className="mb-3 font-semibold"><T id="ui.refundsThisReturn" /></h2>
         {request.refunds.length > 0 ? (
           <ul className="mb-3 space-y-1 text-sm">
             {request.refunds.map((refund) => (
               <li key={refund.id} className="flex justify-between">
                 <span className="text-gray-600">{refund.reason ?? 'Refund'}</span>
                 <span>
-                  {formatMoney(refund.amountMinor)}{' '}
+                  {money(refund.amountMinor)}{' '}
                   <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>
                     {refund.status}
                   </Badge>
@@ -238,7 +235,7 @@ export default function ReturnDetailPage() {
             ))}
           </ul>
         ) : (
-          <p className="mb-3 text-sm text-gray-500">No refunds issued yet.</p>
+          <p className="mb-3 text-sm text-gray-500"><T id="ui.noRefundsIssuedYet" /></p>
         )}
         {['RECEIVED', 'COMPLETED'].includes(request.status) ? (
           <form
@@ -256,9 +253,7 @@ export default function ReturnDetailPage() {
             }}
           >
             <label className="block text-sm">
-              <span className="mb-1 block text-xs font-medium text-gray-500">
-                Amount (minor units)
-              </span>
+              <span className="mb-1 block text-xs font-medium text-gray-500"><T id="ui.amountMinorUnits2" /></span>
               <input
                 type="number"
                 min={1}
@@ -281,9 +276,7 @@ export default function ReturnDetailPage() {
             <button
               data-testid="return-refund-submit"
               className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
-            >
-              Issue refund
-            </button>
+            ><T id="ui.issueRefund" /></button>
           </form>
         ) : null}
       </section>

@@ -7,11 +7,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { addressSchema } from '@outlet/validation';
 import type { CheckoutQuoteDto, PaymentSessionDto } from '@outlet/types';
-import { formatMoney } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { useCurrentUser } from '@/lib/hooks';
 import { Countdown } from '@/components/countdown';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 const checkoutFormSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -24,6 +25,7 @@ const checkoutFormSchema = z.object({
 type CheckoutForm = z.infer<typeof checkoutFormSchema>;
 
 export default function CheckoutPage() {
+  const { money } = useI18n();
   const router = useRouter();
   const { data: me } = useCurrentUser();
   const [quote, setQuote] = useState<CheckoutQuoteDto | null>(null);
@@ -122,7 +124,7 @@ export default function CheckoutPage() {
 
   if (!quote) {
     return (
-      <div className="container-page py-16 text-center text-sm text-ink-500">
+      <div className="container-page py-12 text-center lg:py-16 text-sm text-ink-500">
         {error ?? 'Preparing checkout…'}
       </div>
     );
@@ -148,7 +150,7 @@ export default function CheckoutPage() {
   );
 
   return (
-    <div className="container-page py-8 lg:py-12">
+    <div className="container-page py-6 lg:py-12">
       <div className="border-b border-line pb-5">
         <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">Checkout</h1>
         {quote.reservationDeadline ? (
@@ -171,20 +173,24 @@ export default function CheckoutPage() {
       ) : null}
       <div className="h-8" />
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-8 lg:col-span-2">
-          <section className="rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-3 lg:gap-8">
+        <div className="space-y-6 lg:col-span-2 lg:space-y-8">
+          <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
             <h2 className="mb-3 font-semibold">1 · Contact</h2>
             <label className="block text-sm">
-              <span className="mb-1 block font-medium text-ink-700">Email</span>
-              <input type="email" {...form.register('email')} className="field-input" />
+              <span className="mb-1 block font-medium text-ink-700"><T id="ui.email" /></span>
+              <input
+                type="email"
+                {...form.register('email')}
+                className="field-input"
+              />
               {form.formState.errors.email ? (
                 <span className="text-xs text-sale-500">{form.formState.errors.email.message}</span>
               ) : null}
             </label>
           </section>
 
-          <section className="rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised">
+          <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
             <h2 className="mb-3 font-semibold">2 · Shipping address</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {field('shippingAddress.firstName', 'First name')}
@@ -197,14 +203,10 @@ export default function CheckoutPage() {
               {field('shippingAddress.phone', 'Phone (optional)')}
             </div>
             {Object.keys(form.formState.errors.shippingAddress ?? {}).length > 0 ? (
-              <p className="mt-2 text-xs text-sale-500">
-                Please complete the highlighted address fields.
-              </p>
+              <p className="mt-2 text-xs text-sale-500"><T id="ui.pleaseCompleteHighlightedAddressFields" /></p>
             ) : null}
             <label className="mt-4 flex items-center gap-2 text-sm">
-              <input type="checkbox" {...form.register('billingSameAsShipping')} />
-              Billing address is the same as shipping
-            </label>
+              <input type="checkbox" {...form.register('billingSameAsShipping')} /><T id="ui.billingAddressSameAsShipping" /></label>
             {!billingSame ? (
               <p className="mt-2 text-xs text-ink-500">
                 Billing address entry uses the shipping fields above in this MVP — uncheck is noted
@@ -213,7 +215,7 @@ export default function CheckoutPage() {
             ) : null}
           </section>
 
-          <section className="rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised">
+          <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
             <h2 className="mb-3 font-semibold">3 · Delivery</h2>
             <div className="space-y-2">
               {quote.shippingMethods.map((method) => (
@@ -231,19 +233,23 @@ export default function CheckoutPage() {
                   <span>
                     {method.id === 'STANDARD' && quote.cart.shippingMinor === 0
                       ? 'Free'
-                      : formatMoney(method.priceMinor, quote.cart.currencyCode)}
+                      : money(method.priceMinor)}
                   </span>
                 </label>
               ))}
             </div>
             <label className="mt-4 block text-sm">
-              <span className="mb-1 block font-medium text-ink-700">Order note (optional)</span>
-              <textarea {...form.register('customerNote')} rows={2} className="field-input" />
+              <span className="mb-1 block font-medium text-ink-700"><T id="ui.orderNoteOptional" /></span>
+              <textarea
+                {...form.register('customerNote')}
+                rows={2}
+                className="field-input"
+              />
             </label>
           </section>
         </div>
 
-        <aside className="h-fit rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]">
+        <aside className="h-fit rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]">
           <h2 className="font-semibold">4 · Review &amp; pay</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {quote.cart.items.map((item) => (
@@ -251,7 +257,7 @@ export default function CheckoutPage() {
                 <span className="text-ink-600">
                   {item.productName} × {item.quantity}
                 </span>
-                <span>{formatMoney(item.lineTotalMinor, quote.cart.currencyCode)}</span>
+                <span>{money(item.lineTotalMinor)}</span>
               </li>
             ))}
           </ul>
@@ -259,33 +265,30 @@ export default function CheckoutPage() {
             <dl className="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-ink-500">Subtotal</dt>
-                <dd>{formatMoney(totals.subtotal, quote.cart.currencyCode)}</dd>
+                <dd>{money(totals.subtotal)}</dd>
               </div>
               {totals.discount > 0 ? (
                 <div className="flex justify-between text-success-700">
                   <dt>Discount</dt>
-                  <dd>-{formatMoney(totals.discount, quote.cart.currencyCode)}</dd>
+                  <dd>-{money(totals.discount)}</dd>
                 </div>
               ) : null}
               <div className="flex justify-between">
-                <dt className="text-ink-500">Shipping</dt>
+                <dt className="text-ink-500"><T id="ui.shipping" /></dt>
                 <dd>
                   {totals.shipping === 0
                     ? 'Free'
-                    : formatMoney(totals.shipping, quote.cart.currencyCode)}
+                    : money(totals.shipping)}
                 </dd>
               </div>
-              {/* The figure the whole page exists to state. It gets its own
-                  rule, a step up in size, and the primary content colour —
-                  everything above it is deliberately quieter. */}
               <div className="flex items-baseline justify-between border-t border-line pt-3">
-                <dt className="text-base font-semibold text-ink-950">Total</dt>
+                <dt className="text-base font-semibold text-ink-950"><T id="ui.total" /></dt>
                 <dd
                   data-numeric
                   data-testid="checkout-total"
                   className="text-lg font-bold tracking-[-0.01em] text-ink-950"
                 >
-                  {formatMoney(totals.total, quote.cart.currencyCode)}
+                  {money(totals.total)}
                 </dd>
               </div>
             </dl>
@@ -298,9 +301,7 @@ export default function CheckoutPage() {
           >
             {submitting ? 'Creating payment…' : 'Continue to payment'}
           </button>
-          <p className="mt-3 text-xs text-ink-500">
-            Local development uses a mock payment provider — no real charges.
-          </p>
+          <p className="mt-3 text-xs text-ink-500"><T id="ui.localDevelopmentUsesMockPayment" /></p>
         </aside>
       </form>
     </div>

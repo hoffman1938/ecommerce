@@ -8,8 +8,11 @@ import { registerSchema, type RegisterInput } from '@outlet/validation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Button, TextField } from '@outlet/ui';
 import { api, ApiError, DEMO_MODE } from '@/lib/api';
+import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 export default function RegisterPage() {
+  const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const queryClient = useQueryClient();
@@ -70,10 +73,8 @@ export default function RegisterPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">Create your account</h1>
-      <p className="mt-1.5 text-sm text-ink-600">
-        Track orders, save addresses, and get told when a campaign opens.
-      </p>
+      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950"><T id="ui.createAccount2" /></h1>
+      <p className="mt-1.5 text-sm text-ink-600"><T id="ui.trackOrdersSaveAddressesGet" /></p>
 
       {error ? (
         <div className="mt-6">
@@ -85,14 +86,14 @@ export default function RegisterPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField
             id="firstName"
-            label="First name"
+            label={t('ui.firstName')}
             autoComplete="given-name"
             error={errors.firstName?.message}
             {...form.register('firstName')}
           />
           <TextField
             id="lastName"
-            label="Last name"
+            label={t('ui.lastName')}
             autoComplete="family-name"
             error={errors.lastName?.message}
             {...form.register('lastName')}
@@ -100,7 +101,7 @@ export default function RegisterPage() {
         </div>
         <TextField
           id="email"
-          label="Email"
+          label={t('ui.email')}
           type="email"
           autoComplete="email"
           error={errors.email?.message}
@@ -108,10 +109,10 @@ export default function RegisterPage() {
         />
         <TextField
           id="password"
-          label="Password"
+          label={t('ui.password')}
           type="password"
           autoComplete="new-password"
-          hint="At least 8 characters, with upper- and lowercase letters and a digit."
+          hint={t('ui.atLeast8CharactersWith')}
           error={errors.password?.message}
           {...form.register('password')}
         />
@@ -121,13 +122,9 @@ export default function RegisterPage() {
             type="checkbox"
             className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded-xs border-ink-300 text-ink-950 focus:ring-ink-950"
             {...form.register('newsletterOptIn')}
-          />
-          Send me campaign announcements
-        </label>
+          /><T id="ui.sendMeCampaignAnnouncements" /></label>
 
-        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}>
-          Create account
-        </Button>
+        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}><T id="ui.createAccount3" /></Button>
       </form>
 
       <p className="mt-8 border-t border-line pt-6 text-sm text-ink-600">
@@ -135,9 +132,7 @@ export default function RegisterPage() {
         <Link
           href="/login"
           className="font-medium text-ink-950 underline decoration-ink-300 underline-offset-2 transition-colors hover:decoration-ink-950"
-        >
-          Sign in
-        </Link>
+        ><T id="ui.sign" /></Link>
       </p>
     </div>
   );

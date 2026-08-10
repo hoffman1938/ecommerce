@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import type { ProductListItemDto } from '@outlet/types';
-import { HeartIcon, ImageIcon, Skeleton, StarRating, cx, formatMoney } from '@outlet/ui';
+import { HeartIcon, ImageIcon, Skeleton, StarRating, cx } from '@outlet/ui';
 import { useToggleWishlist } from '@/lib/hooks';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 /**
  * Product tile.
@@ -40,6 +42,7 @@ export function ProductCard({
   /** Skips lazy-loading for above-the-fold tiles. */
   priority?: boolean;
 }) {
+  const { money } = useI18n();
   const soldOut = product.totalAvailable <= 0;
   const lastFew = !soldOut && product.totalAvailable <= 3;
   const discounted = product.discountPercent > 0;
@@ -55,7 +58,7 @@ export function ProductCard({
         // The dark-only card. `-translate-y-0.5` is the whole lift: enough to
         // register as a response, small enough that a 24-tile grid does not
         // ripple when the pointer crosses it.
-        'dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-2.5',
+        'dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-1.5 dark:sm:p-2.5',
         'dark:transition-[transform,background-color,border-color,box-shadow] dark:duration-200 dark:ease-out',
         'dark:hover:-translate-y-0.5 dark:hover:border-line-strong dark:hover:bg-surface-hover dark:hover:shadow-lift',
       )}
@@ -150,9 +153,7 @@ export function ProductCard({
         </button>
 
         {soldOut ? (
-          <span className="absolute inset-x-0 bottom-0 bg-scrim-950/85 py-1.5 text-center text-2xs font-semibold uppercase tracking-[0.08em] text-white">
-            Sold out
-          </span>
+          <span className="absolute inset-x-0 bottom-0 bg-scrim-950/85 py-1.5 text-center text-2xs font-semibold uppercase tracking-[0.08em] text-white"><T id="ui.soldOut" /></span>
         ) : null}
       </div>
 
@@ -176,13 +177,13 @@ export function ProductCard({
             data-numeric
             className={cx('price-now text-sm', discounted && 'price-now--reduced')}
           >
-            {formatMoney(product.currentPriceMinor, product.currencyCode)}
+            {money(product.currentPriceMinor)}
           </span>
           {/* No percentage here — the badge on the image already states it, and
               saying it twice per tile is how a grid turns into a wall of red. */}
           {discounted ? (
             <span data-numeric className="price-was text-xs">
-              {formatMoney(product.originalPriceMinor, product.currencyCode)}
+              {money(product.originalPriceMinor)}
             </span>
           ) : null}
         </div>
@@ -223,13 +224,11 @@ export function ProductGrid({
 }) {
   if (products.length === 0) {
     return (
-      <p className="border-t border-line py-16 text-center text-sm text-ink-500">
-        No products found.
-      </p>
+      <p className="border-t border-line py-10 text-center lg:py-16 text-sm text-ink-500"><T id="ui.noProductsFound" /></p>
     );
   }
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
       {products.map((p, i) => (
         <ProductCard key={p.id} product={p} priority={i < priorityCount} />
       ))}
@@ -241,7 +240,7 @@ export function ProductGrid({
 export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div
-      className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10"
+      className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10"
       aria-hidden="true"
     >
       {/* Mirrors the dark card's border and padding as well as its rhythm, so
@@ -249,7 +248,7 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-2.5"
+          className="dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-1.5 dark:sm:p-2.5"
         >
           <Skeleton className="aspect-[4/5] w-full dark:rounded-lg" />
           <Skeleton className="mt-3 h-2.5 w-16" />

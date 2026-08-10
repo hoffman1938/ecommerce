@@ -152,7 +152,7 @@ function toDto(cart: StoredCart, now: number): CartDto {
 
   const messages: string[] = [];
   if (items.some((item) => item.isExpired)) {
-    messages.push('Some reservations expired and were released. Re-add those items to continue.');
+    messages.push('ui.reservationsExpiredReAdd');
   }
 
   // Saved items are rendered like cart lines but hold no reservation, so their

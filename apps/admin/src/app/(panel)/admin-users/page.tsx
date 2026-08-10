@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { T } from '@/components/t';
 
 interface AdminUserRow {
   id: string;
@@ -35,7 +36,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="max-w-4xl space-y-8">
-      <h1 className="text-2xl font-bold">Admin users &amp; roles</h1>
+      <h1 className="text-2xl font-bold"><T id="ui.adminUsersAmpRoles" /></h1>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -43,7 +44,7 @@ export default function AdminUsersPage() {
           <thead>
             <tr>
               <th>User</th>
-              <th>Status</th>
+              <th><T id="ui.status" /></th>
               <th>Roles</th>
               <th></th>
             </tr>
@@ -82,9 +83,7 @@ export default function AdminUsersPage() {
                       }
                     }}
                     className="text-xs text-gray-500 underline"
-                  >
-                    Edit roles
-                  </button>
+                  ><T id="ui.editRoles" /></button>
                 </td>
               </tr>
             ))}
@@ -93,7 +92,7 @@ export default function AdminUsersPage() {
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Role permission matrix</h2>
+        <h2 className="mb-3 font-semibold"><T id="ui.rolePermissionMatrix" /></h2>
         <div className="space-y-4 text-sm">
           {(roles ?? []).map((role) => (
             <div key={role.id}>

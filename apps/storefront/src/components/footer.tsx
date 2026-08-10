@@ -59,9 +59,9 @@ export function Footer() {
   ];
 
   return (
-    <footer className="mt-20 border-t border-line bg-ink-25 dark:bg-surface-sunken">
+    <footer className="mt-12 border-t border-line bg-ink-25 dark:bg-surface-sunken lg:mt-20">
       <div className="container-page">
-        <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8 lg:py-14">
+        <div className="grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8 lg:py-14">
           {/* The newsletter leads on desktop and drops to the end on mobile,
               where the utility links matter more than the signup. */}
           <div className="order-last lg:order-first lg:col-span-5 lg:pr-12">

@@ -9,8 +9,11 @@ import { loginSchema, type LoginInput } from '@outlet/validation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Button, TextField } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 function LoginInner() {
+  const { t } = useI18n();
   const router = useRouter();
   const params = useSearchParams();
   const queryClient = useQueryClient();
@@ -30,10 +33,8 @@ function LoginInner() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">Sign in</h1>
-      <p className="mt-1.5 text-sm text-ink-600">
-        Your bag and its reservation timers carry over when you sign in.
-      </p>
+      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950"><T id="ui.sign" /></h1>
+      <p className="mt-1.5 text-sm text-ink-600"><T id="ui.bagItsReservationTimersCarry" /></p>
 
       {error ? (
         <div className="mt-6">
@@ -44,7 +45,7 @@ function LoginInner() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="mt-7 space-y-4" noValidate>
         <TextField
           id="email"
-          label="Email"
+          label={t('ui.email')}
           type="email"
           autoComplete="email"
           error={form.formState.errors.email?.message}
@@ -53,7 +54,7 @@ function LoginInner() {
         <div>
           <TextField
             id="password"
-            label="Password"
+            label={t('ui.password')}
             type="password"
             autoComplete="current-password"
             error={form.formState.errors.password?.message}
@@ -63,24 +64,18 @@ function LoginInner() {
             <Link
               href="/forgot-password"
               className="text-xs text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
-            >
-              Forgot your password?
-            </Link>
+            ><T id="ui.forgotPassword" /></Link>
           </div>
         </div>
-        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}>
-          Sign in
-        </Button>
+        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}><T id="ui.sign" /></Button>
       </form>
 
       <p className="mt-8 border-t border-line pt-6 text-sm text-ink-600">
-        New here?{' '}
+        {t('ui.newHere')}{' '}
         <Link
           href="/register"
           className="font-medium text-ink-950 underline underline-offset-2 decoration-ink-300 transition-colors hover:decoration-ink-950"
-        >
-          Create an account
-        </Link>
+        ><T id="ui.createAccount" /></Link>
       </p>
     </div>
   );

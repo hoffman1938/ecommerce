@@ -1,5 +1,29 @@
+'use client';
+
 import Link from 'next/link';
 import type { CategoryDto } from '@outlet/types';
+import { useI18n } from '@/lib/i18n';
+
+/**
+ * Category names arrive from the catalogue as English data. The header already
+ * translates the same set by slug, so tiles resolve through the identical
+ * `categories.*` keys rather than inventing a second vocabulary — and fall back
+ * to the catalogue name for any slug that has no key yet.
+ */
+const CATEGORY_KEY: Record<string, string> = {
+  't-shirts': 'tShirts',
+  shoes: 'shoes',
+  hoodies: 'hoodies',
+  jackets: 'jackets',
+  pants: 'pants',
+  bags: 'bags',
+  accessories: 'accessories',
+  'running-shoes': 'runningShoes',
+  sneakers: 'sneakers',
+  boots: 'boots',
+  backpacks: 'backpacks',
+  'shoulder-bags': 'shoulderBags',
+};
 
 /**
  * Visual category navigation.
@@ -12,6 +36,7 @@ import type { CategoryDto } from '@outlet/types';
  * six-row list of categories pushes the actual products off the first screen.
  */
 export function CategoryTiles({ categories }: { categories: CategoryDto[] }) {
+  const { t } = useI18n();
   if (categories.length === 0) return null;
 
   return (
@@ -35,7 +60,7 @@ export function CategoryTiles({ categories }: { categories: CategoryDto[] }) {
               ) : null}
             </div>
             <p className="mt-2.5 text-sm font-medium text-ink-950 group-hover:underline group-hover:decoration-ink-300 group-hover:underline-offset-2">
-              {category.name}
+              {CATEGORY_KEY[category.slug] ? t(`categories.${CATEGORY_KEY[category.slug]}`) : category.name}
             </p>
           </Link>
         </li>

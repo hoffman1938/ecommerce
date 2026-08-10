@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { AccountOrderDetail } from '@/components/account-order-detail';
+import { T } from '@/components/t';
 
 /**
  * Order detail, addressed as `/account/orders/view?id=…` rather than as a
@@ -15,7 +16,7 @@ export const metadata = { title: 'Order' };
 
 export default function OrderDetailPage() {
   return (
-    <Suspense fallback={<p className="text-ink-500">Loading order…</p>}>
+    <Suspense fallback={<p className="text-ink-500"><T id="ui.loadingOrder" /></p>}>
       <AccountOrderDetail />
     </Suspense>
   );

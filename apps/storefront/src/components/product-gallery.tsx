@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ProductImageDto } from '@outlet/types';
 import { ChevronLeft, ChevronRight, ExpandIcon, cx } from '@outlet/ui';
 import { ImageViewer } from './image-viewer';
+import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Product imagery.
@@ -27,6 +29,7 @@ export function ProductGallery({
   /** Rendered over the top-left of the stage, e.g. a discount flag. */
   badge?: React.ReactNode;
 }) {
+  const { t } = useI18n();
   const [activeIndex, setActiveIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [hoverZoom, setHoverZoom] = useState<{ x: number; y: number } | null>(null);
@@ -65,9 +68,7 @@ export function ProductGallery({
 
   if (images.length === 0) {
     return (
-      <div className="media-well flex aspect-[4/5] items-center justify-center rounded text-sm text-scrim-700 dark:rounded-lg">
-        No image
-      </div>
+      <div className="media-well flex aspect-[4/5] items-center justify-center rounded text-sm text-scrim-700 dark:rounded-lg"><T id="ui.noImage" /></div>
     );
   }
 
@@ -182,7 +183,7 @@ export function ProductGallery({
               });
             }}
             onMouseLeave={() => setHoverZoom(null)}
-            aria-label="Open image full screen"
+            aria-label={t('ui.openImageFullScreen')}
             className="media-well block aspect-[4/5] w-full cursor-zoom-in rounded dark:rounded-lg"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}

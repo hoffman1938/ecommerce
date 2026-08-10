@@ -9,7 +9,7 @@ import type { ReactNode } from 'react';
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="container-page">
-      <div className="mx-auto w-full max-w-[26rem] py-12 lg:py-20">{children}</div>
+      <div className="mx-auto w-full max-w-[26rem] py-8 lg:py-20">{children}</div>
     </div>
   );
 }

@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatMoney, Badge } from '@outlet/ui';
+import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 import {
   EMPTY_PRODUCT,
   ProductForm,
@@ -30,6 +32,7 @@ interface AdminProductDetail extends ProductFormValues {
 }
 
 export default function EditProductPage() {
+  const { t, money  } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [values, setValues] = useState<ProductFormValues>(EMPTY_PRODUCT);
@@ -73,7 +76,7 @@ export default function EditProductPage() {
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-product', params.id] });
 
-  if (!product) return <p className="text-gray-500">Loading product…</p>;
+  if (!product) return <p className="text-gray-500"><T id="ui.loadingProduct" /></p>;
 
   return (
     <div className="max-w-4xl space-y-8">
@@ -130,11 +133,11 @@ export default function EditProductPage() {
           <thead>
             <tr>
               <th>SKU</th>
-              <th>Size</th>
+              <th><T id="ui.size" /></th>
               <th>Color</th>
-              <th className="text-right">On hand</th>
+              <th className="text-right"><T id="ui.hand" /></th>
               <th className="text-right">Reserved</th>
-              <th>Status</th>
+              <th><T id="ui.status" /></th>
               <th></th>
             </tr>
           </thead>
@@ -217,14 +220,12 @@ export default function EditProductPage() {
           <button
             data-testid="add-variant"
             className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-          >
-            Add variant
-          </button>
+          ><T id="ui.addVariant" /></button>
         </form>
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Images (stored in MinIO)</h2>
+        <h2 className="mb-3 font-semibold"><T id="ui.imagesStoredMinio" /></h2>
         <div className="flex flex-wrap gap-3">
           {product.images.map((image) => (
             <div key={image.id} className="relative">
@@ -241,7 +242,7 @@ export default function EditProductPage() {
                   refresh();
                 }}
                 className="absolute -right-2 -top-2 rounded-full bg-red-600 px-1.5 text-xs font-bold text-white"
-                aria-label="Remove image"
+                aria-label={t('ui.removeImage')}
               >
                 ×
               </button>
@@ -249,7 +250,7 @@ export default function EditProductPage() {
           ))}
         </div>
         <label className="mt-4 block text-sm">
-          <span className="mb-1 block font-medium">Upload image (PNG/JPEG/WebP/SVG, max 5 MB)</span>
+          <span className="mb-1 block font-medium"><T id="ui.uploadImagePngJpegWebp" /></span>
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp,image/svg+xml"
@@ -282,8 +283,8 @@ export default function EditProductPage() {
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-500">
-        Outlet price {formatMoney(product.outletPriceMinor)} vs original{' '}
-        {formatMoney(product.originalPriceMinor)}.
+        Outlet price {money(product.outletPriceMinor)} vs original{' '}
+        {money(product.originalPriceMinor)}.
       </section>
     </div>
   );

@@ -5,9 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
-import { formatMoney, formatDate, Alert, Badge, Button } from '@outlet/ui';
+import { formatDate, Alert, Badge, Button } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
 import { OrderTimeline } from '@/components/order-timeline';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 /**
  * Client half of /account/orders/[id]. Split out of page.tsx so the route file
@@ -15,6 +17,7 @@ import { OrderTimeline } from '@/components/order-timeline';
  * 'use client' module cannot do and the static export requires.
  */
 export function AccountOrderDetail() {
+  const { money } = useI18n();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const orderId = searchParams.get('id') ?? '';
@@ -43,8 +46,8 @@ export function AccountOrderDetail() {
     }
   };
 
-  if (isLoading) return <p className="text-ink-500">Loading order…</p>;
-  if (!order) return <p className="text-ink-500">Order not found.</p>;
+  if (isLoading) return <p className="text-ink-500"><T id="ui.loadingOrder" /></p>;
+  if (!order) return <p className="text-ink-500"><T id="ui.orderNotFound" /></p>;
 
   const canReturn =
     ['SHIPPED', 'DELIVERED', 'PARTIALLY_RETURNED'].includes(order.status) &&
@@ -73,8 +76,8 @@ export function AccountOrderDetail() {
 
       <OrderTimeline order={order} />
 
-      <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5">
-        <h2 className="mb-3 font-semibold">Items</h2>
+      <section className="rounded border border-line bg-ink-25 p-4 dark:bg-surface-card sm:p-5">
+        <h2 className="mb-3 font-semibold"><T id="ui.items" /></h2>
         <div className="space-y-3">
           {order.items.map((item) => (
             <div
@@ -98,15 +101,15 @@ export function AccountOrderDetail() {
                   {item.returnedQuantity > 0 ? ` · ${item.returnedQuantity} returned` : ''}
                 </p>
               </div>
-              <p className="font-medium">{formatMoney(item.totalMinor, order.currencyCode)}</p>
+              <p className="font-medium">{money(item.totalMinor)}</p>
             </div>
           ))}
         </div>
       </section>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5 text-sm">
-          <h2 className="mb-2 font-semibold">Delivery</h2>
+        <section className="rounded border border-line bg-ink-25 p-4 text-sm dark:bg-surface-card sm:p-5">
+          <h2 className="mb-2 font-semibold"><T id="ui.delivery" /></h2>
           <p className="text-ink-600">
             {order.shippingAddress.firstName} {order.shippingAddress.lastName}
             <br />
@@ -117,9 +120,7 @@ export function AccountOrderDetail() {
           </p>
           {order.isCancellable ? (
             <div className="mt-4 border-t border-ink-100 pt-3">
-              <Button variant="secondary" size="sm" onClick={cancel} loading={cancelling}>
-                Cancel this order
-              </Button>
+              <Button variant="secondary" size="sm" onClick={cancel} loading={cancelling}><T id="ui.cancelThisOrder" /></Button>
               <p className="mt-2 text-xs text-ink-500">
                 Cancelling releases the stock back to other customers. Once the parcel ships you
                 will need to request a return instead.
@@ -128,26 +129,26 @@ export function AccountOrderDetail() {
           ) : null}
         </section>
 
-        <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5 text-sm">
-          <h2 className="mb-2 font-semibold">Payment</h2>
+        <section className="rounded border border-line bg-ink-25 p-4 text-sm dark:bg-surface-card sm:p-5">
+          <h2 className="mb-2 font-semibold"><T id="ui.payment" /></h2>
           <dl className="space-y-1">
             <div className="flex justify-between">
               <dt className="text-ink-500">Subtotal</dt>
-              <dd>{formatMoney(order.subtotalMinor, order.currencyCode)}</dd>
+              <dd>{money(order.subtotalMinor)}</dd>
             </div>
             {order.discountMinor > 0 ? (
               <div className="flex justify-between text-success-700">
                 <dt>Discount {order.couponCode ? `(${order.couponCode})` : ''}</dt>
-                <dd>-{formatMoney(order.discountMinor, order.currencyCode)}</dd>
+                <dd>-{money(order.discountMinor)}</dd>
               </div>
             ) : null}
             <div className="flex justify-between">
-              <dt className="text-ink-500">Shipping</dt>
-              <dd>{formatMoney(order.shippingMinor, order.currencyCode)}</dd>
+              <dt className="text-ink-500"><T id="ui.shipping" /></dt>
+              <dd>{money(order.shippingMinor)}</dd>
             </div>
             <div className="flex justify-between border-t border-line pt-1 font-bold">
-              <dt>Total</dt>
-              <dd>{formatMoney(order.totalMinor, order.currencyCode)}</dd>
+              <dt><T id="ui.total" /></dt>
+              <dd>{money(order.totalMinor)}</dd>
             </div>
           </dl>
           <div className="mt-3 border-t border-ink-100 pt-3">
@@ -160,7 +161,7 @@ export function AccountOrderDetail() {
                   {p.status}
                 </Badge>
                 {p.refundedAmountMinor > 0
-                  ? ` · refunded ${formatMoney(p.refundedAmountMinor, order.currencyCode)}`
+                  ? ` · refunded ${money(p.refundedAmountMinor)}`
                   : ''}
               </p>
             ))}
@@ -172,9 +173,7 @@ export function AccountOrderDetail() {
         <Link
           href={`/account/returns/new?orderId=${order.id}`}
           className="inline-block rounded border border-ink-950 px-5 py-2.5 text-sm font-semibold hover:bg-ink-950 hover:text-ink-25"
-        >
-          Request a return
-        </Link>
+        ><T id="ui.requestReturn" /></Link>
       ) : null}
     </div>
   );

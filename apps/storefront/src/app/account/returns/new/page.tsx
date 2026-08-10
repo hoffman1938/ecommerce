@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
 import { api, ApiError } from '@/lib/api';
+import { T } from '@/components/t';
 
 function NewReturnInner() {
   const params = useSearchParams();
@@ -21,8 +22,8 @@ function NewReturnInner() {
     enabled: Boolean(orderId),
   });
 
-  if (!orderId) return <p className="text-ink-500">Missing order reference.</p>;
-  if (!order) return <p className="text-ink-500">Loading order…</p>;
+  if (!orderId) return <p className="text-ink-500"><T id="ui.missingOrderReference" /></p>;
+  if (!order) return <p className="text-ink-500"><T id="ui.loadingOrder" /></p>;
 
   const returnable = order.items.filter((i) => i.returnableQuantity > 0);
   const selectedItems = returnable
@@ -97,7 +98,7 @@ function NewReturnInner() {
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Note (optional)</span>
+          <span className="mb-1 block font-medium"><T id="ui.noteOptional" /></span>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -105,9 +106,7 @@ function NewReturnInner() {
             className="w-full rounded border border-ink-300 px-3 py-2"
           />
         </label>
-        <button className="rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-ink-800">
-          Submit return request
-        </button>
+        <button className="rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-ink-800"><T id="ui.submitReturnRequest" /></button>
       </form>
     </div>
   );

@@ -2,8 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { ReturnRequestDto } from '@outlet/types';
-import { formatMoney, formatDate, Badge } from '@outlet/ui';
+import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 const TONE: Record<string, 'gray' | 'green' | 'red' | 'yellow' | 'blue'> = {
   REQUESTED: 'yellow',
@@ -15,6 +17,7 @@ const TONE: Record<string, 'gray' | 'green' | 'red' | 'yellow' | 'blue'> = {
 };
 
 export default function ReturnsPage() {
+  const { money } = useI18n();
   const { data: returns, isLoading } = useQuery({
     queryKey: ['account-returns'],
     queryFn: () => api.get<ReturnRequestDto[]>('/account/returns'),
@@ -22,14 +25,12 @@ export default function ReturnsPage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-bold">Returns &amp; refunds</h1>
-      <p className="mb-4 text-sm text-ink-500">
-        Start a return from the order page of a shipped or delivered order.
-      </p>
+      <h1 className="mb-2 text-2xl font-bold"><T id="ui.returnsAmpRefunds" /></h1>
+      <p className="mb-4 text-sm text-ink-500"><T id="ui.startReturnFromOrderPage" /></p>
       {isLoading ? (
-        <p className="text-ink-500">Loading…</p>
+        <p className="text-ink-500"><T id="ui.loading" /></p>
       ) : !returns || returns.length === 0 ? (
-        <p className="text-ink-500">No return requests yet.</p>
+        <p className="text-ink-500"><T id="ui.noReturnRequestsYet" /></p>
       ) : (
         <div className="space-y-3">
           {returns.map((request) => (
@@ -60,7 +61,7 @@ export default function ReturnsPage() {
                 <div className="mt-2 border-t border-ink-100 pt-2 text-sm">
                   {request.refunds.map((refund) => (
                     <p key={refund.id} className="text-ink-600">
-                      Refund {formatMoney(refund.amountMinor)} ·{' '}
+                      Refund {money(refund.amountMinor)} ·{' '}
                       <Badge tone={refund.status === 'SUCCEEDED' ? 'green' : 'yellow'}>
                         {refund.status}
                       </Badge>

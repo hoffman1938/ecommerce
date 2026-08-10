@@ -12,6 +12,8 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, CloseIcon, ZoomInIcon, ZoomOutIcon, cx } from '@outlet/ui';
+import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 export interface ViewerImage {
   id: string;
@@ -58,6 +60,7 @@ export function ImageViewer({
   onClose: () => void;
   productName: string;
 }) {
+  const { t } = useI18n();
   const [index, setIndex] = useState(startIndex);
   const [transform, setTransform] = useState<Transform>(IDENTITY);
   const [dragging, setDragging] = useState(false);
@@ -440,7 +443,7 @@ export function ImageViewer({
 
         <div className="flex items-center gap-1">
           <ViewerButton
-            label="Zoom out"
+            label={t('ui.zoomOut')}
             onClick={() => zoomBy(1 / 1.4)}
             disabled={transform.scale <= MIN_SCALE + 0.01}
           >
@@ -454,13 +457,13 @@ export function ImageViewer({
             {Math.round(transform.scale * 100)}%
           </span>
           <ViewerButton
-            label="Zoom in"
+            label={t('ui.zoom')}
             onClick={() => zoomBy(1.4)}
             disabled={transform.scale >= MAX_SCALE - 0.01}
           >
             <ZoomInIcon className="h-5 w-5" />
           </ViewerButton>
-          <ViewerButton ref={closeRef} label="Close image viewer" onClick={onClose}>
+          <ViewerButton ref={closeRef} label={t('ui.closeImageViewer')} onClick={onClose}>
             <CloseIcon className="h-5 w-5" />
           </ViewerButton>
         </div>
@@ -544,9 +547,7 @@ export function ImageViewer({
             ))}
           </div>
         ) : null}
-        <p className="mt-2 hidden text-center text-2xs text-white/35 lg:block">
-          Scroll or double-click to zoom · drag to pan · ← → to browse · Esc to close
-        </p>
+        <p className="mt-2 hidden text-center text-2xs text-white/35 lg:block"><T id="ui.scrollDoubleClickZoomDrag" /></p>
       </div>
     </div>,
     document.body,

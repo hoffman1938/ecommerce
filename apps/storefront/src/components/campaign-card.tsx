@@ -1,9 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import type { CampaignDto } from '@outlet/types';
 import { ImageIcon, cx } from '@outlet/ui';
+import { useI18n } from '@/lib/i18n';
 import { Countdown } from './countdown';
-
-const DATE_SHORT = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' });
 
 /**
  * Campaign tile. The cover art is the subject, so the title sits on the image
@@ -23,6 +24,7 @@ export function CampaignCard({
   campaign: CampaignDto;
   upcoming?: boolean;
 }) {
+  const { t, formatDate } = useI18n();
   return (
     <Link
       href={`/campaigns/${campaign.slug}`}
@@ -59,11 +61,13 @@ export function CampaignCard({
               upcoming ? 'bg-white text-scrim-950' : 'bg-sale-brand text-white',
             )}
           >
-            {upcoming ? `Starts ${DATE_SHORT.format(new Date(campaign.startsAt))}` : 'Live now'}
+            {upcoming
+              ? t('campaign.startsOn', { date: formatDate(campaign.startsAt, { day: 'numeric', month: 'short' }) })
+              : t('campaign.liveNow')}
           </span>
           {campaign.productCount ? (
             <span data-numeric className="text-2xs font-medium text-white/80">
-              {campaign.productCount} items
+              {t('campaign.items', { count: campaign.productCount })}
             </span>
           ) : null}
         </div>
@@ -83,7 +87,7 @@ export function CampaignCard({
                 className="inline-block h-1.5 w-1.5 rounded-full bg-sale-400 dark:bg-sale-500"
                 aria-hidden="true"
               />
-              Ends in <Countdown expiresAt={campaign.endsAt} tone="inverse" />
+              {t('campaign.endsIn')} <Countdown expiresAt={campaign.endsAt} tone="inverse" />
             </p>
           ) : null}
         </div>

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { formatDate } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 interface AuditRow {
   id: string;
@@ -17,6 +19,7 @@ interface AuditRow {
 }
 
 export default function AuditLogsPage() {
+  const { t } = useI18n();
   const [action, setAction] = useState('');
   const [page, setPage] = useState(1);
   const { data } = useQuery({
@@ -29,14 +32,14 @@ export default function AuditLogsPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">Audit logs</h1>
+      <h1 className="mb-4 text-2xl font-bold"><T id="ui.auditLogs" /></h1>
       <input
         value={action}
         onChange={(e) => {
           setAction(e.target.value);
           setPage(1);
         }}
-        placeholder="Filter by action (e.g. inventory, reservation, order)…"
+        placeholder={t('ui.filterByActionEG')}
         className="mb-4 w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -87,9 +90,7 @@ export default function AuditLogsPage() {
             disabled={page >= data.totalPages}
             onClick={() => setPage((p) => p + 1)}
             className="rounded border px-3 py-1.5 disabled:opacity-40"
-          >
-            Next →
-          </button>
+          ><T id="ui.next2" /></button>
         </div>
       ) : null}
     </div>

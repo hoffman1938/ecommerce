@@ -10,6 +10,8 @@ import { ProductGrid } from '@/components/product-card';
 import { Section, SectionHeader } from '@/components/section';
 import { RecentlyViewed, TrackProductView } from '@/components/recently-viewed';
 import { breadcrumbJsonLd, productJsonLd, SITE_URL } from '@/lib/structured-data';
+import { T } from '@/components/t';
+import { Breadcrumb } from '@/components/breadcrumb';
 
 /** Pre-render every catalog product so the app can be exported statically. */
 export function generateStaticParams() {
@@ -46,11 +48,11 @@ export async function generateMetadata({
 /** Specification rows, rendered only for the fields a product actually has. */
 function specs(product: ProductDetailDto): Array<[string, string]> {
   const rows: Array<[string, string]> = [];
-  if (product.materials) rows.push(['Materials', product.materials]);
-  if (product.careInstructions) rows.push(['Care', product.careInstructions]);
-  if (product.countryOfOrigin) rows.push(['Made in', product.countryOfOrigin]);
-  if (product.category) rows.push(['Category', product.category.name]);
-  rows.push(['Article', product.variants[0]?.sku.split('-').slice(0, 3).join('-') ?? '—']);
+  if (product.materials) rows.push(['ui.materials', product.materials]);
+  if (product.careInstructions) rows.push(['ui.care', product.careInstructions]);
+  if (product.countryOfOrigin) rows.push(['ui.madeIn', product.countryOfOrigin]);
+  if (product.category) rows.push(['ui.category', product.category.name]);
+  rows.push(['ui.article', product.variants[0]?.sku.split('-').slice(0, 3).join('-') ?? '—']);
   return rows;
 }
 
@@ -74,7 +76,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
   return (
     // Bottom padding on small screens clears the sticky Add to bag bar, so the
     // last section is never trapped underneath it.
-    <div className="container-page py-5 pb-24 lg:py-8 lg:pb-8">
+    <div className="container-page py-4 pb-20 lg:py-8 lg:pb-8">
       <TrackProductView
         slug={product.slug}
         productId={product.id}
@@ -92,12 +94,10 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(trail)) }}
       />
 
-      <nav aria-label="Breadcrumb" className="mb-6 text-xs text-ink-500">
+      <Breadcrumb className="mb-6 text-xs text-ink-500">
         <ol className="flex flex-wrap items-center gap-1.5">
           <li>
-            <Link href="/products" className="transition-colors hover:text-ink-950">
-              All products
-            </Link>
+            <Link href="/products" className="transition-colors hover:text-ink-950"><T id="ui.allProducts" /></Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
@@ -122,7 +122,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
             </>
           ) : null}
         </ol>
-      </nav>
+      </Breadcrumb>
 
       <ProductDetailTop product={product} />
 
@@ -130,13 +130,11 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
           column, which is what used to leave a column-height void beside the
           sticky gallery. */}
       {product.description || rows.length > 0 ? (
-        <section className="mt-14 border-t border-line pt-8 lg:mt-20">
+        <section className="mt-10 border-t border-line pt-6 sm:mt-12 lg:mt-20 lg:pt-8">
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
             {product.description ? (
               <div>
-                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950">
-                  About this piece
-                </h2>
+                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950"><T id="ui.aboutThisPiece" /></h2>
                 <p className="mt-3 max-w-prose whitespace-pre-line text-[15px] leading-relaxed text-ink-600">
                   {product.description}
                 </p>
@@ -145,13 +143,13 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
 
             {rows.length > 0 ? (
               <div>
-                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950">
-                  Product details
-                </h2>
+                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950"><T id="ui.productDetails" /></h2>
                 <dl className="mt-3 divide-y divide-ink-100 dark:divide-line border-t border-ink-100 text-sm">
                   {rows.map(([label, value]) => (
                     <div key={label} className="flex gap-4 py-3">
-                      <dt className="w-28 shrink-0 text-ink-500">{label}</dt>
+                      <dt className="w-28 shrink-0 text-ink-500">
+                        <T id={label} />
+                      </dt>
                       <dd className="min-w-0 text-ink-800">{value}</dd>
                     </div>
                   ))}
@@ -171,8 +169,8 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
       {related && related.length > 0 ? (
         <Section className="reveal">
           <SectionHeader
-            title="You may also like"
-            description="Similar pieces from the same category and brands."
+            title={<T id="ui.youMayAlsoLike" />}
+            description={<T id="ui.similarPiecesFromSameCategory" />}
           />
           <ProductGrid products={related} />
         </Section>

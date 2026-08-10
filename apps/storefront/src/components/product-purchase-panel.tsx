@@ -12,13 +12,13 @@ import {
   ShieldIcon,
   TruckIcon,
   cx,
-  formatMoney,
 } from '@outlet/ui';
 import { useAddToCart, useCurrentUser } from '@/lib/hooks';
 import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 import { track } from '@/lib/analytics';
 import { SizeGuide } from '@/components/size-guide';
+import { T } from '@/components/t';
 
 const MAX_QUANTITY = 5;
 /** Below this, a size is called out as nearly gone. Backed by real inventory. */
@@ -36,7 +36,7 @@ export function ProductPurchasePanel({
   onSelectColor: (color: string) => void;
 }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, money } = useI18n();
   const addToCart = useAddToCart();
   const { data: me } = useCurrentUser();
 
@@ -123,14 +123,14 @@ export function ProductPurchasePanel({
       });
       setFeedback({
         tone: 'success',
-        text: 'Added to your bag — reserved for the next 20 minutes.',
+        text: t('product.addedToBag'),
       });
       return true;
     } catch (err) {
       if (err instanceof ApiError && err.body.code === 'OUT_OF_STOCK') {
         setFeedback({
           tone: 'error',
-          text: 'Sorry — this item was just taken by another customer.',
+          text: t('product.justTaken'),
         });
       } else {
         setFeedback({ tone: 'error', text: (err as Error).message });
@@ -152,7 +152,7 @@ export function ProductPurchasePanel({
     try {
       await api.post('/account/wishlist', { productId: product.id });
       track('wishlist_add', { productId: product.id });
-      setFeedback({ tone: 'success', text: 'Saved to your wishlist.' });
+      setFeedback({ tone: 'success', text: t('product.savedToWishlist') });
     } catch (err) {
       setFeedback({ tone: 'error', text: (err as Error).message });
     }
@@ -166,12 +166,12 @@ export function ProductPurchasePanel({
           data-numeric
           className={cx('price-now text-3xl', product.discountPercent > 0 && 'price-now--reduced')}
         >
-          {formatMoney(price, product.currencyCode)}
+          {money(price)}
         </span>
         {product.discountPercent > 0 ? (
           <>
             <span data-numeric className="price-was text-base">
-              {formatMoney(product.originalPriceMinor, product.currencyCode)}
+              {money(product.originalPriceMinor)}
             </span>
             {/* The saving is the one place a tinted chip earns its keep: it
                 states a number the struck price only implies. `sale-50` is a
@@ -180,17 +180,17 @@ export function ProductPurchasePanel({
               data-numeric
               className="rounded-xs bg-sale-50 px-1.5 py-0.5 text-sm font-semibold text-sale-600 dark:bg-sale-100 dark:text-sale-700"
             >
-              Save {formatMoney(product.originalPriceMinor - price, product.currencyCode)}
+              {t('product.save', { amount: money(product.originalPriceMinor - price) })}
             </span>
           </>
         ) : null}
       </div>
       <p className="mt-1.5 text-xs text-ink-500">
-        Incl. VAT
+        {t('product.inclVat')}
         {product.campaignSlug ? (
           <>
             {' · '}
-            <span className="font-medium text-sale-500">Campaign price applied</span>
+            <span className="font-medium text-sale-500">{t('product.campaignPrice')}</span>
           </>
         ) : null}
       </p>
@@ -199,7 +199,7 @@ export function ProductPurchasePanel({
       {colors.length > 1 ? (
         <fieldset className="mt-7">
           <legend className="mb-2.5 flex w-full items-baseline justify-between text-sm">
-            <span className="font-semibold text-ink-950">Colour</span>
+            <span className="font-semibold text-ink-950">{t('product.colour')}</span>
             <span className="text-ink-500">{selectedColor}</span>
           </legend>
           <div className="flex flex-wrap gap-2.5">
@@ -238,9 +238,12 @@ export function ProductPurchasePanel({
       <fieldset className="mt-7">
         <legend className="mb-2.5 flex w-full items-baseline justify-between gap-4 text-sm">
           <span className={cx('font-semibold', sizeError ? 'text-sale-600' : 'text-ink-950')}>
-            {sizeError ? 'Select a size to continue' : 'Size'}
+            {sizeError ? t('product.selectSize') : t('product.size')}
           </span>
-          <SizeGuide sizes={product.variants.map((v) => v.size)} />
+          <SizeGuide
+            sizes={product.variants.map((v) => v.size)}
+            targetGroup={product.targetGroup}
+          />
         </legend>
         <div
           ref={sizeGridRef}
@@ -297,7 +300,7 @@ export function ProductPurchasePanel({
           </p>
         ) : lastSize ? (
           <p className="mt-2.5 text-sm font-medium text-warning-600">
-            Last size available in this colour
+            {t('product.lastSize')}
           </p>
         ) : null}
       </fieldset>
@@ -310,7 +313,7 @@ export function ProductPurchasePanel({
               type="button"
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               disabled={quantity <= 1}
-              aria-label="Decrease quantity"
+              aria-label={t('product.decrease')}
               className="h-full w-10 text-lg text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300 dark:disabled:text-content-disabled"
             >
               −
@@ -322,7 +325,7 @@ export function ProductPurchasePanel({
               type="button"
               onClick={() => setQuantity((q) => Math.min(maxForVariant, q + 1))}
               disabled={quantity >= maxForVariant}
-              aria-label="Increase quantity"
+              aria-label={t('product.increase')}
               className="h-full w-10 text-lg text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300 dark:disabled:text-content-disabled"
             >
               +
@@ -337,13 +340,13 @@ export function ProductPurchasePanel({
             data-testid="add-to-cart"
             className="flex-1"
           >
-            {soldOut ? t('product.soldOut') : 'Add to bag'}
+            {soldOut ? t('product.soldOut') : t('product.addToBag')}
           </Button>
 
           <button
             type="button"
             onClick={handleWishlist}
-            aria-label="Save to wishlist"
+            aria-label={t('product.saveToWishlist')}
             className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded text-ink-700 ring-1 ring-inset ring-ink-300 transition-colors duration-150 hover:text-sale-500 hover:ring-ink-400 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600"
           >
             <HeartIcon className="h-5 w-5" />
@@ -358,7 +361,7 @@ export function ProductPurchasePanel({
             disabled={addToCart.isPending}
             className="mt-2 w-full"
           >
-            Buy now
+            {t('product.buyNow')}
           </Button>
         ) : null}
       </div>
@@ -373,21 +376,18 @@ export function ProductPurchasePanel({
           what if it doesn't fit, and is paying here safe. Answering them here
           rather than in the footer is the point. */}
       <ul className="mt-6 space-y-3 border-t border-line pt-5 text-sm">
-        <TrustRow icon={<TruckIcon className="h-[18px] w-[18px]" />} title="Delivery">
-          Standard {formatMoney(495, product.currencyCode)}, 3–5 working days. Free over{' '}
-          {formatMoney(10000, product.currencyCode)}. Express 1–2 days at checkout.
+        <TrustRow icon={<TruckIcon className="h-[18px] w-[18px]" />} title={t('product.delivery')}>
+          Standard {money(495)}, 3–5 working days. Free over{' '}
+          {money(10000)}. Express 1–2 days at checkout.
         </TrustRow>
-        <TrustRow icon={<ReturnIcon className="h-[18px] w-[18px]" />} title="Free returns">
+        <TrustRow icon={<ReturnIcon className="h-[18px] w-[18px]" />} title={t('product.freeReturns')}>
           30 days from delivery. Request a return from your order page — no reason needed.
         </TrustRow>
-        <TrustRow icon={<ShieldIcon className="h-[18px] w-[18px]" />} title="Secure checkout">
-          Card or cash on delivery. Card details are never stored by this shop.
-        </TrustRow>
+        <TrustRow icon={<ShieldIcon className="h-[18px] w-[18px]" />} title={t('product.secureCheckout')}><T id="ui.cardCashDeliveryCardDetails" /></TrustRow>
       </ul>
 
       <p className="mt-5 text-xs leading-relaxed text-ink-500">
-        Items in your bag are reserved for 20 minutes. The timer does not restart when you refresh
-        or sign in.
+        {t('product.reserveNote')}
       </p>
 
       {/* Mobile sticky bar — only once the real button is out of view. */}
@@ -414,7 +414,7 @@ export function ProductPurchasePanel({
                 product.discountPercent > 0 ? 'text-sale-500' : 'text-ink-950',
               )}
             >
-              {formatMoney(price, product.currencyCode)}
+              {money(price)}
             </p>
           </div>
           <Button
@@ -423,9 +423,7 @@ export function ProductPurchasePanel({
             disabled={soldOut}
             tabIndex={ctaOffscreen ? 0 : -1}
             className="shrink-0 px-8"
-          >
-            Add to bag
-          </Button>
+          ><T id="ui.addBag" /></Button>
         </div>
       </div>
     </div>

@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatMoney, formatDate, Badge } from '@outlet/ui';
+import { formatDate, Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 interface CustomerDetail {
   id: string;
@@ -42,6 +44,7 @@ interface CustomerDetail {
 }
 
 export default function CustomerDetailPage() {
+  const { t, money  } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [note, setNote] = useState('');
@@ -53,7 +56,7 @@ export default function CustomerDetailPage() {
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-customer', params.id] });
-  if (!customer) return <p className="text-gray-500">Loading customer…</p>;
+  if (!customer) return <p className="text-gray-500"><T id="ui.loadingCustomer" /></p>;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -87,9 +90,7 @@ export default function CustomerDetailPage() {
               }
             }}
             className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm text-red-600 hover:border-red-600"
-          >
-            Disable account
-          </button>
+          ><T id="ui.disableAccount" /></button>
         ) : (
           <button
             type="button"
@@ -98,9 +99,7 @@ export default function CustomerDetailPage() {
               refresh();
             }}
             className="rounded-md border border-green-300 bg-white px-4 py-2 text-sm text-green-700 hover:border-green-600"
-          >
-            Re-enable account
-          </button>
+          ><T id="ui.reEnableAccount" /></button>
         )}
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -121,13 +120,13 @@ export default function CustomerDetailPage() {
                   <Badge tone={order.status === 'CANCELLED' ? 'red' : 'blue'}>{order.status}</Badge>
                 </td>
                 <td className="text-right font-medium">
-                  {formatMoney(order.totalMinor, order.currencyCode)}
+                  {money(order.totalMinor)}
                 </td>
               </tr>
             ))}
             {customer.orders.length === 0 ? (
               <tr>
-                <td className="text-gray-400">No orders.</td>
+                <td className="text-gray-400"><T id="ui.noOrders" /></td>
               </tr>
             ) : null}
           </tbody>
@@ -142,10 +141,10 @@ export default function CustomerDetailPage() {
               {address.line1}, {address.postalCode} {address.city}, {address.countryCode}
             </p>
           ))}
-          {customer.addresses.length === 0 ? <p className="text-gray-400">None saved.</p> : null}
+          {customer.addresses.length === 0 ? <p className="text-gray-400"><T id="ui.noneSaved" /></p> : null}
         </section>
         <section className="rounded-lg border border-gray-200 bg-white p-5 text-sm">
-          <h2 className="mb-2 font-semibold">Returns &amp; refunds</h2>
+          <h2 className="mb-2 font-semibold"><T id="ui.returnsAmpRefunds" /></h2>
           {customer.returnRequests.map((r) => (
             <p key={r.id} className="text-gray-600">
               <Link href={`/returns/${r.id}`} className="hover:underline">
@@ -156,7 +155,7 @@ export default function CustomerDetailPage() {
           ))}
           {customer.refunds.map((refund) => (
             <p key={refund.id} className="text-gray-600">
-              Refund {formatMoney(refund.amountMinor)} · {refund.status}
+              Refund {money(refund.amountMinor)} · {refund.status}
             </p>
           ))}
           {customer.returnRequests.length === 0 && customer.refunds.length === 0 ? (
@@ -166,7 +165,7 @@ export default function CustomerDetailPage() {
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Support notes</h2>
+        <h2 className="mb-3 font-semibold"><T id="ui.supportNotes" /></h2>
         <ul className="space-y-2 text-sm">
           {customer.supportNotes.map((supportNote) => (
             <li key={supportNote.id} className="rounded bg-gray-50 p-3">
@@ -190,7 +189,7 @@ export default function CustomerDetailPage() {
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Add a support note…"
+            placeholder={t('ui.addSupportNote')}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
           <button className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium hover:bg-gray-200">
