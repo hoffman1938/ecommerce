@@ -83,14 +83,14 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
         type="button"
         aria-label="Close bag"
         onClick={onClose}
-        className="absolute inset-0 animate-fade-in bg-ink-950/40"
+        className="absolute inset-0 animate-fade-in bg-scrim-950/50 dark:bg-scrim-950/70"
       />
 
       <div
         ref={panelRef}
-        className="absolute inset-y-0 right-0 flex w-[min(26rem,92vw)] animate-slide-in-right flex-col bg-ink-25 shadow-md"
+        className="absolute inset-y-0 right-0 flex w-[min(26rem,92vw)] animate-slide-in-right flex-col bg-ink-25 shadow-md dark:border-l dark:border-line dark:bg-surface-raised dark:shadow-lg"
       >
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-ink-200 px-4">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-4">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-950">
             <BagIcon className="h-[18px] w-[18px]" />
             Your bag
@@ -105,7 +105,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             aria-label="Close bag"
-            className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50"
+            className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950"
           >
             <CloseIcon className="h-5 w-5" />
           </button>
@@ -117,7 +117,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-ink-50 text-ink-400">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-ink-50 text-ink-400 dark:bg-surface-active">
               <BagIcon className="h-6 w-6" />
             </span>
             <div>
@@ -129,7 +129,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
             <Link
               href="/products"
               onClick={onClose}
-              className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
+              className="inline-flex h-10 items-center rounded bg-accent px-5 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover"
             >
               Browse the outlet
             </Link>
@@ -142,7 +142,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
               </div>
             ) : null}
 
-            <ul className="min-h-0 flex-1 divide-y divide-ink-100 overflow-y-auto overscroll-contain px-4">
+            <ul className="min-h-0 flex-1 divide-y divide-ink-100 dark:divide-line overflow-y-auto overscroll-contain px-4">
               {items.map((item) => (
                 <DrawerLine
                   key={item.id}
@@ -155,7 +155,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
               ))}
             </ul>
 
-            <div className="shrink-0 border-t border-ink-200 p-4">
+            <div className="shrink-0 border-t border-line p-4">
               {error ? (
                 <p
                   role="alert"
@@ -222,7 +222,7 @@ function DrawerLine({
       <Link
         href={`/products/${item.productSlug}`}
         onClick={onClose}
-        className="shrink-0 overflow-hidden rounded-xs bg-ink-50"
+        className="media-well shrink-0 rounded-xs"
       >
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

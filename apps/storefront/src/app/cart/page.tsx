@@ -66,7 +66,7 @@ export default function CartPage() {
           action={
             <Link
               href="/products"
-              className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
+              className="inline-flex h-10 items-center rounded bg-accent px-5 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover"
             >
               Browse the outlet
             </Link>
@@ -121,7 +121,7 @@ export default function CartPage() {
       />
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
-        <ul className="divide-y divide-ink-200 border-b border-t border-ink-200">
+        <ul className="divide-y divide-line border-b border-t border-line">
           {cart.items.map((item) => (
             <CartRow
               key={item.id}
@@ -151,10 +151,14 @@ export default function CartPage() {
           ))}
         </ul>
 
-        <aside className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit">
+        {/* In dark the summary becomes a real panel. On white the page frames it
+            and a heading plus a rule is enough; on near-black an unbounded
+            column of figures beside an unbounded column of items reads as one
+            undifferentiated list, and the total stops being the answer. */}
+        <aside className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit dark:rounded-lg dark:border dark:border-line dark:bg-surface-card dark:p-5">
           <h2 className="text-sm font-semibold text-ink-950">Order summary</h2>
 
-          <dl className="mt-4 space-y-2.5 border-t border-ink-200 pt-4 text-sm">
+          <dl className="mt-4 space-y-2.5 border-t border-line pt-4 text-sm">
             <div className="flex justify-between">
               <dt className="text-ink-600">Subtotal</dt>
               <dd data-numeric className="text-ink-900">
@@ -175,7 +179,7 @@ export default function CartPage() {
                   : formatMoney(cart.shippingMinor, cart.currencyCode)}
               </dd>
             </div>
-            <div className="flex items-baseline justify-between border-t border-ink-200 pt-3">
+            <div className="flex items-baseline justify-between border-t border-line pt-3">
               <dt className="text-base font-semibold text-ink-950">Total</dt>
               <dd data-numeric data-testid="cart-total" className="text-lg font-bold text-ink-950">
                 {formatMoney(cart.totalMinor, cart.currencyCode)}
@@ -196,7 +200,7 @@ export default function CartPage() {
             </p>
           ) : null}
 
-          <div className="mt-5 border-t border-ink-200 pt-5">
+          <div className="mt-5 border-t border-line pt-5">
             {cart.couponCode ? (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-600">
@@ -244,7 +248,7 @@ export default function CartPage() {
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
                   placeholder="Coupon code"
-                  className="h-10 w-full rounded bg-ink-25 px-3 text-sm uppercase ring-1 ring-inset ring-ink-300 transition-shadow placeholder:normal-case placeholder:text-ink-400 hover:ring-ink-400"
+                  className="h-10 w-full rounded bg-ink-25 px-3 text-sm uppercase ring-1 ring-inset ring-ink-300 transition-shadow duration-150 placeholder:normal-case placeholder:text-ink-400 hover:ring-ink-400 dark:bg-surface-sunken dark:ring-line-strong dark:placeholder:text-content-muted dark:hover:bg-surface dark:hover:ring-ink-600"
                 />
                 <Button type="submit" variant="secondary">
                   Apply
@@ -257,7 +261,7 @@ export default function CartPage() {
             href="/checkout"
             data-testid="go-to-checkout"
             className={cx(
-              'mt-6 hidden h-12 items-center justify-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800 lg:flex',
+              'mt-6 hidden h-12 items-center justify-center rounded bg-accent px-5 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover lg:flex',
               liveItems.length === 0 && 'pointer-events-none bg-ink-200 text-ink-400',
             )}
           >
@@ -280,7 +284,7 @@ export default function CartPage() {
       ) : null}
 
       {/* Mobile: keep checkout reachable without scrolling past every item. */}
-      <div className="sticky bottom-0 -mx-4 mt-8 border-t border-ink-200 bg-ink-25/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+      <div className="sticky bottom-0 -mx-4 mt-8 border-t border-line bg-ink-25/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur dark:bg-surface-raised/95 dark:shadow-overlay lg:hidden">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-xs text-ink-500">Total</p>
@@ -291,7 +295,7 @@ export default function CartPage() {
           <Link
             href="/checkout"
             className={cx(
-              'inline-flex h-11 flex-1 max-w-48 items-center justify-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800',
+              'inline-flex h-11 flex-1 max-w-48 items-center justify-center rounded bg-accent px-5 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover',
               liveItems.length === 0 && 'pointer-events-none bg-ink-200 text-ink-400',
             )}
           >
@@ -325,7 +329,7 @@ function FreeShippingProgress({
   );
 
   return (
-    <div className="mt-6 border-y border-ink-200 py-4">
+    <div className="mt-6 border-y border-line py-4">
       <p className="text-sm text-ink-700">
         {progress.qualified ? (
           <>
@@ -343,7 +347,7 @@ function FreeShippingProgress({
         )}
       </p>
       <div
-        className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-ink-100"
+        className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-ink-100 dark:bg-surface-active"
         role="progressbar"
         aria-valuenow={percent}
         aria-valuemin={0}
@@ -353,7 +357,7 @@ function FreeShippingProgress({
         <div
           className={cx(
             'h-full rounded-full transition-[width] duration-500 ease-out',
-            progress.qualified ? 'bg-success-700' : 'bg-ink-950',
+            progress.qualified ? 'bg-success-600' : 'bg-ink-950',
           )}
           style={{ width: `${percent}%` }}
         />
@@ -391,7 +395,7 @@ function SavedForLater({
   onDiscard: (id: string) => void;
 }) {
   return (
-    <section className="mt-12 border-t border-ink-200 pt-8">
+    <section className="mt-12 border-t border-line pt-8">
       <h2 className="text-lg font-bold tracking-[-0.02em] text-ink-950">
         Saved for later{' '}
         <span data-numeric className="font-normal text-ink-500">
@@ -403,7 +407,7 @@ function SavedForLater({
         your bag.
       </p>
 
-      <ul className="mt-5 divide-y divide-ink-100 border-t border-ink-200">
+      <ul className="mt-5 divide-y divide-ink-100 dark:divide-line border-t border-line">
         {items.map((item) => (
           <li
             key={item.id}
@@ -411,7 +415,7 @@ function SavedForLater({
           >
             <Link
               href={`/products/${item.productSlug}`}
-              className="relative h-20 w-16 shrink-0 overflow-hidden rounded bg-ink-50"
+              className="media-well h-20 w-16 shrink-0 rounded"
             >
               {item.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -485,7 +489,7 @@ function CartRow({
     >
       <Link
         href={`/products/${item.productSlug}`}
-        className="relative h-28 w-24 shrink-0 overflow-hidden rounded bg-ink-50 sm:h-32 sm:w-28"
+        className="media-well h-28 w-24 shrink-0 rounded sm:h-32 sm:w-28"
       >
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -519,13 +523,13 @@ function CartRow({
 
         <div className="mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 items-center rounded ring-1 ring-inset ring-ink-300">
+            <div className="flex h-9 items-center rounded ring-1 ring-inset ring-ink-300 dark:bg-surface-card dark:ring-line-strong">
               <button
                 type="button"
                 onClick={() => onQuantity(item.quantity - 1)}
                 disabled={busy || item.quantity <= 1}
                 aria-label="Decrease quantity"
-                className="h-full w-8 text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300"
+                className="h-full w-8 text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300 dark:disabled:text-content-disabled"
               >
                 −
               </button>
@@ -537,7 +541,7 @@ function CartRow({
                 onClick={() => onQuantity(item.quantity + 1)}
                 disabled={busy}
                 aria-label="Increase quantity"
-                className="h-full w-8 text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300"
+                className="h-full w-8 text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300 dark:disabled:text-content-disabled"
               >
                 +
               </button>

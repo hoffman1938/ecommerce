@@ -60,7 +60,7 @@ export function InboxView() {
         This is a sandbox mailbox. Messages are generated locally and never sent to a real address.
       </Alert>
 
-      <div role="tablist" className="flex gap-1 border-b border-ink-200">
+      <div role="tablist" className="flex gap-1 border-b border-line">
         <TabButton
           active={tab === 'notifications'}
           onClick={() => setTab('notifications')}
@@ -89,17 +89,20 @@ export function InboxView() {
             }
           />
         ) : (
-          <ul className="divide-y divide-ink-100 border-t border-ink-200">
+          <ul className="divide-y divide-ink-100 dark:divide-line border-t border-line">
             {(notifications.data?.items ?? []).map((notification) => (
               <li
                 key={notification.id}
-                className={cx('py-4', notification.readAt === null && 'bg-ink-25')}
+                // `surface-card` is white in light — identical to the `ink-25` this used,
+                // which meant the unread tint never actually showed — and a genuine
+                // step above the page in dark.
+                className={cx('py-4', notification.readAt === null && 'bg-surface-card')}
               >
                 <div className="flex items-start gap-3">
                   <span
                     className={cx(
                       'mt-1.5 h-2 w-2 shrink-0 rounded-full',
-                      notification.readAt === null ? 'bg-sale-500' : 'bg-ink-200',
+                      notification.readAt === null ? 'bg-sale-500' : 'bg-ink-200 dark:bg-ink-300',
                     )}
                     aria-label={notification.readAt === null ? 'Unread' : 'Read'}
                   />
@@ -133,11 +136,11 @@ export function InboxView() {
           description="Order confirmations and shipping updates land here instead of a real inbox."
         />
       ) : (
-        <ul className="divide-y divide-ink-100 border-t border-ink-200">
+        <ul className="divide-y divide-ink-100 dark:divide-line border-t border-line">
           {(emails.data?.items ?? []).map((email) => {
             const open = openEmailId === email.id;
             return (
-              <li key={email.id} className={cx(email.readAt === null && 'bg-ink-25')}>
+              <li key={email.id} className={cx(email.readAt === null && 'bg-surface-card')}>
                 <button
                   type="button"
                   aria-expanded={open}
@@ -175,7 +178,7 @@ export function InboxView() {
                 </button>
 
                 {open ? (
-                  <div className="border-l-2 border-ink-200 pb-4 pl-4">
+                  <div className="border-l-2 border-line pb-4 pl-4">
                     <p className="whitespace-pre-line text-sm leading-relaxed text-ink-700">
                       {email.body}
                     </p>
@@ -226,7 +229,7 @@ function TabButton({
       {count > 0 ? (
         <span
           data-numeric
-          className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-sale-500 px-1 text-[10px] font-semibold text-white"
+          className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-sale-500 px-1 text-[10px] font-semibold text-white dark:text-content-inverse"
         >
           {count}
         </span>

@@ -91,7 +91,7 @@ export function QaConsole() {
 
   return (
     <div className="container-page py-8 lg:py-12">
-      <header className="border-b border-ink-200 pb-6">
+      <header className="border-b border-line pb-6">
         <div className="flex flex-wrap items-center gap-3">
           <span className="rounded-xs bg-warning-100 px-2 py-1 text-2xs font-bold uppercase tracking-[0.08em] text-warning-700">
             Sandbox
@@ -153,7 +153,7 @@ export function QaConsole() {
       >
         <ul className="grid gap-4 sm:grid-cols-2">
           {SCENARIOS.map((scenario) => (
-            <li key={scenario.id} className="rounded border border-ink-200 p-4">
+            <li key={scenario.id} className="rounded border border-line p-4">
               <h3 className="text-sm font-semibold text-ink-950">{scenario.title}</h3>
               <p className="mt-1 text-sm text-ink-600">{scenario.goal}</p>
               <ol className="mt-3 space-y-1 text-xs text-ink-600">
@@ -193,7 +193,7 @@ export function QaConsole() {
             to use these controls.
           </p>
         ) : (
-          <ul className="divide-y divide-ink-100">
+          <ul className="divide-y divide-ink-100 dark:divide-line">
             {(orders.data ?? []).map((order) => (
               <li key={order.id} className="flex flex-wrap items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
@@ -288,7 +288,7 @@ export function QaConsole() {
             No returns yet. Deliver an order, then request one from its order page.
           </p>
         ) : (
-          <ul className="divide-y divide-ink-100">
+          <ul className="divide-y divide-ink-100 dark:divide-line">
             {(returns.data ?? []).map((request) => (
               <li key={request.id} className="flex flex-wrap items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
@@ -345,8 +345,8 @@ export function QaConsole() {
       >
         <div className="max-h-80 overflow-y-auto">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-ink-25">
-              <tr className="border-b border-ink-200 text-left">
+            <thead className="sticky top-0 bg-ink-25 dark:bg-surface-card">
+              <tr className="border-b border-line text-left">
                 <th className="py-2 pr-3 text-2xs font-semibold uppercase tracking-[0.06em] text-ink-500">
                   Variant
                 </th>
@@ -417,7 +417,7 @@ export function QaConsole() {
         {(events.data ?? []).length === 0 ? (
           <p className="text-sm text-ink-500">Nothing recorded yet.</p>
         ) : (
-          <ul className="max-h-96 divide-y divide-ink-100 overflow-y-auto">
+          <ul className="max-h-96 divide-y divide-ink-100 dark:divide-line overflow-y-auto">
             {(events.data ?? []).map((event) => (
               <li key={event.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2">
                 <code className="text-xs font-semibold text-ink-900">{event.type}</code>
@@ -477,7 +477,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-8 border-t border-ink-200 pt-6">
+    <section className="mt-8 border-t border-line pt-6">
       <h2 className="text-lg font-bold tracking-[-0.02em] text-ink-950">{title}</h2>
       <p className="mt-1 max-w-2xl text-sm text-ink-600">{description}</p>
       <div className="mt-4">{children}</div>
@@ -487,7 +487,7 @@ function Panel({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border border-ink-200 px-3 py-2">
+    <div className="rounded border border-line px-3 py-2">
       <dt className="text-2xs font-semibold uppercase tracking-[0.06em] text-ink-500">{label}</dt>
       <dd data-numeric className={cx('mt-0.5 text-sm text-ink-900')}>
         {value}

@@ -9,10 +9,24 @@ import { useToggleWishlist } from '@/lib/hooks';
 /**
  * Product tile.
  *
- * Deliberately not a bordered card: the image tile carries the visual weight
- * and the metadata sits on the page beneath it, so a grid reads as a rhythm of
- * products rather than a wall of boxes. Only two things earn colour — the
- * reduced price and a genuine scarcity warning.
+ * In light mode this is deliberately not a bordered card: the image tile
+ * carries the visual weight and the metadata sits on the page beneath it, so a
+ * grid reads as a rhythm of products rather than a wall of boxes.
+ *
+ * Dark mode takes the opposite decision, via `dark:` variants. That inversion
+ * of approach is the point: on white, the page itself frames a tile, and a
+ * border would be noise. On near-black there is nothing to frame it — an
+ * unbounded image floats, the metadata beneath it belongs to no particular
+ * product, and a grid dissolves into a field of rectangles. So dark gets a real
+ * card: `surface-card` a step above the page, a hairline, and padding that
+ * gathers the image and its metadata into one object.
+ *
+ * WHAT DOES NOT INVERT
+ * The catalogue is shot on off-white, so the image is a *light* object in both
+ * themes. Everything that sits on top of it — badge, wishlist control, sold-out
+ * bar — is therefore pinned to fixed colours rather than theme tokens. Letting
+ * those follow the theme is what produced white-on-white badges and a dark
+ * wishlist pill on a pale shoe.
  *
  * The hover state does the work a second visit would otherwise cost: the
  * alternate shot fades in, and saving becomes possible without opening the
@@ -36,11 +50,19 @@ export function ProductCard({
 
   return (
     <article
-      className="group relative"
+      className={cx(
+        'group relative',
+        // The dark-only card. `-translate-y-0.5` is the whole lift: enough to
+        // register as a response, small enough that a 24-tile grid does not
+        // ripple when the pointer crosses it.
+        'dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-2.5',
+        'dark:transition-[transform,background-color,border-color,box-shadow] dark:duration-200 dark:ease-out',
+        'dark:hover:-translate-y-0.5 dark:hover:border-line-strong dark:hover:bg-surface-hover dark:hover:shadow-lift',
+      )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="relative aspect-[4/5] overflow-hidden rounded bg-ink-50">
+      <div className="media-well aspect-[4/5] rounded dark:rounded-lg">
         {product.imageUrl ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -51,6 +73,8 @@ export function ProductCard({
               decoding="async"
               className={cx(
                 'h-full w-full object-cover transition-[transform,opacity] duration-500 ease-out',
+                // With an alternate shot the crossfade is the hover; without
+                // one, a 1.03 push stands in for it.
                 secondary ? 'group-hover:opacity-0' : 'group-hover:scale-[1.03]',
                 soldOut && 'opacity-60',
               )}
@@ -81,13 +105,10 @@ export function ProductCard({
           </div>
         )}
 
-        {/* Hairline keeps pale product images from bleeding into the page. */}
-        <div className="pointer-events-none absolute inset-0 rounded ring-1 ring-inset ring-ink-950/[0.06]" />
-
         {discounted ? (
           <span
             data-numeric
-            className="absolute left-2 top-2 rounded-xs bg-sale-500 px-1.5 py-0.5 text-2xs font-bold tracking-[0.02em] text-white"
+            className="absolute left-2 top-2 rounded-xs bg-sale-brand px-1.5 py-0.5 text-2xs font-bold tracking-[0.02em] text-white"
           >
             −{product.discountPercent}%
           </span>
@@ -109,24 +130,33 @@ export function ProductCard({
           aria-pressed={wishlist.contains(product.id)}
           className={cx(
             'absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full',
-            'bg-ink-25/85 backdrop-blur transition',
+            // Fixed white, not `ink-25`: this pill sits on the photograph, and
+            // a themed surface turned it into a black dot on a pale shoe.
+            'bg-white/85 shadow-xs ring-1 ring-inset ring-black/[0.06] backdrop-blur',
+            'transition-[color,transform,background-color] duration-150',
+            'hover:bg-white active:scale-95',
             'focus-visible:opacity-100 group-hover:opacity-100 lg:opacity-0',
             wishlist.contains(product.id)
-              ? 'text-sale-500 lg:opacity-100'
-              : 'text-ink-600 hover:text-ink-950',
+              ? 'text-sale-brand lg:opacity-100'
+              : 'text-scrim-700 hover:text-scrim-950',
           )}
         >
-          <HeartIcon className={cx('h-4 w-4', wishlist.contains(product.id) && 'fill-current')} />
+          <HeartIcon
+            className={cx(
+              'h-4 w-4',
+              wishlist.contains(product.id) && 'animate-heart-pop fill-current',
+            )}
+          />
         </button>
 
         {soldOut ? (
-          <span className="absolute inset-x-0 bottom-0 bg-ink-950/85 py-1.5 text-center text-2xs font-semibold uppercase tracking-[0.08em] text-ink-25">
+          <span className="absolute inset-x-0 bottom-0 bg-scrim-950/85 py-1.5 text-center text-2xs font-semibold uppercase tracking-[0.08em] text-white">
             Sold out
           </span>
         ) : null}
       </div>
 
-      <div className="pt-3">
+      <div className="pt-3 dark:px-0.5 dark:pb-0.5">
         <p className="text-2xs font-semibold uppercase tracking-[0.07em] text-ink-500">
           {product.brand.name}
         </p>
@@ -138,15 +168,20 @@ export function ProductCard({
           </Link>
         </h3>
 
-        <div className="mt-1.5 flex items-baseline gap-2">
+        {/* Price row. The reduced figure is the only thing here allowed to be
+            loud; the original recedes to a struck, muted number and the saving
+            is stated in words rather than shouted in a second badge. */}
+        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span
             data-numeric
-            className={cx('text-sm font-semibold', discounted ? 'text-sale-500' : 'text-ink-900')}
+            className={cx('price-now text-sm', discounted && 'price-now--reduced')}
           >
             {formatMoney(product.currentPriceMinor, product.currencyCode)}
           </span>
+          {/* No percentage here — the badge on the image already states it, and
+              saying it twice per tile is how a grid turns into a wall of red. */}
           {discounted ? (
-            <span data-numeric className="text-xs text-ink-400 line-through">
+            <span data-numeric className="price-was text-xs">
               {formatMoney(product.originalPriceMinor, product.currencyCode)}
             </span>
           ) : null}
@@ -188,7 +223,7 @@ export function ProductGrid({
 }) {
   if (products.length === 0) {
     return (
-      <p className="border-t border-ink-200 py-16 text-center text-sm text-ink-500">
+      <p className="border-t border-line py-16 text-center text-sm text-ink-500">
         No products found.
       </p>
     );
@@ -209,9 +244,14 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
       className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10"
       aria-hidden="true"
     >
+      {/* Mirrors the dark card's border and padding as well as its rhythm, so
+          the grid does not jump a few pixels when the real tiles land. */}
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i}>
-          <Skeleton className="aspect-[4/5] w-full" />
+        <div
+          key={i}
+          className="dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-2.5"
+        >
+          <Skeleton className="aspect-[4/5] w-full dark:rounded-lg" />
           <Skeleton className="mt-3 h-2.5 w-16" />
           <Skeleton className="mt-2 h-3 w-full" />
           <Skeleton className="mt-1.5 h-3 w-3/5" />

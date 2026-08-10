@@ -99,7 +99,7 @@ export default function WishlistPage() {
                 <li key={item.id} className="group relative">
                   <Link
                     href={`/products/${item.slug}`}
-                    className="relative block aspect-[4/5] overflow-hidden rounded bg-ink-50"
+                    className="media-well block aspect-[4/5] rounded dark:rounded-lg"
                   >
                     {item.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element

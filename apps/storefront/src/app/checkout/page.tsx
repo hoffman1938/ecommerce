@@ -143,13 +143,13 @@ export default function CheckoutPage() {
   ) => (
     <label className={`block text-sm ${span2 ? 'sm:col-span-2' : ''}`}>
       <span className="mb-1 block font-medium text-ink-700">{label}</span>
-      <input {...form.register(name)} className="w-full rounded border border-ink-300 px-3 py-2" />
+      <input {...form.register(name)} className="field-input" />
     </label>
   );
 
   return (
     <div className="container-page py-8 lg:py-12">
-      <div className="border-b border-ink-200 pb-5">
+      <div className="border-b border-line pb-5">
         <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">Checkout</h1>
         {quote.reservationDeadline ? (
           <p className="mt-1.5 text-sm text-ink-600">
@@ -173,14 +173,14 @@ export default function CheckoutPage() {
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          <section className="rounded border border-ink-200 bg-ink-25 p-5">
+          <section className="rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised">
             <h2 className="mb-3 font-semibold">1 · Contact</h2>
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink-700">Email</span>
               <input
                 type="email"
                 {...form.register('email')}
-                className="w-full rounded border border-ink-300 px-3 py-2"
+                className="field-input"
               />
               {form.formState.errors.email ? (
                 <span className="text-xs text-sale-500">{form.formState.errors.email.message}</span>
@@ -188,7 +188,7 @@ export default function CheckoutPage() {
             </label>
           </section>
 
-          <section className="rounded border border-ink-200 bg-ink-25 p-5">
+          <section className="rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised">
             <h2 className="mb-3 font-semibold">2 · Shipping address</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {field('shippingAddress.firstName', 'First name')}
@@ -217,13 +217,13 @@ export default function CheckoutPage() {
             ) : null}
           </section>
 
-          <section className="rounded border border-ink-200 bg-ink-25 p-5">
+          <section className="rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised">
             <h2 className="mb-3 font-semibold">3 · Delivery</h2>
             <div className="space-y-2">
               {quote.shippingMethods.map((method) => (
                 <label
                   key={method.id}
-                  className="flex cursor-pointer items-center justify-between rounded border border-ink-200 px-4 py-3 text-sm has-[:checked]:border-ink-950"
+                  className="flex cursor-pointer items-center justify-between rounded border border-line px-4 py-3 text-sm transition-colors duration-150 hover:border-line-strong has-[:checked]:border-ink-950 dark:hover:bg-surface-hover dark:has-[:checked]:bg-surface-hover"
                 >
                   <span className="flex items-center gap-3">
                     <input type="radio" value={method.id} {...form.register('shippingMethod')} />
@@ -245,13 +245,13 @@ export default function CheckoutPage() {
               <textarea
                 {...form.register('customerNote')}
                 rows={2}
-                className="w-full rounded border border-ink-300 px-3 py-2"
+                className="field-input"
               />
             </label>
           </section>
         </div>
 
-        <aside className="h-fit rounded border border-ink-200 bg-ink-25 p-5">
+        <aside className="h-fit rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]">
           <h2 className="font-semibold">4 · Review &amp; pay</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {quote.cart.items.map((item) => (
@@ -264,7 +264,7 @@ export default function CheckoutPage() {
             ))}
           </ul>
           {totals ? (
-            <dl className="mt-4 space-y-1.5 border-t border-ink-200 pt-3 text-sm">
+            <dl className="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-ink-500">Subtotal</dt>
                 <dd>{formatMoney(totals.subtotal, quote.cart.currencyCode)}</dd>
@@ -283,9 +283,16 @@ export default function CheckoutPage() {
                     : formatMoney(totals.shipping, quote.cart.currencyCode)}
                 </dd>
               </div>
-              <div className="flex justify-between border-t border-ink-200 pt-2 text-base font-bold">
-                <dt>Total</dt>
-                <dd data-testid="checkout-total">
+              {/* The figure the whole page exists to state. It gets its own
+                  rule, a step up in size, and the primary content colour —
+                  everything above it is deliberately quieter. */}
+              <div className="flex items-baseline justify-between border-t border-line pt-3">
+                <dt className="text-base font-semibold text-ink-950">Total</dt>
+                <dd
+                  data-numeric
+                  data-testid="checkout-total"
+                  className="text-lg font-bold tracking-[-0.01em] text-ink-950"
+                >
                   {formatMoney(totals.total, quote.cart.currencyCode)}
                 </dd>
               </div>
@@ -295,7 +302,7 @@ export default function CheckoutPage() {
             type="submit"
             disabled={submitting}
             data-testid="pay-now"
-            className="mt-5 w-full rounded bg-ink-950 px-5 py-3 text-sm font-semibold text-ink-25 hover:bg-ink-800 disabled:bg-ink-200"
+            className="mt-5 w-full rounded bg-accent px-5 py-3 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover disabled:bg-ink-200 disabled:text-content-disabled"
           >
             {submitting ? 'Creating payment…' : 'Continue to payment'}
           </button>

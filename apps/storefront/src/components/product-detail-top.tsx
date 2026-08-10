@@ -53,7 +53,7 @@ export function ProductDetailTop({ product }: { product: ProductDetailDto }) {
             discounted ? (
               <span
                 data-numeric
-                className="rounded-xs bg-sale-500 px-2 py-1 text-xs font-bold text-white shadow-sm"
+                className="rounded-xs bg-sale-brand px-2 py-1 text-xs font-bold text-white shadow-sm"
               >
                 −{product.discountPercent}%
               </span>

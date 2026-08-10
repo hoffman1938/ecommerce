@@ -26,6 +26,11 @@ export function SectionHeader({
     <div
       className={cx(
         'mb-5 flex items-end justify-between gap-6 border-t border-ink-950 pt-4 lg:mb-6',
+        // The rule is the page's main structural device. Matching light's
+        // near-black weight literally would put a pure-white line above every
+        // section, which blooms and reads far heavier than its light
+        // counterpart; a step down holds the same authority.
+        'dark:border-ink-700',
         className,
       )}
     >
@@ -73,7 +78,7 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div className={cx('border-b border-ink-200 pb-5', className)}>
+    <div className={cx('border-b border-line pb-5', className)}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">

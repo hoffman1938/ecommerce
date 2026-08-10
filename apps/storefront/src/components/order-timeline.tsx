@@ -37,7 +37,7 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
   // stages as "still to come" would be a lie.
   if (order.status === 'CANCELLED') {
     return (
-      <section className="rounded border border-ink-200 bg-ink-25 p-5">
+      <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5">
         <h2 className="mb-3 font-semibold text-ink-950">Order progress</h2>
         <ol className="space-y-3">
           {order.timeline.map((entry, index) => (
@@ -66,10 +66,10 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
   const shipment = order.shipments[0];
 
   return (
-    <section className="rounded border border-ink-200 bg-ink-25 p-5">
+    <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5">
       <h2 className="mb-4 font-semibold text-ink-950">Order progress</h2>
 
-      <ol className="relative space-y-4 border-l border-ink-200 pl-5">
+      <ol className="relative space-y-4 border-l border-line pl-5">
         {ORDER_STAGES.map((stage) => {
           const at = reachedAt.get(stage.status);
           const done = Boolean(at);
@@ -104,7 +104,7 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
 
 function TrackingTimeline({ shipment }: { shipment: ShipmentDto }) {
   return (
-    <div className="mt-6 border-t border-ink-200 pt-5">
+    <div className="mt-6 border-t border-line pt-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold text-ink-950">Tracking</h3>
         <p data-numeric className="text-xs text-ink-500">
@@ -117,7 +117,7 @@ function TrackingTimeline({ shipment }: { shipment: ShipmentDto }) {
           No carrier scans yet. The first update appears once the parcel is collected.
         </p>
       ) : (
-        <ol className="relative mt-4 space-y-3.5 border-l border-ink-200 pl-5">
+        <ol className="relative mt-4 space-y-3.5 border-l border-line pl-5">
           {/* Newest first: the current whereabouts is what people open this for. */}
           {[...shipment.events].reverse().map((event, index) => (
             <li key={`${event.code}-${event.at}`} className="relative">

@@ -126,7 +126,7 @@ function Group({
   const [open, setOpen] = useState(defaultOpen || Boolean(badge));
 
   return (
-    <div className="border-t border-ink-200 py-4 first:border-t-0 first:pt-0">
+    <div className="border-t border-line py-4 first:border-t-0 first:pt-0">
       <h3>
         <button
           type="button"
@@ -171,7 +171,9 @@ function OptionRow({
         aria-pressed={selected}
         className={cx(
           'flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm transition-colors',
-          selected ? 'font-medium text-ink-950' : 'text-ink-600 hover:bg-ink-50 hover:text-ink-950',
+          selected
+            ? 'font-medium text-ink-950 dark:bg-surface-active'
+            : 'text-ink-600 hover:bg-ink-50 hover:text-ink-950 dark:hover:bg-surface-hover',
         )}
       >
         {label}
@@ -226,7 +228,7 @@ function PriceRange() {
           value={draft.min}
           onChange={(e) => setDraft((d) => ({ ...d, min: e.target.value }))}
           onBlur={commit}
-          className="h-9 w-full rounded bg-ink-25 px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 placeholder:text-ink-400 focus:ring-ink-950"
+          className="h-9 w-full rounded bg-ink-25 px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 placeholder:text-ink-400 focus:ring-ink-950 dark:bg-surface-sunken dark:ring-line-strong dark:placeholder:text-content-muted dark:hover:bg-surface dark:hover:ring-ink-600"
         />
       </label>
       <span aria-hidden="true" className="text-ink-400">
@@ -242,7 +244,7 @@ function PriceRange() {
           value={draft.max}
           onChange={(e) => setDraft((d) => ({ ...d, max: e.target.value }))}
           onBlur={commit}
-          className="h-9 w-full rounded bg-ink-25 px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 placeholder:text-ink-400 focus:ring-ink-950"
+          className="h-9 w-full rounded bg-ink-25 px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 placeholder:text-ink-400 focus:ring-ink-950 dark:bg-surface-sunken dark:ring-line-strong dark:placeholder:text-content-muted dark:hover:bg-surface dark:hover:ring-ink-600"
         />
       </label>
       <button type="submit" className="sr-only">
@@ -277,7 +279,7 @@ export function FilterPanel() {
             type="checkbox"
             checked={current('inStock') === 'true'}
             onChange={(e) => setParam('inStock', e.target.checked ? 'true' : null)}
-            className="h-4 w-4 shrink-0 cursor-pointer rounded-xs border-ink-300 text-ink-950 focus:ring-ink-950"
+            className="h-4 w-4 shrink-0 cursor-pointer rounded-xs border-ink-300 accent-ink-950 text-ink-950 focus:ring-ink-950"
           />
           In stock only
         </label>
@@ -318,7 +320,7 @@ export function FilterPanel() {
                   'h-9 min-w-[2.75rem] rounded px-2 text-sm font-medium transition-colors',
                   selected
                     ? 'bg-ink-950 text-ink-25'
-                    : 'text-ink-700 ring-1 ring-inset ring-ink-300 hover:ring-ink-950',
+                    : 'text-ink-700 ring-1 ring-inset ring-ink-300 hover:ring-ink-950 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600',
                 )}
               >
                 {size}
@@ -341,12 +343,12 @@ export function FilterPanel() {
                   className={cx(
                     'flex w-full items-center gap-2.5 rounded px-2 py-1.5 text-left text-sm transition-colors',
                     selected
-                      ? 'font-medium text-ink-950'
-                      : 'text-ink-600 hover:bg-ink-50 hover:text-ink-950',
+                      ? 'font-medium text-ink-950 dark:bg-surface-active'
+                      : 'text-ink-600 hover:bg-ink-50 hover:text-ink-950 dark:hover:bg-surface-hover',
                   )}
                 >
                   <span
-                    className="h-4 w-4 shrink-0 rounded-full ring-1 ring-inset ring-ink-950/15"
+                    className="h-4 w-4 shrink-0 rounded-full ring-1 ring-inset ring-ink-950/15 dark:ring-ink-950/30"
                     style={{ backgroundColor: hex }}
                     aria-hidden="true"
                   />
@@ -458,7 +460,7 @@ export function ActiveFilters() {
           key={chip.key}
           type="button"
           onClick={chip.remove}
-          className="group inline-flex h-7 items-center gap-1.5 rounded bg-ink-100 pl-2.5 pr-2 text-xs font-medium text-ink-800 transition-colors hover:bg-ink-200"
+          className="group inline-flex h-7 items-center gap-1.5 rounded bg-ink-100 pl-2.5 pr-2 text-xs font-medium text-ink-800 transition-colors duration-150 hover:bg-ink-200 dark:bg-surface-active dark:text-ink-800 dark:ring-1 dark:ring-inset dark:ring-line dark:hover:bg-surface-hover dark:hover:ring-line-strong"
         >
           {chip.label}
           <CloseIcon className="h-3 w-3 text-ink-500 transition-colors group-hover:text-ink-900" />
@@ -484,7 +486,7 @@ export function SortSelect() {
       <select
         value={params.get('sort') ?? 'recommended'}
         onChange={(e) => setParam('sort', e.target.value === 'recommended' ? null : e.target.value)}
-        className="h-9 cursor-pointer rounded bg-ink-25 pl-2.5 pr-8 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow hover:ring-ink-400"
+        className="h-9 cursor-pointer rounded bg-ink-25 pl-2.5 pr-8 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow duration-150 hover:ring-ink-400 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600"
       >
         {SORTS.map(([value, label]) => (
           <option key={value} value={value}>

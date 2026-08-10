@@ -65,7 +65,7 @@ export function CampaignSections({ limit }: { limit?: number }) {
             ))}
           </div>
         ) : (
-          <p className="border-t border-ink-200 py-12 text-center text-sm text-ink-500">
+          <p className="border-t border-line py-12 text-center text-sm text-ink-500">
             No campaigns are running right now.
           </p>
         )}
@@ -82,7 +82,7 @@ export function CampaignSections({ limit }: { limit?: number }) {
             ))}
           </div>
         ) : (
-          <p className="border-t border-ink-200 py-12 text-center text-sm text-ink-500">
+          <p className="border-t border-line py-12 text-center text-sm text-ink-500">
             Nothing scheduled yet — check back soon.
           </p>
         )}
@@ -129,14 +129,16 @@ export function CampaignDetail({ slug }: { slug: string }) {
 
   return (
     <div className="container-page py-6 lg:py-8">
-      <div className="relative overflow-hidden rounded bg-ink-900">
+      {/* Fixed scrim colours: the copy over this artwork is white in both
+          themes, so the gradient beneath it must stay dark in both. */}
+      <div className="relative overflow-hidden rounded bg-scrim-900 dark:rounded-lg dark:ring-1 dark:ring-inset dark:ring-line">
         <div className="relative aspect-[16/9] sm:aspect-[21/8] lg:aspect-[3/1]">
           {campaign.coverImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={campaign.coverImageUrl} alt="" className="h-full w-full object-cover" />
           ) : null}
           <div
-            className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-ink-950/45 to-ink-950/10"
+            className="absolute inset-0 bg-gradient-to-t from-scrim-950/90 via-scrim-950/45 to-scrim-950/10 dark:from-scrim-950/92 dark:via-scrim-950/55 dark:to-scrim-950/20"
             aria-hidden="true"
           />
           <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 lg:p-9">
@@ -165,7 +167,7 @@ export function CampaignDetail({ slug }: { slug: string }) {
       </div>
 
       {isUpcoming ? (
-        <p className="mt-6 border-l-2 border-ink-950 bg-ink-25 px-4 py-3 text-sm text-ink-700">
+        <p className="mt-6 border-l-2 border-ink-950 bg-ink-25 px-4 py-3 text-sm text-ink-700 dark:rounded-r dark:border-l-ink-700 dark:bg-surface-card dark:text-content-secondary">
           This campaign has not started yet. The prices below are the campaign prices that will
           apply once it opens.
         </p>

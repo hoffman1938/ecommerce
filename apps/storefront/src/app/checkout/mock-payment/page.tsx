@@ -110,7 +110,7 @@ function MockPaymentInner() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10 sm:px-6">
-      <div className="rounded-xl border border-ink-200 bg-ink-25 p-6 shadow-sm sm:p-8">
+      <div className="rounded-xl border border-line bg-ink-25 dark:bg-surface-card p-6 shadow-sm sm:p-8">
         <div className="flex items-center gap-2">
           <span className="rounded-xs bg-warning-100 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-[0.06em] text-warning-700">
             Sandbox
@@ -186,7 +186,7 @@ function MockPaymentInner() {
           </Button>
         </form>
 
-        <div className="mt-6 border-t border-ink-200 pt-5">
+        <div className="mt-6 border-t border-line pt-5">
           <button
             type="button"
             onClick={() => setShowCards((v) => !v)}
@@ -203,7 +203,7 @@ function MockPaymentInner() {
                   <button
                     type="button"
                     onClick={() => fill(card.number)}
-                    className="flex w-full items-baseline justify-between gap-3 rounded px-2 py-1.5 text-left transition-colors hover:bg-ink-50"
+                    className="flex w-full items-baseline justify-between gap-3 rounded px-2 py-1.5 text-left transition-colors hover:bg-ink-50 dark:hover:bg-surface-hover"
                   >
                     <span className="min-w-0">
                       <span className="block text-sm font-medium text-ink-900">{card.label}</span>
@@ -219,7 +219,7 @@ function MockPaymentInner() {
           ) : null}
         </div>
 
-        <details className="mt-5 border-t border-ink-200 pt-5">
+        <details className="mt-5 border-t border-line pt-5">
           <summary className="cursor-pointer text-sm font-medium text-ink-700 hover:text-ink-950">
             Force an outcome directly
           </summary>
@@ -233,7 +233,7 @@ function MockPaymentInner() {
                 data-testid={`mock-${outcome.code}`}
                 className={cx(
                   'w-full rounded px-4 py-2.5 text-sm font-medium text-ink-900',
-                  'ring-1 ring-inset ring-ink-300 transition-colors hover:bg-ink-50 hover:ring-ink-400',
+                  'ring-1 ring-inset ring-ink-300 transition-colors hover:bg-ink-50 dark:hover:bg-surface-hover hover:ring-ink-400',
                   'disabled:opacity-60',
                 )}
               >

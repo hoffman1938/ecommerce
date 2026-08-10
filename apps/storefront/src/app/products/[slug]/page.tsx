@@ -130,7 +130,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
           column, which is what used to leave a column-height void beside the
           sticky gallery. */}
       {product.description || rows.length > 0 ? (
-        <section className="mt-14 border-t border-ink-200 pt-8 lg:mt-20">
+        <section className="mt-14 border-t border-line pt-8 lg:mt-20">
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
             {product.description ? (
               <div>
@@ -148,7 +148,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
                 <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950">
                   Product details
                 </h2>
-                <dl className="mt-3 divide-y divide-ink-100 border-t border-ink-100 text-sm">
+                <dl className="mt-3 divide-y divide-ink-100 dark:divide-line border-t border-ink-100 text-sm">
                   {rows.map(([label, value]) => (
                     <div key={label} className="flex gap-4 py-3">
                       <dt className="w-28 shrink-0 text-ink-500">{label}</dt>

@@ -35,16 +35,26 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
+/**
+ * Interaction states are theme-aware because "one step darker on hover" is not
+ * a rule that survives inversion — on a dark surface, hover has to go *up*.
+ *
+ * `secondary` and `ghost` are the ones that needed real work: both were painted
+ * with the page colour, which is correct on white but leaves a button invisible
+ * the moment it sits on a card in dark mode. Both now take an explicit surface
+ * from the elevation ladder.
+ */
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    'bg-ink-950 text-ink-25 hover:bg-ink-800 active:bg-ink-900 disabled:bg-ink-200 disabled:text-ink-400',
+    'bg-accent text-accent-contrast hover:bg-accent-hover active:bg-accent disabled:bg-ink-200 disabled:text-content-disabled',
   secondary:
-    'bg-ink-25 text-ink-900 ring-1 ring-inset ring-ink-300 hover:bg-ink-25 hover:ring-ink-400 active:bg-ink-50 disabled:text-ink-400 disabled:ring-ink-200 disabled:bg-ink-25',
+    'bg-surface-card text-ink-900 ring-1 ring-inset ring-ink-300 hover:ring-ink-400 active:bg-surface-hover disabled:text-content-disabled disabled:ring-line disabled:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600',
   ghost:
-    'bg-transparent text-ink-700 hover:bg-ink-100 hover:text-ink-950 active:bg-ink-200 disabled:text-ink-300',
+    'bg-transparent text-ink-700 hover:bg-surface-hover hover:text-ink-950 active:bg-surface-active disabled:text-content-disabled',
   danger:
-    'bg-sale-500 text-ink-25 hover:bg-sale-600 active:bg-sale-700 disabled:bg-sale-200 disabled:text-ink-25',
-  link: 'bg-transparent text-ink-900 underline underline-offset-[3px] decoration-ink-300 hover:decoration-ink-900 disabled:text-ink-400 disabled:no-underline',
+    // `text-ink-25` is already the dark label this coral needs in both themes.
+    'bg-sale-500 text-ink-25 hover:bg-sale-600 active:bg-sale-700 disabled:bg-sale-200 disabled:text-ink-25 dark:hover:bg-sale-400',
+  link: 'bg-transparent text-ink-900 underline underline-offset-[3px] decoration-ink-300 hover:decoration-ink-900 disabled:text-content-disabled disabled:no-underline',
 };
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {
@@ -85,13 +95,35 @@ export function Button({
 
 // --- Form fields -----------------------------------------------------------
 
+/**
+ * The shell every control shares.
+ *
+ * Checkout is where a dark theme is most likely to lose someone's trust, and a
+ * field that is only findable by clicking is what does it.
+ *
+ * So in dark the field is a *well*: `surface-sunken`, one step below the card
+ * it usually sits in. Recessing rather than raising is what makes a single rule
+ * work everywhere — a field filled with the card colour disappeared the moment
+ * it was placed on a card, which is where most of them are. Sunken reads as a
+ * field on the page, on a card and inside a modal alike.
+ *
+ * Placeholder text moves up to `content-muted`, which clears 4.5:1 on the
+ * field's own fill rather than only on the page.
+ */
 function fieldShell(hasError: boolean): string {
   return cx(
     'w-full rounded bg-ink-25 text-base text-ink-900 transition-shadow duration-150',
     'ring-1 ring-inset placeholder:text-ink-400',
     'hover:ring-ink-400',
-    'disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-400 disabled:ring-ink-200',
-    hasError ? 'ring-sale-500 hover:ring-sale-600' : 'ring-ink-300',
+    'disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-content-disabled disabled:ring-line',
+    'dark:bg-surface-sunken dark:placeholder:text-content-muted',
+    'dark:hover:bg-surface dark:disabled:bg-surface-sunken/60',
+    // Focus itself is the global `:focus-visible` outline — one treatment for
+    // native and custom controls alike, and it does not fire on mouse-down the
+    // way a `focus:` ring would.
+    hasError
+      ? 'ring-sale-500 hover:ring-sale-600'
+      : 'ring-ink-300 dark:ring-line-strong dark:hover:ring-ink-600',
   );
 }
 
@@ -267,14 +299,18 @@ export function Badge({
   tone?: BadgeTone;
   className?: string;
 }) {
+  // `neutral` uses `surface-active` rather than `ink-100`: in dark the two are
+  // the same value as the card a badge normally sits on, so the badge vanished
+  // into its own container.
+  const neutral = 'bg-ink-100 text-ink-700 dark:bg-surface-active dark:text-ink-800';
   const tones: Record<BadgeTone, string> = {
-    neutral: 'bg-ink-100 text-ink-700',
+    neutral,
     success: 'bg-success-100 text-success-700',
     sale: 'bg-sale-100 text-sale-700',
     warning: 'bg-warning-100 text-warning-700',
     info: 'bg-ink-900 text-ink-25',
     solid: 'bg-sale-500 text-ink-25',
-    gray: 'bg-ink-100 text-ink-700',
+    gray: neutral,
     green: 'bg-success-100 text-success-700',
     red: 'bg-sale-100 text-sale-700',
     yellow: 'bg-warning-100 text-warning-700',
@@ -309,7 +345,7 @@ export function Spinner({
         size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4',
         tone === 'current'
           ? 'border-current/30 border-t-current'
-          : 'border-ink-200 border-t-ink-900',
+          : 'border-ink-200 border-t-ink-900 dark:border-ink-300 dark:border-t-ink-800',
       )}
     />
   );
@@ -339,8 +375,10 @@ export function Alert({
   children?: ReactNode;
   className?: string;
 }) {
+  // `info` was the page colour, which made it a borderless ghost on a dark
+  // page; it now sits on the card surface like every other panel.
   const tones: Record<AlertTone, string> = {
-    info: 'border-ink-200 bg-ink-25 text-ink-700',
+    info: 'border-line bg-ink-25 text-ink-700 dark:bg-surface-card',
     success: 'border-success-100 bg-success-50 text-success-700',
     error: 'border-sale-200 bg-sale-50 text-sale-700',
     warning: 'border-warning-100 bg-warning-50 text-warning-700',
@@ -379,7 +417,9 @@ export function EmptyState({
   return (
     <div className={cx('mx-auto max-w-sm py-16 text-center', className)}>
       <p className="text-lg font-semibold text-ink-950">{title}</p>
-      {description ? <p className="mt-1.5 text-sm text-ink-500">{description}</p> : null}
+      {description ? (
+        <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-ink-500">{description}</p>
+      ) : null}
       {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>
   );
@@ -539,7 +579,10 @@ export function StarRating({
             aria-hidden="true"
             className={cx(RATING_SIZES[size], 'shrink-0')}
           >
-            <path d={STAR_PATH} className="fill-ink-200" />
+            {/* The unfilled remainder. `ink-200` is the card surface itself in
+                dark, which erased the track a 3.5-star rating is read against,
+                so dark steps it up to the hairline value. */}
+            <path d={STAR_PATH} className="fill-ink-200 dark:fill-ink-300" />
             {fill > 0 ? (
               <>
                 <defs>

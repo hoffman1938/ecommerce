@@ -62,7 +62,7 @@ export function ProductReviews({
 
   if (reviewCount === 0 || ratingAverage === null) {
     return (
-      <section id="reviews" className="mt-14 border-t border-ink-200 pt-8 lg:mt-20">
+      <section id="reviews" className="mt-14 border-t border-line pt-8 lg:mt-20">
         <h2 className="text-xl font-bold tracking-[-0.02em] text-ink-950">Reviews</h2>
         <p className="mt-3 max-w-md text-sm text-ink-600">
           No reviews yet. This is a recent addition to the outlet — check the size and materials in
@@ -75,7 +75,7 @@ export function ProductReviews({
   const totalPages = data?.totalPages ?? 1;
 
   return (
-    <section id="reviews" className="mt-14 border-t border-ink-200 pt-8 lg:mt-20">
+    <section id="reviews" className="mt-14 border-t border-line pt-8 lg:mt-20">
       <h2 className="text-xl font-bold tracking-[-0.02em] text-ink-950">Reviews</h2>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-14">
@@ -111,7 +111,7 @@ export function ProductReviews({
                   </dt>
                   <dd className="flex min-w-0 flex-1 items-center gap-2.5">
                     <span
-                      className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100"
+                      className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100 dark:bg-surface-active"
                       aria-hidden="true"
                     >
                       <span
@@ -135,7 +135,7 @@ export function ProductReviews({
 
         {/* List */}
         <div className="min-w-0">
-          <div className="flex items-center justify-between gap-4 border-b border-ink-200 pb-3">
+          <div className="flex items-center justify-between gap-4 border-b border-line pb-3">
             <label htmlFor="review-sort" className="text-sm text-ink-600">
               Sort by
             </label>
@@ -146,7 +146,7 @@ export function ProductReviews({
                 setSort(e.target.value as (typeof SORTS)[number]['value']);
                 setPage(1);
               }}
-              className="h-9 rounded bg-ink-25 px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow hover:ring-ink-400"
+              className="h-9 cursor-pointer rounded bg-ink-25 px-2.5 text-sm text-ink-900 ring-1 ring-inset ring-ink-300 transition-shadow duration-150 hover:ring-ink-400 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600"
             >
               {SORTS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -157,7 +157,7 @@ export function ProductReviews({
           </div>
 
           {isLoading ? (
-            <ul className="divide-y divide-ink-100">
+            <ul className="divide-y divide-line">
               {Array.from({ length: 3 }).map((_, i) => (
                 <li key={i} className="space-y-2 py-5">
                   <Skeleton className="h-3 w-24" />
@@ -167,7 +167,7 @@ export function ProductReviews({
               ))}
             </ul>
           ) : (
-            <ul className="divide-y divide-ink-100">
+            <ul className="divide-y divide-line">
               {(data?.items ?? []).map((review) => (
                 <li key={review.id} className="py-5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -199,7 +199,7 @@ export function ProductReviews({
                       tinted so it reads as a reply rather than a second review
                       competing with the customer's. */}
                   {review.adminReply ? (
-                    <div className="mt-3 border-l-2 border-ink-300 bg-ink-50 py-3 pl-4 pr-3">
+                    <div className="mt-3 rounded-r border-l-2 border-ink-300 bg-ink-50 py-3 pl-4 pr-3 dark:border-ink-600 dark:bg-surface-card">
                       <p className="text-2xs font-semibold uppercase tracking-[0.07em] text-ink-500">
                         Response from Outlet
                         {review.adminReplyAt ? (
@@ -223,14 +223,16 @@ export function ProductReviews({
           )}
 
           {totalPages > 1 ? (
-            <div className="mt-5 flex items-center justify-between gap-4 border-t border-ink-200 pt-4">
+            <div className="mt-5 flex items-center justify-between gap-4 border-t border-line pt-4">
               <button
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
                 className={cx(
                   'text-sm underline underline-offset-2 transition-colors',
-                  page <= 1 ? 'cursor-not-allowed text-ink-300' : 'text-ink-600 hover:text-ink-950',
+                  page <= 1
+                    ? 'cursor-not-allowed text-ink-300 no-underline dark:text-content-disabled'
+                    : 'text-ink-600 hover:text-ink-950',
                 )}
               >
                 Previous
@@ -245,7 +247,7 @@ export function ProductReviews({
                 className={cx(
                   'text-sm underline underline-offset-2 transition-colors',
                   page >= totalPages
-                    ? 'cursor-not-allowed text-ink-300'
+                    ? 'cursor-not-allowed text-ink-300 dark:text-content-disabled'
                     : 'text-ink-600 hover:text-ink-950',
                 )}
               >

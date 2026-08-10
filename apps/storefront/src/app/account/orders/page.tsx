@@ -25,7 +25,7 @@ export default function OrdersPage() {
             <Link
               key={order.id}
               href={`/account/orders/view?id=${order.id}`}
-              className="flex items-center justify-between rounded border border-ink-200 bg-ink-25 p-4 hover:shadow-sm"
+              className="flex items-center justify-between rounded border border-line bg-ink-25 dark:bg-surface-card p-4 hover:shadow-sm"
             >
               <div>
                 <p className="font-semibold">{order.orderNumber}</p>

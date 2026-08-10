@@ -44,7 +44,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="container-page py-8 lg:py-12">
-      <div className="border-b border-ink-200 pb-5">
+      <div className="border-b border-line pb-5">
         <p className="eyebrow">Your account</p>
         <h1 className="mt-2 text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
           {me.user.firstName} {me.user.lastName}
@@ -70,8 +70,8 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
                     className={cx(
                       'block whitespace-nowrap rounded px-3 py-2 text-sm transition-colors lg:whitespace-normal lg:px-2.5',
                       active
-                        ? 'bg-ink-100 font-medium text-ink-950'
-                        : 'text-ink-600 hover:bg-ink-50 hover:text-ink-950',
+                        ? 'bg-ink-100 font-medium text-ink-950 dark:bg-surface-active'
+                        : 'text-ink-600 hover:bg-ink-50 dark:hover:bg-surface-hover hover:text-ink-950',
                     )}
                   >
                     {item.label}
@@ -80,7 +80,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
               );
             })}
           </ul>
-          <div className="mt-4 hidden border-t border-ink-200 pt-4 lg:block">
+          <div className="mt-4 hidden border-t border-line pt-4 lg:block">
             <button
               type="button"
               onClick={() => logout.mutate()}

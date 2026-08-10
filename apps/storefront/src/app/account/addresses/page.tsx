@@ -45,7 +45,7 @@ export default function AddressesPage() {
       <h1 className="mb-4 text-2xl font-bold">Saved addresses</h1>
       <div className="space-y-3">
         {(addresses ?? []).map((address) => (
-          <div key={address.id} className="rounded border border-ink-200 bg-ink-25 p-4 text-sm">
+          <div key={address.id} className="rounded border border-line bg-ink-25 dark:bg-surface-card p-4 text-sm">
             <p className="font-medium">
               {address.firstName} {address.lastName}
               {address.isDefaultShipping ? (
@@ -77,7 +77,7 @@ export default function AddressesPage() {
 
       {showForm ? (
         <form
-          className="mt-6 space-y-3 rounded border border-ink-200 bg-ink-25 p-4"
+          className="mt-6 space-y-3 rounded border border-line bg-ink-25 dark:bg-surface-card p-4"
           onSubmit={async (e) => {
             e.preventDefault();
             setError(null);

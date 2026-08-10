@@ -59,7 +59,7 @@ function NewReturnInner() {
           }
         }}
       >
-        <div className="space-y-3 rounded border border-ink-200 bg-ink-25 p-4">
+        <div className="space-y-3 rounded border border-line bg-ink-25 dark:bg-surface-card p-4">
           {returnable.map((item) => (
             <label key={item.id} className="flex items-center justify-between gap-4 text-sm">
               <span>

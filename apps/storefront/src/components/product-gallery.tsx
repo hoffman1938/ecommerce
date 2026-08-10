@@ -65,7 +65,7 @@ export function ProductGallery({
 
   if (images.length === 0) {
     return (
-      <div className="flex aspect-[4/5] items-center justify-center rounded bg-ink-50 text-sm text-ink-400">
+      <div className="media-well flex aspect-[4/5] items-center justify-center rounded text-sm text-scrim-700 dark:rounded-lg">
         No image
       </div>
     );
@@ -91,7 +91,7 @@ export function ProductGallery({
                   setViewerOpen(true);
                 }}
                 aria-label={`Open image ${index + 1} of ${images.length} full screen`}
-                className="relative aspect-[4/5] w-full shrink-0 snap-center overflow-hidden bg-ink-50"
+                className="media-well relative aspect-[4/5] w-full shrink-0 snap-center"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -106,7 +106,7 @@ export function ProductGallery({
 
           {badge ? <div className="pointer-events-none absolute left-3 top-3">{badge}</div> : null}
 
-          <span className="pointer-events-none absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-ink-950/55 text-ink-25 backdrop-blur">
+          <span className="pointer-events-none absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-scrim-950/55 text-white backdrop-blur">
             <ExpandIcon className="h-4 w-4" />
           </span>
         </div>
@@ -120,9 +120,13 @@ export function ProductGallery({
                 onClick={() => step(index - activeIndex)}
                 aria-label={`Show image ${index + 1}`}
                 aria-current={index === activeIndex}
+                // The painted dot stays 6px; `before` extends the *hit* area to
+                // a thumb-sized 24px without moving anything, so the pager is
+                // tappable on a phone without opening up the visual spacing.
                 className={cx(
-                  'h-1.5 rounded-full transition-all',
-                  index === activeIndex ? 'w-5 bg-ink-950' : 'w-1.5 bg-ink-300',
+                  'relative h-1.5 rounded-full transition-all duration-200',
+                  'before:absolute before:-inset-y-2.5 before:-inset-x-1.5 before:content-[""]',
+                  index === activeIndex ? 'w-5 bg-ink-950' : 'w-1.5 bg-ink-300 dark:bg-ink-400',
                 )}
               />
             ))}
@@ -143,10 +147,12 @@ export function ProductGallery({
                   aria-label={`View image ${index + 1} of ${images.length}`}
                   aria-current={index === activeIndex}
                   className={cx(
-                    'block aspect-[4/5] w-full overflow-hidden rounded-xs bg-ink-50 transition',
+                    'media-well block aspect-[4/5] w-full rounded-xs transition duration-150',
+                    // The thumbnails are light tiles in both themes, so the
+                    // inactive ring stays dark rather than following the theme.
                     index === activeIndex
-                      ? 'ring-2 ring-ink-950'
-                      : 'opacity-70 ring-1 ring-inset ring-ink-950/10 hover:opacity-100 hover:ring-ink-400',
+                      ? 'opacity-100 ring-2 ring-ink-950 dark:ring-ink-800'
+                      : 'opacity-60 ring-1 ring-inset ring-black/10 hover:opacity-100 hover:ring-black/25 dark:opacity-50 dark:hover:opacity-100',
                   )}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -177,7 +183,7 @@ export function ProductGallery({
             }}
             onMouseLeave={() => setHoverZoom(null)}
             aria-label="Open image full screen"
-            className="relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden rounded bg-ink-50"
+            className="media-well block aspect-[4/5] w-full cursor-zoom-in rounded dark:rounded-lg"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -189,9 +195,8 @@ export function ProductGallery({
               )}
               style={hoverZoom ? { transformOrigin: `${hoverZoom.x}% ${hoverZoom.y}%` } : undefined}
             />
-            <div className="pointer-events-none absolute inset-0 rounded ring-1 ring-inset ring-ink-950/[0.06]" />
 
-            <span className="pointer-events-none absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-ink-950/55 text-ink-25 opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+            <span className="pointer-events-none absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-scrim-950/55 text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
               <ExpandIcon className="h-4 w-4" />
             </span>
           </button>
@@ -234,8 +239,10 @@ function GalleryArrow({ side, onClick }: { side: 'left' | 'right'; onClick: () =
       aria-label={side === 'left' ? 'Previous image' : 'Next image'}
       className={cx(
         'absolute top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full',
-        'bg-ink-25/85 text-ink-800 opacity-0 shadow-sm backdrop-blur transition',
-        'hover:bg-ink-25 hover:text-ink-950 focus-visible:opacity-100 group-hover:opacity-100',
+        // On the photograph, so fixed white with dark glyphs in both themes.
+        'bg-white/85 text-scrim-800 opacity-0 shadow-sm ring-1 ring-inset ring-black/[0.06] backdrop-blur',
+        'transition duration-150 hover:bg-white hover:text-scrim-950',
+        'focus-visible:opacity-100 group-hover:opacity-100',
         // The arrows belong to the stage, which is the hover group.
         side === 'left' ? 'left-3' : 'right-3',
       )}
