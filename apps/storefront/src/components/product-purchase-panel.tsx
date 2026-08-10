@@ -165,20 +165,23 @@ export function ProductPurchasePanel({
         <span
           data-numeric
           className={cx(
-            'text-3xl font-bold tracking-[-0.02em]',
-            product.discountPercent > 0 ? 'text-sale-500' : 'text-ink-950',
+            'price-now text-3xl',
+            product.discountPercent > 0 && 'price-now--reduced',
           )}
         >
           {formatMoney(price, product.currencyCode)}
         </span>
         {product.discountPercent > 0 ? (
           <>
-            <span data-numeric className="text-base text-ink-400 line-through">
+            <span data-numeric className="price-was text-base">
               {formatMoney(product.originalPriceMinor, product.currencyCode)}
             </span>
+            {/* The saving is the one place a tinted chip earns its keep: it
+                states a number the struck price only implies. `sale-50` is a
+                deep tint in dark, not the pale wash it is on white. */}
             <span
               data-numeric
-              className="rounded-xs bg-sale-50 px-1.5 py-0.5 text-sm font-semibold text-sale-600"
+              className="rounded-xs bg-sale-50 px-1.5 py-0.5 text-sm font-semibold text-sale-600 dark:bg-sale-100 dark:text-sale-700"
             >
               Save {formatMoney(product.originalPriceMinor - price, product.currencyCode)}
             </span>
@@ -217,11 +220,14 @@ export function ProductPurchasePanel({
                   title={color}
                   onClick={() => onSelectColor(color)}
                   className={cx(
-                    'relative h-9 w-9 rounded-full transition-shadow',
+                    'relative h-9 w-9 rounded-full transition-shadow duration-150',
+                    // The ring is drawn in the *content* colour at low alpha,
+                    // so it reads against a white swatch on a dark panel and a
+                    // black swatch on a white one alike.
                     active
                       ? 'ring-2 ring-ink-950 ring-offset-2 ring-offset-ink-25'
-                      : 'ring-1 ring-inset ring-ink-950/20 hover:ring-ink-500',
-                    !available && 'opacity-45',
+                      : 'ring-1 ring-inset ring-ink-950/20 hover:ring-ink-500 dark:ring-ink-950/25 dark:hover:ring-ink-700',
+                    !available && 'opacity-40 saturate-50',
                   )}
                   style={{ backgroundColor: COLOR_HEX[color] ?? '#9ca3af' }}
                 />
@@ -262,14 +268,21 @@ export function ProductPurchasePanel({
                   setFeedback(null);
                 }}
                 data-testid={`variant-${variant.sku}`}
+                // Four states that have to be told apart at a glance:
+                //   selected     solid block, maximum contrast
+                //   default      outlined, on its own surface in dark
+                //   hover        border strengthens and the surface lifts
+                //   unavailable  struck, dimmed, but still legible — an
+                //                invisible sold-out size just reads as a
+                //                rendering bug
                 className={cx(
-                  'relative h-11 rounded text-sm font-medium transition-colors',
+                  'relative h-11 rounded text-sm font-medium transition-[background-color,box-shadow,color] duration-150',
                   active && 'bg-ink-950 text-ink-25',
                   !active &&
                     !disabled &&
-                    'text-ink-900 ring-1 ring-inset ring-ink-300 hover:ring-ink-950',
+                    'text-ink-900 ring-1 ring-inset ring-ink-300 hover:ring-ink-950 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600',
                   disabled &&
-                    'cursor-not-allowed text-ink-300 ring-1 ring-inset ring-ink-100 line-through',
+                    'cursor-not-allowed text-ink-300 ring-1 ring-inset ring-ink-100 line-through dark:bg-surface-sunken/60 dark:text-content-disabled dark:ring-line',
                 )}
               >
                 {variant.size ?? variant.sku}
@@ -295,13 +308,13 @@ export function ProductPurchasePanel({
       {/* Quantity + actions */}
       <div ref={ctaRef} className="mt-7">
         <div className="flex items-stretch gap-2">
-          <div className="flex h-12 shrink-0 items-center rounded ring-1 ring-inset ring-ink-300">
+          <div className="flex h-12 shrink-0 items-center rounded ring-1 ring-inset ring-ink-300 dark:bg-surface-card dark:ring-line-strong">
             <button
               type="button"
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               disabled={quantity <= 1}
               aria-label="Decrease quantity"
-              className="h-full w-10 text-lg text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300"
+              className="h-full w-10 text-lg text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300 dark:disabled:text-content-disabled"
             >
               −
             </button>
@@ -313,7 +326,7 @@ export function ProductPurchasePanel({
               onClick={() => setQuantity((q) => Math.min(maxForVariant, q + 1))}
               disabled={quantity >= maxForVariant}
               aria-label="Increase quantity"
-              className="h-full w-10 text-lg text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300"
+              className="h-full w-10 text-lg text-ink-700 transition-colors hover:text-ink-950 disabled:text-ink-300 dark:disabled:text-content-disabled"
             >
               +
             </button>
@@ -334,7 +347,7 @@ export function ProductPurchasePanel({
             type="button"
             onClick={handleWishlist}
             aria-label="Save to wishlist"
-            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded text-ink-700 ring-1 ring-inset ring-ink-300 transition-colors hover:text-sale-500 hover:ring-ink-400"
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded text-ink-700 ring-1 ring-inset ring-ink-300 transition-colors duration-150 hover:text-sale-500 hover:ring-ink-400 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600"
           >
             <HeartIcon className="h-5 w-5" />
           </button>
@@ -362,7 +375,7 @@ export function ProductPurchasePanel({
       {/* The three questions people ask before committing: when does it arrive,
           what if it doesn't fit, and is paying here safe. Answering them here
           rather than in the footer is the point. */}
-      <ul className="mt-6 space-y-3 border-t border-ink-200 pt-5 text-sm">
+      <ul className="mt-6 space-y-3 border-t border-line pt-5 text-sm">
         <TrustRow icon={<TruckIcon className="h-[18px] w-[18px]" />} title="Delivery">
           Standard {formatMoney(495, product.currencyCode)}, 3–5 working days. Free over{' '}
           {formatMoney(10000, product.currencyCode)}. Express 1–2 days at checkout.
@@ -383,7 +396,9 @@ export function ProductPurchasePanel({
       {/* Mobile sticky bar — only once the real button is out of view. */}
       <div
         className={cx(
-          'fixed inset-x-0 bottom-0 z-30 border-t border-ink-200 bg-ink-25/95 px-4 py-3 backdrop-blur transition-transform duration-200 lg:hidden',
+          // Overlays the page, so it takes the raised surface rather than the
+          // page colour it would otherwise share with the content behind it.
+          'fixed inset-x-0 bottom-0 z-30 border-t border-line bg-ink-25/95 px-4 py-3 backdrop-blur transition-transform duration-200 dark:border-line dark:bg-surface-raised/95 dark:shadow-overlay lg:hidden',
           'pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
           ctaOffscreen && !soldOut ? 'translate-y-0' : 'translate-y-full',
         )}

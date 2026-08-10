@@ -4,13 +4,22 @@
 
 @layer base {
   /**
-   * The `ink` scale is theme-relative, not a fixed grey ramp:
-   *   ink-25  = page surface,  ink-950 = primary content.
-   * Dark mode inverts it, so `bg-ink-25` and `text-ink-950` stay correct in
-   * both themes and components need no `dark:` variants.
+   * Colour lives in two layers (see packages/ui/tailwind-preset.js):
+   *
+   *   `ink`      — a theme-relative lightness ramp. ink-25 is the lowest
+   *                surface, ink-950 is primary content, and dark inverts it.
+   *   semantic   — `surface`/`line`/`content`/`accent`, named for the job they
+   *                do. New code should use these; they are the only way to
+   *                express elevation, because a single ramp cannot.
+   *
+   * The light values below are the source of truth for the light theme and are
+   * deliberately arranged so every semantic token resolves to the exact value
+   * the component used before the tokens existed — white pages, white cards,
+   * #E2E1DD hairlines. Light rendering is therefore byte-for-byte unchanged.
    *
    * Values are space-separated RGB triplets so Tailwind's `/opacity`
    * modifiers keep working (see rgb(var(--x) / <alpha-value>) in the preset).
+   * `--line*` are the exception: their alpha is part of the token.
    */
   :root {
     --ink-25: 255 255 255;
@@ -25,6 +34,30 @@
     --ink-800: 41 41 39;
     --ink-900: 25 25 24;
     --ink-950: 13 13 12;
+
+    /* Elevation. On white these collapse to two values; the hairline does the
+       separating. That is correct for light and is why dark needed its own. */
+    --surface: 255 255 255;
+    --surface-sunken: 246 246 244;
+    --surface-card: 255 255 255;
+    --surface-raised: 255 255 255;
+    --surface-hover: 246 246 244;
+    --surface-active: 237 237 234;
+    --surface-inverse: 13 13 12;
+
+    --line: rgb(226 225 221);
+    --line-strong: rgb(198 197 192);
+    --line-inverse: rgb(255 255 255 / 0.16);
+
+    --content: 13 13 12;
+    --content-secondary: 90 89 84;
+    --content-muted: 123 122 116;
+    --content-disabled: 198 197 192;
+    --content-inverse: 255 255 255;
+
+    --accent: 13 13 12;
+    --accent-hover: 41 41 39;
+    --accent-contrast: 255 255 255;
 
     --sale-50: 254 243 243;
     --sale-100: 253 228 229;
@@ -45,6 +78,18 @@
     --warning-600: 138 90 17;
     --warning-700: 110 71 13;
 
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+    --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.05), 0 6px 16px -2px rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 8px 24px -6px rgb(0 0 0 / 0.12), 0 2px 6px -2px rgb(0 0 0 / 0.06);
+    --shadow-overlay: 0 -1px 0 0 rgb(0 0 0 / 0.06), 0 -8px 24px -6px rgb(0 0 0 / 0.16);
+    --shadow-lift: 0 10px 28px -12px rgb(0 0 0 / 0.16);
+
+    /* Contains pale product shots so they do not bleed into a pale page. */
+    --media-well-edge: rgb(13 13 12 / 0.06);
+    /* Sheen that sweeps a loading skeleton. */
+    --skeleton-sheen: rgb(255 255 255 / 0.55);
+
     /* Height of the sticky header, used for scroll offsets and sticky rails. */
     --header-h: 3.5rem;
     color-scheme: light;
@@ -57,43 +102,115 @@
   }
 
   /**
-   * Dark theme. The ink ramp inverts end-for-end; the accent brightens because
-   * #C8102E does not hold contrast against a near-black surface. Mid greys are
-   * not a straight mirror — dark UIs need the mid range lifted or muted text
-   * disappears.
+   * Dark theme.
+   *
+   * Not an inversion of the light theme — a separate design.
+   *
+   * SURFACES climb a five-step ladder from #0D0E10 to #202329. Each step is
+   * ~4–6 points of lightness: enough to read as a different plane, small
+   * enough that the page still looks like one material. Elevation is carried
+   * by that tonal step plus a translucent-white hairline, not by shadow, which
+   * is close to invisible on near-black anyway.
+   *
+   * The neutral is very slightly cool (blue channel a few points above red).
+   * A truly neutral grey reads green on OLED, and warm greys read muddy — a
+   * hint of blue is what makes near-black look like considered product
+   * photography backdrop rather than switched-off screen.
+   *
+   * CONTENT is the deliberate part of the ramp. Dark text needs a *smaller*
+   * range than light: pure white on near-black glares and blooms, so primary
+   * caps at #F5F5F5, and the muted end stops at #73767D, which still clears
+   * 4.5:1 on every surface in the ladder. Anything below that is reserved for
+   * disabled, where the job is "perceivable but plainly inert".
+   *
+   * Note the gap between ink-300 (borders) and ink-400 (muted text). In dark
+   * there is nothing legitimate between a hairline and readable text, so the
+   * ramp jumps rather than filling the range with values that would only ever
+   * be misused.
    */
   [data-theme='dark'] {
-    --ink-25: 11 11 10;
-    --ink-50: 19 19 18;
-    --ink-100: 27 27 25;
-    --ink-200: 38 38 36;
-    --ink-300: 61 61 58;
-    --ink-400: 92 91 87;
-    --ink-500: 130 129 123;
-    --ink-600: 163 162 156;
-    --ink-700: 196 195 189;
-    --ink-800: 224 223 218;
-    --ink-900: 240 239 235;
-    --ink-950: 247 247 245;
+    --ink-25: 13 14 16;
+    --ink-50: 18 20 23;
+    --ink-100: 23 25 29;
+    --ink-200: 29 32 37;
+    --ink-300: 58 62 69;
+    --ink-400: 134 138 147;
+    --ink-500: 152 156 163;
+    --ink-600: 167 169 174;
+    --ink-700: 192 194 199;
+    --ink-800: 216 218 221;
+    --ink-900: 234 235 237;
+    --ink-950: 245 245 245;
 
-    --sale-50: 45 12 17;
-    --sale-100: 62 16 23;
-    --sale-200: 92 24 34;
-    --sale-300: 148 40 55;
-    --sale-400: 214 68 85;
-    --sale-500: 255 90 106;
-    --sale-600: 255 122 135;
-    --sale-700: 255 154 164;
+    --surface: 13 14 16;
+    --surface-sunken: 18 20 23;
+    --surface-card: 23 25 29;
+    --surface-raised: 29 32 37;
+    --surface-hover: 32 35 41;
+    --surface-active: 38 42 49;
+    --surface-inverse: 245 245 245;
 
-    --success-50: 15 31 22;
-    --success-100: 22 46 32;
-    --success-600: 106 194 141;
-    --success-700: 138 212 168;
+    --line: rgb(255 255 255 / 0.08);
+    --line-strong: rgb(255 255 255 / 0.14);
+    --line-inverse: rgb(0 0 0 / 0.14);
 
-    --warning-50: 40 29 12;
-    --warning-100: 58 42 17;
-    --warning-600: 226 176 92;
-    --warning-700: 240 200 134;
+    /**
+     * Muted sits at #868A93 rather than the #73767D a dark palette usually
+     * reaches for. #73767D clears 4.5:1 on the page, but drops to 3.9:1 by the
+     * time the same text appears on a card and 3.6:1 on a raised panel — and
+     * muted text is exactly what ends up inside cards and drawers. The token
+     * is set so it passes on every surface in the ladder, not just the page it
+     * was sampled against. The dimmer value survives as `content-disabled`,
+     * where "inert but perceivable" is the whole point.
+     */
+    --content: 245 245 245;
+    --content-secondary: 167 169 174;
+    --content-muted: 134 138 147;
+    --content-disabled: 115 118 125;
+    --content-inverse: 13 14 16;
+
+    /* The primary CTA. Bright, but a warm-neutral off-white rather than #FFF —
+       pure white on near-black glares, and the eye reads the softer block as
+       the more expensive one. */
+    --accent: 245 245 245;
+    --accent-hover: 224 225 228;
+    --accent-contrast: 13 14 16;
+
+    /* Sale. Deep tints for surfaces, a coral-leaning red for type. #FF5A6A
+       was hot enough to read as a warning; this is pulled back toward the
+       brand's #C8102E while keeping 4.5:1 on the card surface. */
+    --sale-50: 39 18 21;
+    --sale-100: 54 23 28;
+    --sale-200: 84 32 39;
+    --sale-300: 138 51 62;
+    --sale-400: 200 78 92;
+    --sale-500: 236 106 118;
+    --sale-600: 245 138 148;
+    --sale-700: 250 174 181;
+
+    --success-50: 14 28 21;
+    --success-100: 20 42 31;
+    --success-600: 106 190 140;
+    --success-700: 142 212 172;
+
+    --warning-50: 38 29 14;
+    --warning-100: 54 41 20;
+    --warning-600: 219 173 96;
+    --warning-700: 236 200 140;
+
+    /* Deeper and wider than the light casts, and paired everywhere with a
+       hairline — shadow alone cannot separate two near-black planes. */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 1px 3px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 2px 6px -1px rgb(0 0 0 / 0.5), 0 8px 20px -4px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 4px 10px -3px rgb(0 0 0 / 0.4);
+    --shadow-overlay: 0 -1px 0 0 rgb(255 255 255 / 0.06), 0 -12px 32px -8px rgb(0 0 0 / 0.6);
+    --shadow-lift: 0 14px 32px -14px rgb(0 0 0 / 0.7);
+
+    /* Dark, not white: the well holds a *light* photograph in this theme, so
+       the containing edge has to be darker than what it contains. */
+    --media-well-edge: rgb(0 0 0 / 0.12);
+    --skeleton-sheen: rgb(255 255 255 / 0.06);
 
     color-scheme: dark;
   }
@@ -118,9 +235,20 @@
   }
 
   body {
-    @apply bg-ink-25 font-sans text-base text-ink-800 antialiased;
+    @apply bg-surface font-sans text-base text-ink-800 antialiased;
     font-feature-settings: 'cv05' 1, 'ss01' 1;
     text-rendering: optimizeLegibility;
+  }
+
+  /**
+   * Dark type on a dark ground benefits from the *thinner* stem weight
+   * `antialiased` gives on macOS, but on dark the same setting makes text look
+   * anaemic at body sizes. Nudging the optical weight back keeps paragraphs
+   * feeling the same colour in both themes.
+   */
+  [data-theme='dark'] body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1,
@@ -135,13 +263,19 @@
     text-wrap: pretty;
   }
 
+  /**
+   * `outline` rather than a ring: outline leaves its offset transparent, so one
+   * rule works on every surface in the elevation ladder. A ring would paint the
+   * gap a fixed colour and halo whenever the control sat on a raised card.
+   */
   :focus-visible {
-    @apply outline-none ring-2 ring-ink-950 ring-offset-2 ring-offset-ink-25;
+    outline: 2px solid rgb(var(--content));
+    outline-offset: 2px;
     border-radius: 2px;
   }
 
   ::selection {
-    @apply bg-ink-950 text-ink-25;
+    @apply bg-accent text-accent-contrast;
   }
 
   /* Money, counters and timers must not jitter as digits change. */
@@ -151,7 +285,7 @@
   }
 
   hr {
-    @apply border-ink-200;
+    @apply border-line;
   }
 
   input,
@@ -176,13 +310,152 @@
 
   /* Small uppercase label for section eyebrows and field legends. */
   .eyebrow {
-    @apply text-2xs font-semibold uppercase tracking-[0.12em] text-ink-500;
+    @apply text-2xs font-semibold uppercase tracking-[0.12em] text-content-muted;
   }
 
   /* Oversized editorial heading. Optical sizing plus negative tracking is what
      separates a display setting from body type scaled up. */
   .display {
     @apply font-extrabold leading-[0.92] tracking-[-0.04em] text-ink-950;
+  }
+
+  /**
+   * Large type set in a heavy weight gains apparent weight on a dark ground —
+   * light-on-dark strokes bloom outward. Shaving the tracking back and easing
+   * off the weight keeps the masthead reading as the same design in both
+   * themes instead of a fatter one at night.
+   */
+  [data-theme='dark'] .display {
+    @apply font-bold tracking-[-0.035em];
+  }
+
+  /**
+   * The card plane. One place decides what a card *is*, so a product tile, an
+   * order summary and a filter panel cannot drift apart.
+   */
+  .surface-panel {
+    @apply rounded border border-line bg-surface-card;
+  }
+
+  /**
+   * Anything overlapping the page — drawer, modal, dropdown, popover. Sits a
+   * step above `.surface-panel` so a menu opened over a card still reads as
+   * being in front of it.
+   */
+  .surface-overlay {
+    @apply rounded border border-line bg-surface-raised shadow-lg;
+  }
+
+  /* Dark carries a softer radius throughout — a tighter corner reads as harsh
+     against low-contrast edges, where light has a crisp page to sit against.
+     Scoped to the theme so light geometry is untouched. */
+  [data-theme='dark'] .surface-panel,
+  [data-theme='dark'] .surface-overlay {
+    @apply rounded-lg;
+  }
+
+  /**
+   * Image well.
+   *
+   * The single most important surface on the site, and the one a naive dark
+   * theme ruins. Product photography is shot on white or near-white; dropping
+   * it onto near-black leaves a glowing rectangle with a hard edge, and the
+   * usual "fix" — dimming the image — makes the goods look cheap.
+   *
+   * Instead the *well* moves toward the product: a light-lifted surface in
+   * dark mode, so the photo's own background lands closer to its container and
+   * the seam softens. The inset hairline then contains pale product shots, and
+   * the photograph itself is never filtered.
+   */
+  .media-well {
+    @apply relative overflow-hidden bg-surface-sunken;
+  }
+  /* Tuned to the catalogue's own studio backdrop (#f4f2ef → #e4e0da), so the
+     placeholder and the photograph that replaces it are the same material and
+     there is no flash on load. */
+  [data-theme='dark'] .media-well {
+    background-color: rgb(238 236 232);
+  }
+  .media-well::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0 rounded-[inherit];
+    box-shadow: inset 0 0 0 1px var(--media-well-edge);
+  }
+
+  /**
+   * Text-input shell for the handful of places that use raw `<input>` rather
+   * than the shared `TextField` — checkout, chiefly. Same shape and the same
+   * states, so the most trust-sensitive page on the site does not end up with
+   * the only fields that lack a hover or a visible edge.
+   *
+   * Focus stays with the global `:focus-visible` outline.
+   */
+  .field-input {
+    @apply w-full rounded bg-ink-25 px-3 py-2 text-base text-ink-900;
+    @apply ring-1 ring-inset ring-ink-300 transition-shadow duration-150;
+    @apply placeholder:text-ink-400 hover:ring-ink-400;
+    @apply disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-content-disabled;
+  }
+  /* A well, one step *below* its container — see fieldShell in packages/ui for
+     why recessing is the rule that survives being placed on a card. */
+  [data-theme='dark'] .field-input {
+    @apply bg-surface-sunken ring-line-strong placeholder:text-content-muted;
+    @apply hover:bg-surface hover:ring-ink-600;
+    @apply disabled:bg-surface-sunken/60;
+  }
+  .field-input[aria-invalid='true'] {
+    @apply ring-sale-500 hover:ring-sale-600;
+  }
+
+  /* Native controls take the theme's accent so a checked box is not the OS
+     blue sitting in the middle of a monochrome palette. */
+  .field-input,
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: rgb(var(--accent));
+  }
+
+  /**
+   * Price typography, defined once so every surface — tile, detail page, cart
+   * line, order summary — sets money identically. The reduced price carries
+   * the weight; the original recedes to a struck, muted figure rather than
+   * competing at the same size.
+   */
+  .price-now {
+    @apply font-semibold tracking-[-0.01em] text-ink-950;
+  }
+  .price-now--reduced {
+    @apply text-sale-500;
+  }
+  /* ink-400 rather than content-muted so the light theme keeps the exact
+     struck grey it had; in dark the two resolve to the same value anyway. */
+  .price-was {
+    @apply font-normal text-ink-400 line-through;
+    text-decoration-color: rgb(var(--ink-400) / 0.6);
+  }
+
+  /**
+   * A single, very quiet wash behind the masthead in dark mode.
+   *
+   * A type-led hero on white is framed by the paper itself. On near-black the
+   * same layout is a large unlit rectangle, and the usual reflex — a glow
+   * behind the headline — is exactly the cheap look to avoid. This instead
+   * lifts the top of the page by about four points of lightness and falls off
+   * before the fold, which reads as light in a room rather than as an effect.
+   */
+  .masthead-wash {
+    @apply relative;
+  }
+  [data-theme='dark'] .masthead-wash::before {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 top-0 -z-10;
+    height: 30rem;
+    background: linear-gradient(
+      to bottom,
+      rgb(var(--surface-card) / 0.9) 0%,
+      rgb(var(--surface-sunken) / 0.55) 45%,
+      transparent 100%
+    );
   }
 
   .link-underline {
@@ -206,17 +479,21 @@
     }
   }
 
+  /* The sheen is a variable because the light theme sweeps white over grey,
+     while dark has to sweep a *lift* over near-black — the same rule with
+     --ink-25 substituted swept near-black over near-black and read as nothing
+     happening at all. */
   .skeleton {
-    @apply relative overflow-hidden bg-ink-100;
+    @apply relative overflow-hidden bg-surface-active;
   }
   .skeleton::after {
     content: '';
     @apply absolute inset-0 -translate-x-full;
     background-image: linear-gradient(
       90deg,
-      rgb(var(--ink-25) / 0) 0,
-      rgb(var(--ink-25) / 0.5) 50%,
-      rgb(var(--ink-25) / 0) 100%
+      transparent 0,
+      var(--skeleton-sheen) 50%,
+      transparent 100%
     );
     animation: shimmer 1.6s infinite;
   }

@@ -117,7 +117,7 @@ export function SizeGuide({ sizes }: { sizes: Array<string | null> }) {
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-ink-950/40 p-0 sm:items-center sm:p-6"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-scrim-950/50 p-0 dark:bg-scrim-950/70 sm:items-center sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="size-guide-title"
@@ -125,7 +125,7 @@ export function SizeGuide({ sizes }: { sizes: Array<string | null> }) {
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-t bg-ink-25 p-6 shadow-xl sm:rounded">
+          <div className="max-h-[85vh] w-full max-w-xl animate-slide-up overflow-y-auto rounded-t bg-ink-25 p-6 shadow-xl dark:border dark:border-line dark:bg-surface-raised dark:shadow-lg sm:rounded">
             <div className="flex items-start justify-between gap-4">
               <h2 id="size-guide-title" className="text-lg font-bold text-ink-950">
                 {table.title}
@@ -145,7 +145,7 @@ export function SizeGuide({ sizes }: { sizes: Array<string | null> }) {
             <div className="mt-5 overflow-x-auto">
               <table className="w-full min-w-[22rem] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-ink-300">
+                  <tr className="border-b border-ink-300 dark:border-line-strong">
                     {table.columns.map((column) => (
                       <th
                         key={column}
@@ -159,7 +159,7 @@ export function SizeGuide({ sizes }: { sizes: Array<string | null> }) {
                 </thead>
                 <tbody>
                   {table.rows.map((row) => (
-                    <tr key={row[0]} className="border-b border-ink-100">
+                    <tr key={row[0]} className="border-b border-ink-100 dark:border-line">
                       {row.map((cell, i) => (
                         <td
                           key={i}

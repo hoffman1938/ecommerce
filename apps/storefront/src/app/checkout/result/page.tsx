@@ -164,7 +164,7 @@ function ResultInner() {
         </>
       ) : waiting ? (
         <>
-          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-ink-200 border-t-ink-950" />
+          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-line border-t-ink-950" />
           <h1 className="mt-4 text-2xl font-bold">Waiting for payment confirmation…</h1>
           <p className="mt-2 text-ink-600">
             {attempts > 5

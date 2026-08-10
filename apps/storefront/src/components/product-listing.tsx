@@ -113,7 +113,7 @@ function ProductListingInner({
 
   return (
     <div className="container-page py-6 lg:py-10">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink-200 pb-6">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
         <h1 className="display text-4xl sm:text-5xl lg:text-6xl">
           {term ? (
             <span className="block text-base font-semibold uppercase tracking-[0.12em] text-ink-500">
@@ -219,11 +219,11 @@ function Pagination({
   push(totalPages);
 
   const stepClass =
-    'inline-flex h-9 items-center rounded px-3 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors hover:bg-ink-50 hover:ring-ink-400';
+    'inline-flex h-9 items-center rounded px-3 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors duration-150 hover:bg-ink-50 hover:ring-ink-400 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600';
 
   return (
     <nav
-      className="mt-12 flex items-center justify-between gap-3 border-t border-ink-200 pt-6"
+      className="mt-12 flex items-center justify-between gap-3 border-t border-line pt-6"
       aria-label="Pagination"
     >
       {page > 1 ? (
@@ -253,7 +253,7 @@ function Pagination({
                   'inline-flex h-9 min-w-9 items-center justify-center rounded px-2 text-sm transition-colors',
                   entry === page
                     ? 'bg-ink-950 font-semibold text-ink-25'
-                    : 'text-ink-700 hover:bg-ink-100 hover:text-ink-950',
+                    : 'text-ink-700 hover:bg-ink-100 hover:text-ink-950 dark:hover:bg-surface-hover',
                 )}
               >
                 {entry}
@@ -297,7 +297,7 @@ function NoResults() {
         action={<ClearFiltersButton />}
       />
 
-      <div className="mt-8 border-t border-ink-200 pt-6">
+      <div className="mt-8 border-t border-line pt-6">
         <p className="text-2xs font-semibold uppercase tracking-[0.07em] text-ink-500">
           Browse categories
         </p>
@@ -306,7 +306,7 @@ function NoResults() {
             <li key={category.slug}>
               <Link
                 href={`/category/${category.slug}`}
-                className="inline-flex h-9 items-center rounded px-3 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors hover:bg-ink-25 hover:ring-ink-950"
+                className="inline-flex h-9 items-center rounded px-3 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors duration-150 hover:bg-ink-25 hover:ring-ink-950 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600"
               >
                 {category.name}
               </Link>
@@ -348,16 +348,16 @@ function FilterDrawer({ onClose, total }: { onClose: () => void; total?: number 
         type="button"
         aria-label="Close filters"
         onClick={onClose}
-        className="absolute inset-0 animate-fade-in bg-ink-950/40"
+        className="absolute inset-0 animate-fade-in bg-scrim-950/50 dark:bg-scrim-950/70"
       />
-      <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-xl bg-ink-25 shadow-overlay">
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-ink-200 px-4">
+      <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] animate-slide-up flex-col rounded-t-xl bg-ink-25 shadow-overlay dark:border-t dark:border-line dark:bg-surface-raised">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-4">
           <h2 className="text-base font-semibold text-ink-950">Filters</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50"
+            className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950"
           >
             <CloseIcon className="h-5 w-5" />
           </button>
@@ -367,7 +367,7 @@ function FilterDrawer({ onClose, total }: { onClose: () => void; total?: number 
         </div>
         <div
           className={cx(
-            'flex shrink-0 gap-3 border-t border-ink-200 px-4 py-3',
+            'flex shrink-0 gap-3 border-t border-line px-4 py-3',
             'pb-[max(0.75rem,env(safe-area-inset-bottom))]',
           )}
         >
@@ -396,7 +396,7 @@ export function ProductListing(props: {
     <Suspense
       fallback={
         <div className="container-page py-6 lg:py-10">
-          <div className="border-b border-ink-200 pb-5">
+          <div className="border-b border-line pb-5">
             <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
               {props.title}
             </h1>

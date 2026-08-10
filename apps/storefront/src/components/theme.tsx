@@ -83,7 +83,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       // rather than claiming the wrong one to a screen reader.
       aria-label={theme ? `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme` : 'Switch theme'}
       className={cx(
-        'inline-flex h-10 w-10 items-center justify-center rounded text-ink-600 transition-colors hover:bg-ink-100 hover:text-ink-950',
+        'inline-flex h-10 w-10 items-center justify-center rounded transition-colors duration-150',
+        'text-ink-600 hover:bg-ink-100 hover:text-ink-950',
+        'dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950',
         className,
       )}
     >

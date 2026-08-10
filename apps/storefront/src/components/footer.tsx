@@ -59,7 +59,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="mt-20 border-t border-ink-200 bg-ink-25">
+    <footer className="mt-20 border-t border-line bg-ink-25 dark:bg-surface-sunken">
       <div className="container-page">
         <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8 lg:py-14">
           {/* The newsletter leads on desktop and drops to the end on mobile,
@@ -98,7 +98,8 @@ export function Footer() {
                 placeholder={t('footer.emailPlaceholder')}
                 aria-invalid={state === 'error' || undefined}
                 className={cx(
-                  'h-10 w-full rounded bg-ink-25 px-3 text-sm ring-1 ring-inset transition-shadow placeholder:text-ink-400',
+                  'h-10 w-full rounded bg-ink-25 px-3 text-sm ring-1 ring-inset transition-shadow duration-150 placeholder:text-ink-400',
+          'dark:bg-surface-sunken dark:placeholder:text-content-muted dark:hover:bg-surface',
                   state === 'error' ? 'ring-sale-500' : 'ring-ink-300 hover:ring-ink-400',
                 )}
               />
@@ -130,7 +131,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-ink-200 py-6 text-xs text-ink-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 border-t border-line py-6 text-xs text-ink-500 sm:flex-row sm:items-center sm:justify-between">
           {/* No dynamic year: the page is prerendered, so a year computed at
               build time would mismatch the client's on New Year's Day. */}
           <p>{t('footer.copyright')}</p>

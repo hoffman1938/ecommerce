@@ -73,7 +73,7 @@ function LoginInner() {
         </Button>
       </form>
 
-      <p className="mt-8 border-t border-ink-200 pt-6 text-sm text-ink-600">
+      <p className="mt-8 border-t border-line pt-6 text-sm text-ink-600">
         New here?{' '}
         <Link
           href="/register"

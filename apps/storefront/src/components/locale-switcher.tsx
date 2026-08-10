@@ -24,10 +24,14 @@ export function LocaleSwitcher() {
           onClick={() => handleLocaleChange(l)}
           aria-pressed={locale === l}
           className={cx(
-            'h-7 rounded px-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors',
+            'h-7 rounded px-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors duration-150',
             locale === l
-              ? 'bg-ink-950 text-ink-25'
-              : 'text-ink-500 hover:bg-ink-100 hover:text-ink-950',
+              ? // A solid block is the right weight on white, but on near-black
+                // the same treatment fires a bright chip into the corner of the
+                // header. Dark marks the selection with a raised surface and
+                // full-strength label instead.
+                'bg-ink-950 text-ink-25 dark:bg-surface-active dark:text-ink-950 dark:ring-1 dark:ring-inset dark:ring-line-strong'
+              : 'text-ink-500 hover:bg-ink-100 hover:text-ink-950 dark:hover:bg-surface-hover',
             i > 0 && 'ml-px',
           )}
         >

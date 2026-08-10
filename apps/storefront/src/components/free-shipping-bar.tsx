@@ -53,7 +53,7 @@ export function FreeShippingBar({
         )}
       </p>
       <div
-        className="mt-2 h-1 overflow-hidden rounded-full bg-ink-100"
+        className="mt-2 h-1 overflow-hidden rounded-full bg-ink-100 dark:bg-surface-active"
         role="progressbar"
         aria-valuenow={percent}
         aria-valuemin={0}

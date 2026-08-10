@@ -21,7 +21,14 @@ export function Countdown({
   expiresAt: string;
   onExpired?: () => void;
   className?: string;
-  /** `inverse` for use on dark artwork, where the urgency red would vanish. */
+  /**
+   * `inverse` for use on dark artwork, where the urgency red would vanish.
+   *
+   * "Dark artwork" means artwork, not theme — a campaign scrim is dark in both
+   * themes — so this tone is fixed white rather than a theme token. It used to
+   * be `text-ink-25`, which flipped to near-black in dark mode and left the
+   * timer invisible on its own scrim.
+   */
   tone?: 'default' | 'inverse';
 }) {
   const [secondsLeft, setSecondsLeft] = useState(() =>
@@ -50,7 +57,7 @@ export function Countdown({
       data-numeric
       className={cx(
         'font-semibold',
-        tone === 'inverse' ? 'text-ink-25' : urgent ? 'text-sale-500' : 'text-ink-800',
+        tone === 'inverse' ? 'text-white' : urgent ? 'text-sale-500' : 'text-ink-800',
         className,
       )}
       data-testid="reservation-countdown"

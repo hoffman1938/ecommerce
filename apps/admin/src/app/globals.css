@@ -26,6 +26,41 @@
     --ink-900: 25 25 24;
     --ink-950: 13 13 12;
 
+    /* Semantic layer. The admin panel has no dark theme, so every step of the
+       elevation ladder collapses to the light value it had before the tokens
+       existed — white surfaces separated by a hairline. */
+    --surface: 255 255 255;
+    --surface-sunken: 246 246 244;
+    --surface-card: 255 255 255;
+    --surface-raised: 255 255 255;
+    --surface-hover: 246 246 244;
+    --surface-active: 237 237 234;
+    --surface-inverse: 13 13 12;
+
+    --line: rgb(226 225 221);
+    --line-strong: rgb(198 197 192);
+    --line-inverse: rgb(255 255 255 / 0.16);
+
+    --content: 13 13 12;
+    --content-secondary: 90 89 84;
+    --content-muted: 123 122 116;
+    --content-disabled: 198 197 192;
+    --content-inverse: 255 255 255;
+
+    --accent: 13 13 12;
+    --accent-hover: 41 41 39;
+    --accent-contrast: 255 255 255;
+
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+    --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.05), 0 6px 16px -2px rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 8px 24px -6px rgb(0 0 0 / 0.12), 0 2px 6px -2px rgb(0 0 0 / 0.06);
+    --shadow-overlay: 0 -1px 0 0 rgb(0 0 0 / 0.06), 0 -8px 24px -6px rgb(0 0 0 / 0.16);
+    --shadow-lift: 0 10px 28px -12px rgb(0 0 0 / 0.16);
+
+    --media-well-edge: rgb(13 13 12 / 0.06);
+    --skeleton-sheen: rgb(255 255 255 / 0.55);
+
     --sale-50: 254 243 243;
     --sale-100: 253 228 229;
     --sale-200: 250 199 203;

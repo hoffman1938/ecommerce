@@ -49,7 +49,7 @@ export default function NotificationsPage() {
         {options.map(([key, label]) => (
           <label
             key={key}
-            className="flex items-center gap-3 rounded border border-ink-200 bg-ink-25 p-4 text-sm"
+            className="flex items-center gap-3 rounded border border-line bg-ink-25 dark:bg-surface-card p-4 text-sm"
           >
             <input
               type="checkbox"

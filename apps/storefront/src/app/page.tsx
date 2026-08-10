@@ -29,8 +29,8 @@ export default async function HomePage() {
       {/* Editorial masthead. Type is the image here — the campaign artwork
           immediately below carries the photography, so competing with it would
           only crowd the fold. */}
-      <section className="container-page">
-        <div className="grid items-end gap-8 border-b border-ink-200 pb-10 pt-10 lg:grid-cols-12 lg:pb-14 lg:pt-16">
+      <section className="masthead-wash container-page">
+        <div className="grid items-end gap-8 border-b border-line pb-10 pt-10 lg:grid-cols-12 lg:pb-14 lg:pt-16 dark:lg:pb-16 dark:lg:pt-20">
           <div className="lg:col-span-8">
             <p className="eyebrow">
               <T id="home.eyebrow" />
@@ -47,7 +47,7 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/campaigns"
-                className="group inline-flex h-12 items-center gap-2 rounded-none bg-ink-950 px-7 text-sm font-semibold uppercase tracking-[0.06em] text-ink-25 transition-colors hover:bg-ink-800"
+                className="group inline-flex h-12 items-center gap-2 rounded-none bg-accent px-7 text-sm font-semibold uppercase tracking-[0.06em] text-accent-contrast transition-colors duration-150 hover:bg-accent-hover"
               >
                 <T id="home.shopCampaigns" />
                 <span className="transition-transform duration-300 ease-out group-hover:translate-x-1">
@@ -70,7 +70,7 @@ export default async function HomePage() {
       {/* Brand ticker. A quiet editorial device, not a headline — small type,
           slow, and stopped entirely under reduced-motion. */}
       {featured.length > 0 ? (
-        <div className="overflow-hidden border-b border-ink-200 py-3">
+        <div className="overflow-hidden border-b border-line py-3">
           <div className="flex w-max animate-marquee gap-10 pr-10 motion-reduce:animate-none">
             {[0, 1].map((copy) => (
               <ul key={copy} className="flex shrink-0 items-center gap-10" aria-hidden={copy === 1}>
@@ -119,7 +119,7 @@ export default async function HomePage() {
           </Section>
         ) : (
           <Section>
-            <p className="border-t border-ink-200 py-16 text-center text-sm text-ink-500">
+            <p className="border-t border-line py-16 text-center text-sm text-ink-500">
               <T id="product.noCatalog" />
             </p>
           </Section>
@@ -129,7 +129,7 @@ export default async function HomePage() {
             index, rather than another even grid of tiles. */}
         {featured.length > 0 ? (
           <Section className="reveal">
-            <div className="grid gap-8 border-t border-ink-950 pt-4 lg:grid-cols-12 lg:gap-12">
+            <div className="grid gap-8 border-t border-ink-950 pt-4 dark:border-ink-700 lg:grid-cols-12 lg:gap-12">
               <div className="lg:col-span-4">
                 <h2 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
                   <T id="home.theBrands" />
@@ -140,7 +140,7 @@ export default async function HomePage() {
               </div>
               <ul className="lg:col-span-8">
                 {featured.map((brand) => (
-                  <li key={brand.id} className="border-b border-ink-200 first:border-t">
+                  <li key={brand.id} className="border-b border-line first:border-t">
                     <Link
                       href={`/brand/${brand.slug}`}
                       className="group flex items-baseline justify-between gap-6 py-5 lg:py-6"
@@ -180,9 +180,11 @@ export default async function HomePage() {
         {/* Service facts, numbered. Stated once, low on the page, where they
             answer a question rather than interrupt the offer. */}
         <Section className="reveal">
-          <dl className="grid gap-px border-t border-ink-950 bg-ink-200 pt-px sm:grid-cols-3">
+          {/* `gap-px` over a background is what draws the rules between cells,
+              so the wrapper colour is a divider, not a surface. */}
+          <dl className="grid gap-px border-t border-ink-950 bg-ink-200 pt-px dark:border-ink-700 dark:bg-line-strong sm:grid-cols-3">
             {PROPOSITIONS.map(([index, title, body]) => (
-              <div key={index as string} className="bg-ink-25 py-6 sm:px-5 sm:first:pl-0">
+              <div key={index as string} className="bg-ink-25 py-6 dark:bg-surface sm:px-5 sm:first:pl-0">
                 <span className="eyebrow">{index as string}</span>
                 <dt className="mt-2 text-base font-semibold text-ink-950">{title}</dt>
                 <dd className="mt-1 text-sm leading-relaxed text-ink-600">{body}</dd>

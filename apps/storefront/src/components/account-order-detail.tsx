@@ -73,7 +73,7 @@ export function AccountOrderDetail() {
 
       <OrderTimeline order={order} />
 
-      <section className="rounded border border-ink-200 bg-ink-25 p-5">
+      <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5">
         <h2 className="mb-3 font-semibold">Items</h2>
         <div className="space-y-3">
           {order.items.map((item) => (
@@ -89,7 +89,7 @@ export function AccountOrderDetail() {
                   className="h-16 w-16 rounded object-cover"
                 />
               ) : (
-                <div className="h-16 w-16 rounded bg-ink-100" />
+                <div className="h-16 w-16 rounded bg-ink-100 dark:bg-surface-active" />
               )}
               <div className="flex-1">
                 <p className="font-medium">{item.name}</p>
@@ -105,7 +105,7 @@ export function AccountOrderDetail() {
       </section>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <section className="rounded border border-ink-200 bg-ink-25 p-5 text-sm">
+        <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5 text-sm">
           <h2 className="mb-2 font-semibold">Delivery</h2>
           <p className="text-ink-600">
             {order.shippingAddress.firstName} {order.shippingAddress.lastName}
@@ -128,7 +128,7 @@ export function AccountOrderDetail() {
           ) : null}
         </section>
 
-        <section className="rounded border border-ink-200 bg-ink-25 p-5 text-sm">
+        <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5 text-sm">
           <h2 className="mb-2 font-semibold">Payment</h2>
           <dl className="space-y-1">
             <div className="flex justify-between">
@@ -145,7 +145,7 @@ export function AccountOrderDetail() {
               <dt className="text-ink-500">Shipping</dt>
               <dd>{formatMoney(order.shippingMinor, order.currencyCode)}</dd>
             </div>
-            <div className="flex justify-between border-t border-ink-200 pt-1 font-bold">
+            <div className="flex justify-between border-t border-line pt-1 font-bold">
               <dt>Total</dt>
               <dd>{formatMoney(order.totalMinor, order.currencyCode)}</dd>
             </div>

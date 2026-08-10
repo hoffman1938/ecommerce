@@ -103,12 +103,35 @@ function Wordmark({ className }: { className?: string }) {
       aria-label="Outlet Marketplace — home"
       className={cx(
         'shrink-0 text-[1.0625rem] font-extrabold uppercase tracking-[-0.02em] text-ink-950',
+        // A heavy uppercase wordmark gains apparent weight light-on-dark, so
+        // dark drops a step and opens the tracking to hold the same silhouette.
+        'dark:font-bold dark:tracking-[-0.005em]',
         className,
       )}
     >
       Outlet<span className="text-sale-500">.</span>
     </Link>
   );
+}
+
+/**
+ * True once the page has left the very top.
+ *
+ * The header sits directly on the page in dark mode — no border, no fill — so
+ * that the masthead reads as one uninterrupted surface at rest. That only works
+ * while there is nothing underneath it: as soon as content scrolls beneath, the
+ * bar has to earn its own plane, or product images slide under a transparent
+ * strip and the navigation becomes unreadable.
+ */
+function useScrolled(threshold = 8): boolean {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > threshold);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [threshold]);
+  return scrolled;
 }
 
 /**
@@ -240,7 +263,17 @@ function SearchForm({
           }
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus={autoFocus}
-          className="h-10 w-full rounded bg-ink-50 pl-9 pr-3 text-sm text-ink-900 ring-1 ring-inset ring-transparent transition-shadow placeholder:text-ink-500 hover:bg-ink-100 focus:bg-ink-25 focus:ring-ink-300"
+          className={cx(
+            'h-10 w-full rounded pl-9 pr-3 text-sm text-ink-900 transition-[background-color,box-shadow] duration-150',
+            'bg-ink-50 ring-1 ring-inset ring-transparent placeholder:text-ink-500',
+            'hover:bg-ink-100 focus:bg-ink-25 focus:ring-ink-300',
+            // Dark needs the field to read as a *well* — recessed below the
+            // bar — and then to rise to a raised surface on focus. Inheriting
+            // light's near-invisible fill left a search box you had to hunt for.
+            'dark:bg-surface-card dark:ring-line dark:placeholder:text-content-muted',
+            'dark:hover:bg-surface-hover dark:hover:ring-line-strong',
+            'dark:focus:bg-surface-raised dark:focus:ring-2 dark:focus:ring-ink-700',
+          )}
         />
       </form>
 
@@ -249,7 +282,7 @@ function SearchForm({
           id="search-suggestions"
           role="listbox"
           aria-label="Search suggestions"
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[70vh] overflow-y-auto rounded border border-ink-200 bg-ink-25 py-1.5 shadow-lg"
+          className="surface-overlay absolute left-0 right-0 top-full z-50 mt-1.5 max-h-[70vh] animate-slide-up overflow-y-auto py-1.5"
         >
           {options.length === 0 ? (
             <p className="px-3 py-3 text-sm text-ink-500">
@@ -363,8 +396,10 @@ function SuggestionRow({
         onClick={onSelect}
         onMouseEnter={onHover}
         className={cx(
-          'flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm text-ink-900 transition-colors',
-          active ? 'bg-ink-100' : 'hover:bg-ink-50',
+          'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-ink-900 transition-colors duration-150',
+          // The highlighted option has to be unmistakable on an already-raised
+          // surface, so it steps up again rather than tinting.
+          active ? 'bg-surface-active' : 'hover:bg-surface-hover',
         )}
       >
         {children}
@@ -396,7 +431,10 @@ function HeaderAction({
         {count && count > 0 ? (
           <span
             data-numeric
-            className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-sale-500 px-1 text-[10px] font-semibold leading-none text-ink-25"
+            // `key` on the count restarts the pop animation each time the
+            // number changes, which is the cart acknowledging an add.
+            key={count}
+            className="absolute -right-2 -top-1.5 flex h-4 min-w-4 animate-count-pop items-center justify-center rounded-full bg-sale-500 px-1 text-[10px] font-semibold leading-none text-ink-25 dark:bg-sale-500 dark:text-content-inverse"
           >
             {count > 99 ? '99+' : count}
           </span>
@@ -406,8 +444,13 @@ function HeaderAction({
     </>
   );
 
-  const className =
-    'group relative inline-flex h-10 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950';
+  // Icons rest a step below primary text in dark: at full brightness a row of
+  // five glyphs competes with the wordmark and reads as a toolbar.
+  const className = cx(
+    'group relative inline-flex h-10 items-center gap-2 rounded px-2 text-sm transition-colors duration-150',
+    'text-ink-700 hover:bg-ink-50 dark:hover:bg-surface-hover hover:text-ink-950',
+    'dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950',
+  );
 
   if (onClick) {
     return (
@@ -486,9 +529,28 @@ export function Header() {
   const cancelClose = () => window.clearTimeout(closeTimer.current);
 
   const itemCount = cart?.itemCount ?? 0;
+  const scrolled = useScrolled();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink-200 bg-ink-25/95 backdrop-blur supports-[backdrop-filter]:bg-ink-25/85">
+    <header
+      className={cx(
+        'sticky top-0 z-40 border-b transition-[background-color,border-color,box-shadow] duration-200',
+        'border-line bg-ink-25/95 backdrop-blur supports-[backdrop-filter]:bg-ink-25/85',
+        // At rest the bar *is* the page: no fill, no line, so the masthead
+        // reads as one surface. Once content passes beneath it, it lifts onto
+        // its own plane — a step up in surface, a hairline, and a cast to
+        // separate it from whatever is sliding under.
+        //
+        // The two states are branches rather than a base plus an override:
+        // `dark:bg-surface` and `dark:bg-surface-sunken` are the same kind of
+        // utility, so which one wins is decided by their order in the
+        // stylesheet, not by their order in this list. Emitting exactly one
+        // removes the question.
+        scrolled
+          ? 'dark:border-line dark:bg-surface-sunken dark:shadow-md dark:backdrop-blur-header dark:supports-[backdrop-filter]:bg-surface-sunken/85'
+          : 'dark:border-transparent dark:bg-surface dark:supports-[backdrop-filter]:bg-surface/80',
+      )}
+    >
       <div className="container-page">
         <div className="flex h-14 items-center gap-3 lg:h-16 lg:gap-6">
           <button
@@ -496,7 +558,7 @@ export function Header() {
             onClick={() => setMenuOpen(true)}
             aria-label={t('nav.openMenu')}
             aria-expanded={menuOpen}
-            className="-ml-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 lg:hidden"
+            className="-ml-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950 lg:hidden"
           >
             <MenuIcon className="h-5 w-5" />
           </button>
@@ -513,7 +575,7 @@ export function Header() {
               onClick={() => setSearchOpen((v) => !v)}
               aria-label={t('nav.search')}
               aria-expanded={searchOpen}
-              className="inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 md:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950 md:hidden"
             >
               {searchOpen ? <CloseIcon className="h-5 w-5" /> : <SearchIcon className="h-5 w-5" />}
             </button>
@@ -535,7 +597,7 @@ export function Header() {
               <div className="hidden items-center lg:flex">
                 <Link
                   href="/account"
-                  className="inline-flex h-10 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950"
+                  className="inline-flex h-10 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950"
                 >
                   <UserIcon className="h-[18px] w-[18px]" />
                   <span className="hidden max-w-24 truncate xl:inline">{me.user.firstName}</span>
@@ -552,7 +614,7 @@ export function Header() {
               <Link
                 href="/login"
                 aria-label={t('nav.signIn')}
-                className="hidden h-10 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 lg:inline-flex"
+                className="hidden h-10 items-center gap-2 rounded px-2 text-sm text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950 lg:inline-flex"
               >
                 <UserIcon className="h-[18px] w-[18px]" />
                 <span className="hidden xl:inline">{t('nav.signIn')}</span>
@@ -574,7 +636,7 @@ export function Header() {
       <nav
         ref={navRef}
         aria-label="Categories"
-        className="relative hidden border-t border-ink-100 md:block"
+        className="relative hidden border-t border-ink-100 dark:border-line md:block"
         onMouseLeave={scheduleClose}
       >
         <div className="container-page">
@@ -587,7 +649,7 @@ export function Header() {
                 {t('nav.campaigns')}
               </Link>
             </li>
-            <li aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-ink-200" />
+            <li aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-ink-200 dark:bg-ink-300" />
             <li className="shrink-0">
               <NavLink href="/products" active={pathname === '/products'}>
                 {t('nav.allProducts')}
@@ -620,7 +682,9 @@ export function Header() {
             that moves as you slide along the row. */}
         {openPanel ? (
           <div
-            className="absolute inset-x-0 top-full z-40 hidden animate-slide-up border-b border-ink-200 bg-ink-25 shadow-lg lg:block"
+            // Full-bleed sheet, so it takes `surface-raised` flat rather than
+            // the rounded overlay treatment used by panels that float free.
+            className="absolute inset-x-0 top-full z-40 hidden animate-slide-up border-b border-line bg-ink-25 shadow-lg dark:border-line dark:bg-surface-raised dark:shadow-lg lg:block"
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
           >
@@ -667,7 +731,7 @@ function CategoryPanel({
               <Link
                 href={`/category/${child.slug}`}
                 onClick={onNavigate}
-                className="text-ink-800 transition-colors hover:text-ink-950"
+                className="text-ink-800 transition-colors hover:text-ink-950 dark:text-content-secondary dark:hover:text-ink-950"
               >
                 {child.name}
               </Link>
@@ -684,7 +748,7 @@ function CategoryPanel({
               <Link
                 href={`${link.href}&category=${entry.slug}`}
                 onClick={onNavigate}
-                className="text-ink-800 transition-colors hover:text-ink-950"
+                className="text-ink-800 transition-colors hover:text-ink-950 dark:text-content-secondary dark:hover:text-ink-950"
               >
                 {link.label}
               </Link>
@@ -701,7 +765,7 @@ function CategoryPanel({
               <Link
                 href={`/brand/${brand.slug}`}
                 onClick={onNavigate}
-                className="text-ink-800 transition-colors hover:text-ink-950"
+                className="text-ink-800 transition-colors hover:text-ink-950 dark:text-content-secondary dark:hover:text-ink-950"
               >
                 {brand.name}
               </Link>
@@ -713,10 +777,10 @@ function CategoryPanel({
       <Link
         href="/campaigns"
         onClick={onNavigate}
-        className="group flex flex-col justify-between rounded bg-ink-950 p-5 text-ink-25"
+        className="group flex flex-col justify-between rounded bg-accent p-5 text-accent-contrast dark:rounded-lg"
       >
         <div>
-          <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-ink-25/60">
+          <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-accent-contrast/60">
             Live campaigns
           </p>
           <p className="mt-2 text-lg font-bold leading-tight">Short windows, limited stock.</p>
@@ -791,19 +855,21 @@ function MobileMenu({
         type="button"
         aria-label={t('nav.closeMenu')}
         onClick={onClose}
-        className="absolute inset-0 animate-fade-in bg-ink-950/40"
+        // Fixed black rather than `ink-950/40`, which inverted to a *white*
+        // wash over the page in dark mode.
+        className="absolute inset-0 animate-fade-in bg-scrim-950/50 dark:bg-scrim-950/70"
       />
       {/* A left-edge drawer must enter from the left: `slide-in-left` starts at
           translateX(-100%). */}
-      <div className="absolute inset-y-0 left-0 flex w-[min(21rem,88vw)] animate-slide-in-left flex-col bg-ink-25 shadow-md">
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-ink-200 px-4">
+      <div className="absolute inset-y-0 left-0 flex w-[min(21rem,88vw)] animate-slide-in-left flex-col bg-ink-25 shadow-md dark:border-r dark:border-line dark:bg-surface-raised dark:shadow-lg">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-4 dark:border-line">
           <Wordmark />
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label={t('nav.closeMenu')}
-            className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50"
+            className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950"
           >
             <CloseIcon className="h-5 w-5" />
           </button>
@@ -823,18 +889,20 @@ function MobileMenu({
                   type="button"
                   onClick={() => setExpanded((c) => (c === entry.slug ? null : entry.slug))}
                   aria-expanded={expanded === entry.slug}
-                  className="flex w-full items-center justify-between px-4 py-2.5 text-left text-[15px] text-ink-800 transition-colors hover:bg-ink-50 hover:text-ink-950"
+                  className="flex w-full items-center justify-between px-4 py-2.5 text-left text-[15px] text-ink-800 transition-colors hover:bg-ink-50 hover:text-ink-950 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950"
                 >
                   {categoryLabel(entry.key, t)}
                   <ChevronDown
                     className={cx(
-                      'h-4 w-4 text-ink-400 transition-transform',
+                      'h-4 w-4 text-ink-400 transition-transform duration-200',
                       expanded === entry.slug && 'rotate-180',
                     )}
                   />
                 </button>
                 {expanded === entry.slug ? (
-                  <div className="bg-ink-50/60 py-1">
+                  // A recess, not a raise: the sub-list belongs *inside* the
+                  // row above it.
+                  <div className="animate-slide-up bg-ink-50/60 py-1 dark:bg-surface-sunken/70">
                     <MenuLink href={`/category/${entry.slug}`} className="pl-8 text-sm">
                       All {categoryLabel(entry.key, t).toLowerCase()}
                     </MenuLink>
@@ -869,7 +937,7 @@ function MobileMenu({
                   logout.mutate();
                   onClose();
                 }}
-                className="block w-full px-4 py-2.5 text-left text-[15px] text-ink-500 transition-colors hover:bg-ink-50 hover:text-ink-950"
+                className="block w-full px-4 py-2.5 text-left text-[15px] text-ink-500 transition-colors hover:bg-ink-50 hover:text-ink-950 dark:hover:bg-surface-hover"
               >
                 {t('nav.signOut')}
               </button>
@@ -883,7 +951,7 @@ function MobileMenu({
           )}
         </nav>
 
-        <div className="flex items-center justify-between border-t border-ink-200 p-4">
+        <div className="flex items-center justify-between border-t border-line p-4 dark:border-line">
           <LocaleSwitcher />
           <ThemeToggle />
         </div>
@@ -906,7 +974,8 @@ function MenuLink({
     <Link
       href={href}
       className={cx(
-        'block px-4 py-2.5 text-[15px] text-ink-800 transition-colors hover:bg-ink-50 hover:text-ink-950',
+        'block px-4 py-2.5 text-[15px] text-ink-800 transition-colors hover:bg-ink-50 dark:hover:bg-surface-hover hover:text-ink-950',
+        'dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950',
         className,
       )}
     >
