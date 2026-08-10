@@ -5,20 +5,23 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { Skeleton, cx } from '@outlet/ui';
 import { useCurrentUser, useLogout } from '@/lib/hooks';
+import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 const NAV = [
-  { href: '/account', label: 'Overview' },
-  { href: '/account/orders', label: 'Orders' },
-  { href: '/account/returns', label: 'Returns & refunds' },
-  { href: '/account/addresses', label: 'Addresses' },
-  { href: '/account/profile', label: 'Personal information' },
-  { href: '/account/security', label: 'Password & security' },
-  { href: '/account/inbox', label: 'Notifications & inbox' },
-  { href: '/account/notifications', label: 'Notification settings' },
-  { href: '/wishlist', label: 'Wishlist' },
+  { href: '/account', labelKey: 'ui.navOverview' },
+  { href: '/account/orders', labelKey: 'ui.navOrders' },
+  { href: '/account/returns', labelKey: 'ui.navReturnsRefunds' },
+  { href: '/account/addresses', labelKey: 'ui.navAddresses' },
+  { href: '/account/profile', labelKey: 'ui.navPersonalInformation' },
+  { href: '/account/security', labelKey: 'ui.navPasswordSecurity' },
+  { href: '/account/inbox', labelKey: 'ui.navNotificationsInbox' },
+  { href: '/account/notifications', labelKey: 'ui.navNotificationSettings' },
+  { href: '/wishlist', labelKey: 'ui.navWishlist' },
 ];
 
 export default function AccountLayout({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
   const { data: me, isLoading } = useCurrentUser();
@@ -45,7 +48,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
   return (
     <div className="container-page py-6 lg:py-12">
       <div className="border-b border-line pb-5">
-        <p className="eyebrow">Your account</p>
+        <p className="eyebrow"><T id="ui.account" /></p>
         <h1 className="mt-2 text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
           {me.user.firstName} {me.user.lastName}
         </h1>
@@ -61,7 +64,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
             sibling — heading, panels — inherited that width and pushed the
             phone layout into a horizontal scroll. */}
         <nav
-          aria-label="Account"
+          aria-label={t('ui.account2')}
           className="min-w-0 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit"
         >
           <ul className="-mx-4 flex gap-1 overflow-x-auto scrollbar-none px-4 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
@@ -79,7 +82,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
                         : 'text-ink-600 hover:bg-ink-50 dark:hover:bg-surface-hover hover:text-ink-950',
                     )}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </Link>
                 </li>
               );
@@ -90,9 +93,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => logout.mutate()}
               className="px-2.5 text-sm text-ink-500 transition-colors hover:text-ink-950"
-            >
-              Sign out
-            </button>
+            ><T id="ui.signOut" /></button>
           </div>
         </nav>
 

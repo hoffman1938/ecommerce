@@ -12,6 +12,7 @@ import { track } from '@/lib/analytics';
 import { useCurrentUser } from '@/lib/hooks';
 import { Countdown } from '@/components/countdown';
 import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 const checkoutFormSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -177,7 +178,7 @@ export default function CheckoutPage() {
           <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
             <h2 className="mb-3 font-semibold">1 · Contact</h2>
             <label className="block text-sm">
-              <span className="mb-1 block font-medium text-ink-700">Email</span>
+              <span className="mb-1 block font-medium text-ink-700"><T id="ui.email" /></span>
               <input
                 type="email"
                 {...form.register('email')}
@@ -202,14 +203,10 @@ export default function CheckoutPage() {
               {field('shippingAddress.phone', 'Phone (optional)')}
             </div>
             {Object.keys(form.formState.errors.shippingAddress ?? {}).length > 0 ? (
-              <p className="mt-2 text-xs text-sale-500">
-                Please complete the highlighted address fields.
-              </p>
+              <p className="mt-2 text-xs text-sale-500"><T id="ui.pleaseCompleteHighlightedAddressFields" /></p>
             ) : null}
             <label className="mt-4 flex items-center gap-2 text-sm">
-              <input type="checkbox" {...form.register('billingSameAsShipping')} />
-              Billing address is the same as shipping
-            </label>
+              <input type="checkbox" {...form.register('billingSameAsShipping')} /><T id="ui.billingAddressSameAsShipping" /></label>
             {!billingSame ? (
               <p className="mt-2 text-xs text-ink-500">
                 Billing address entry uses the shipping fields above in this MVP — uncheck is noted
@@ -242,7 +239,7 @@ export default function CheckoutPage() {
               ))}
             </div>
             <label className="mt-4 block text-sm">
-              <span className="mb-1 block font-medium text-ink-700">Order note (optional)</span>
+              <span className="mb-1 block font-medium text-ink-700"><T id="ui.orderNoteOptional" /></span>
               <textarea
                 {...form.register('customerNote')}
                 rows={2}
@@ -277,7 +274,7 @@ export default function CheckoutPage() {
                 </div>
               ) : null}
               <div className="flex justify-between">
-                <dt className="text-ink-500">Shipping</dt>
+                <dt className="text-ink-500"><T id="ui.shipping" /></dt>
                 <dd>
                   {totals.shipping === 0
                     ? 'Free'
@@ -288,7 +285,7 @@ export default function CheckoutPage() {
                   rule, a step up in size, and the primary content colour —
                   everything above it is deliberately quieter. */}
               <div className="flex items-baseline justify-between border-t border-line pt-3">
-                <dt className="text-base font-semibold text-ink-950">Total</dt>
+                <dt className="text-base font-semibold text-ink-950"><T id="ui.total" /></dt>
                 <dd
                   data-numeric
                   data-testid="checkout-total"
@@ -307,9 +304,7 @@ export default function CheckoutPage() {
           >
             {submitting ? 'Creating payment…' : 'Continue to payment'}
           </button>
-          <p className="mt-3 text-xs text-ink-500">
-            Local development uses a mock payment provider — no real charges.
-          </p>
+          <p className="mt-3 text-xs text-ink-500"><T id="ui.localDevelopmentUsesMockPayment" /></p>
         </aside>
       </form>
     </div>

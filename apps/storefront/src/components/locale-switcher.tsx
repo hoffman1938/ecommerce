@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 const LOCALES = Object.keys(LOCALE_LABELS) as Locale[];
 
 export function LocaleSwitcher() {
-  const { locale, setLocale } = useI18n();
+  const { t, locale, setLocale  } = useI18n();
   const router = useRouter();
 
   const handleLocaleChange = (l: Locale) => {
@@ -16,7 +16,7 @@ export function LocaleSwitcher() {
   };
 
   return (
-    <div className="flex items-center gap-0.5" role="group" aria-label="Select language">
+    <div className="flex items-center gap-0.5" role="group" aria-label={t('ui.selectLanguage')}>
       {LOCALES.map((l, i) => (
         <button
           key={l}

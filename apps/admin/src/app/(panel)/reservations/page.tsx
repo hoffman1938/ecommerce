@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReservationAdminDto } from '@outlet/types';
 import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
+import { T } from '@/components/t';
 
 const STATUSES = [
   '',
@@ -53,10 +54,10 @@ export default function ReservationsPage() {
           <thead>
             <tr>
               <th>SKU</th>
-              <th>Product</th>
+              <th><T id="ui.product" /></th>
               <th className="text-right">Qty</th>
-              <th>Status</th>
-              <th>Customer</th>
+              <th><T id="ui.status" /></th>
+              <th><T id="ui.customer" /></th>
               <th>Expires</th>
               <th></th>
             </tr>
@@ -111,9 +112,7 @@ export default function ReservationsPage() {
             })}
             {data && data.items.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-gray-400">
-                  No reservations with this status.
-                </td>
+                <td colSpan={7} className="text-gray-400"><T id="ui.noReservationsWithThisStatus" /></td>
               </tr>
             ) : null}
           </tbody>

@@ -11,6 +11,7 @@ import type { InventoryRowDto, ReturnRowDto, SimulationStatusDto } from '@/lib/d
 import { RETURN_STATUS_LABELS } from '@/lib/demo/simulation';
 import { SCENARIOS } from '@/lib/scenarios';
 import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 /**
  * Simulation control center.
@@ -40,7 +41,7 @@ const RESET_TARGETS = [
 ] as const;
 
 export function QaConsole() {
-  const { money } = useI18n();
+  const { t, money  } = useI18n();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
@@ -98,9 +99,7 @@ export function QaConsole() {
           <span className="rounded-xs bg-warning-100 px-2 py-1 text-2xs font-bold uppercase tracking-[0.08em] text-warning-700">
             Sandbox
           </span>
-          <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">
-            Simulation control center
-          </h1>
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950"><T id="ui.simulationControlCenter" /></h1>
         </div>
         <p className="mt-2 max-w-2xl text-sm text-ink-600">
           Drive the simulated store into any state without waiting. Everything here changes
@@ -117,13 +116,13 @@ export function QaConsole() {
 
       {/* --- Clock ---------------------------------------------------------- */}
       <Panel
-        title="Time"
-        description="Advancing the clock ages reservations, campaign windows and fulfilment together."
+        title={t('ui.time')}
+        description={t('ui.advancingClockAgesReservationsCampaign')}
       >
         <dl className="mb-4 grid gap-3 sm:grid-cols-3">
-          <Stat label="Simulated now" value={formatStamp(status.data?.simulatedNow)} />
-          <Stat label="Real now" value={formatStamp(status.data?.realNow)} />
-          <Stat label="Offset" value={offsetLabel} />
+          <Stat label={t('ui.simulatedNow')} value={formatStamp(status.data?.simulatedNow)} />
+          <Stat label={t('ui.realNow')} value={formatStamp(status.data?.realNow)} />
+          <Stat label={t('ui.offset')} value={offsetLabel} />
         </dl>
         <div className="flex flex-wrap gap-2">
           {TIME_JUMPS.map((jump) => (
@@ -142,16 +141,14 @@ export function QaConsole() {
             variant="ghost"
             size="sm"
             onClick={() => run.mutate({ path: '/simulation/reset-time' })}
-          >
-            Reset to real time
-          </Button>
+          ><T id="ui.resetRealTime" /></Button>
         </div>
       </Panel>
 
       {/* --- Scenarios ------------------------------------------------------ */}
       <Panel
-        title="Scenarios"
-        description="Step-by-step routes through the flows that are awkward to reach by hand."
+        title={t('ui.scenarios')}
+        description={t('ui.stepByStepRoutesThrough')}
       >
         <ul className="grid gap-4 sm:grid-cols-2">
           {SCENARIOS.map((scenario) => (
@@ -172,9 +169,7 @@ export function QaConsole() {
                 <Link
                   href={scenario.startHref}
                   className="mt-3 inline-block text-xs font-medium text-ink-900 underline underline-offset-2 hover:text-ink-950"
-                >
-                  Start scenario →
-                </Link>
+                ><T id="ui.startScenario" /></Link>
               ) : null}
             </li>
           ))}
@@ -183,15 +178,13 @@ export function QaConsole() {
 
       {/* --- Orders --------------------------------------------------------- */}
       <Panel
-        title="Orders"
+        title={t('ui.orders')}
         description="Force fulfilment transitions, fail a delivery, or cancel. Sign in to see orders placed while signed in."
       >
         {(orders.data ?? []).length === 0 ? (
           <p className="text-sm text-ink-500">
             No orders yet.{' '}
-            <Link href="/products" className="underline underline-offset-2">
-              Place one
-            </Link>{' '}
+            <Link href="/products" className="underline underline-offset-2"><T id="ui.placeOne" /></Link>{' '}
             to use these controls.
           </p>
         ) : (
@@ -230,7 +223,7 @@ export function QaConsole() {
                     }}
                     className="w-40"
                   >
-                    <option value="">Jump to stage…</option>
+                    <option value=""><T id="ui.jumpStage" /></option>
                     {STAGES.map((stage) => (
                       <option key={stage} value={stage}>
                         {stage}
@@ -258,9 +251,7 @@ export function QaConsole() {
                         body: { order: order.orderNumber },
                       })
                     }
-                  >
-                    Fail delivery
-                  </Button>
+                  ><T id="ui.failDelivery" /></Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -282,13 +273,11 @@ export function QaConsole() {
 
       {/* --- Returns -------------------------------------------------------- */}
       <Panel
-        title="Returns & refunds"
+        title={t('ui.returnsRefunds')}
         description="Walk a return through review, approval, receipt and refund. The refund and restock only happen at the final step."
       >
         {(returns.data ?? []).length === 0 ? (
-          <p className="text-sm text-ink-500">
-            No returns yet. Deliver an order, then request one from its order page.
-          </p>
+          <p className="text-sm text-ink-500"><T id="ui.noReturnsYetDeliverOrder" /></p>
         ) : (
           <ul className="divide-y divide-ink-100 dark:divide-line">
             {(returns.data ?? []).map((request) => (
@@ -342,8 +331,8 @@ export function QaConsole() {
 
       {/* --- Inventory ------------------------------------------------------ */}
       <Panel
-        title="Inventory"
-        description="Set a variant's availability to reproduce low-stock and sold-out states."
+        title={t('ui.inventory')}
+        description={t('ui.setVariantAvailability')}
       >
         <div className="max-h-80 overflow-y-auto">
           <table className="w-full text-sm">
@@ -413,11 +402,11 @@ export function QaConsole() {
 
       {/* --- Event log ------------------------------------------------------ */}
       <Panel
-        title="Event log"
-        description="Every state change the sandbox has recorded, newest first."
+        title={t('ui.eventLog')}
+        description={t('ui.everyStateChangeSandboxHas')}
       >
         {(events.data ?? []).length === 0 ? (
-          <p className="text-sm text-ink-500">Nothing recorded yet.</p>
+          <p className="text-sm text-ink-500"><T id="ui.nothingRecordedYet" /></p>
         ) : (
           <ul className="max-h-96 divide-y divide-ink-100 dark:divide-line overflow-y-auto">
             {(events.data ?? []).map((event) => (
@@ -442,8 +431,8 @@ export function QaConsole() {
 
       {/* --- Reset ---------------------------------------------------------- */}
       <Panel
-        title="Reset test data"
-        description="Clearing orders also returns the stock they consumed."
+        title={t('ui.resetTestData')}
+        description={t('ui.clearingOrdersAlsoReturnsStock')}
       >
         <div className="flex flex-wrap gap-2">
           {RESET_TARGETS.map((target) => (

@@ -12,6 +12,7 @@ import { ProductGrid, ProductGridSkeleton } from './product-card';
 import { Recommendations } from './recommendations';
 import { ActiveFilters, FilterPanel, SortSelect, useFilters } from './filter-panel';
 import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 const ALLOWED_FILTERS = [
   'q',
@@ -58,12 +59,19 @@ function toQueryString(params: ReadableParams, fixed: Record<string, string>): s
  */
 function ProductListingInner({
   title,
+  titleKey,
   fixedFilters = {},
   basePath,
   titleFromQueryParam,
   audience,
 }: {
-  title: string;
+  title?: string;
+  /**
+   * Translation key for the heading. Statically exported pages render on the
+   * server, where there is no locale context to read, so they hand the key down
+   * and this client component resolves it.
+   */
+  titleKey?: string;
   fixedFilters?: Record<string, string>;
   basePath: string;
   titleFromQueryParam?: string;
@@ -77,7 +85,8 @@ function ProductListingInner({
   const queryString = toQueryString(searchParams, fixedFilters);
 
   const term = titleFromQueryParam ? searchParams.get(titleFromQueryParam) : null;
-  const resolvedTitle = term ? `“${term}”` : title;
+  const heading = titleKey ? t(titleKey) : (title ?? '');
+  const resolvedTitle = term ? `“${term}”` : heading;
 
   const {
     data: result,
@@ -213,6 +222,7 @@ function Pagination({
   totalPages: number;
   buildPageLink: (target: number) => string;
 }) {
+  const { t } = useI18n();
   const pages: Array<number | 'gap'> = [];
   const push = (n: number) => {
     if (n >= 1 && n <= totalPages && !pages.includes(n)) pages.push(n);
@@ -229,13 +239,13 @@ function Pagination({
   return (
     <nav
       className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5 lg:mt-12 lg:pt-6"
-      aria-label="Pagination"
+      aria-label={t('ui.pagination')}
     >
       {page > 1 ? (
         <Link href={buildPageLink(page - 1)} rel="prev" className={stepClass}>
           <span aria-hidden="true">←</span>
-          <span className="ml-1.5 hidden sm:inline">Previous</span>
-          <span className="sr-only">Previous page</span>
+          <span className="ml-1.5 hidden sm:inline"><T id="ui.previous" /></span>
+          <span className="sr-only"><T id="ui.previousPage" /></span>
         </Link>
       ) : (
         <span />
@@ -270,9 +280,9 @@ function Pagination({
 
       {page < totalPages ? (
         <Link href={buildPageLink(page + 1)} rel="next" className={stepClass}>
-          <span className="mr-1.5 hidden sm:inline">Next</span>
+          <span className="mr-1.5 hidden sm:inline"><T id="ui.next" /></span>
           <span aria-hidden="true">→</span>
-          <span className="sr-only">Next page</span>
+          <span className="sr-only"><T id="ui.nextPage" /></span>
         </Link>
       ) : (
         <span />
@@ -336,29 +346,28 @@ function ClearFiltersButton() {
   const { clearAll, activeCount } = useFilters();
   if (activeCount === 0) return null;
   return (
-    <Button variant="secondary" onClick={clearAll}>
-      Clear all filters
-    </Button>
+    <Button variant="secondary" onClick={clearAll}><T id="ui.clearAllFilters" /></Button>
   );
 }
 
 function FilterDrawer({ onClose, total }: { onClose: () => void; total?: number }) {
+  const { t } = useI18n();
   const { clearAll, activeCount } = useFilters();
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
       <button
         type="button"
-        aria-label="Close filters"
+        aria-label={t('ui.closeFilters')}
         onClick={onClose}
         className="absolute inset-0 animate-fade-in bg-scrim-950/50 dark:bg-scrim-950/70"
       />
       <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] animate-slide-up flex-col rounded-t-xl bg-ink-25 shadow-overlay dark:border-t dark:border-line dark:bg-surface-raised">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-4">
-          <h2 className="text-base font-semibold text-ink-950">Filters</h2>
+          <h2 className="text-base font-semibold text-ink-950"><T id="ui.filters" /></h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close filters"
+            aria-label={t('ui.closeFilters')}
             className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded text-ink-700 transition-colors hover:bg-ink-50 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950"
           >
             <CloseIcon className="h-5 w-5" />
@@ -374,9 +383,7 @@ function FilterDrawer({ onClose, total }: { onClose: () => void; total?: number 
           )}
         >
           {activeCount > 0 ? (
-            <Button variant="secondary" onClick={clearAll} className="flex-1">
-              Clear all
-            </Button>
+            <Button variant="secondary" onClick={clearAll} className="flex-1"><T id="ui.clearAll" /></Button>
           ) : null}
           <Button onClick={onClose} className="flex-1">
             {typeof total === 'number' ? `Show ${total} products` : 'Show results'}
@@ -389,7 +396,8 @@ function FilterDrawer({ onClose, total }: { onClose: () => void; total?: number 
 
 /** `useSearchParams` needs a Suspense boundary to be statically exportable. */
 export function ProductListing(props: {
-  title: string;
+  title?: string;
+  titleKey?: string;
   fixedFilters?: Record<string, string>;
   basePath: string;
   titleFromQueryParam?: string;
@@ -401,7 +409,7 @@ export function ProductListing(props: {
         <div className="container-page py-6 lg:py-10">
           <div className="border-b border-line pb-5">
             <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
-              {props.title}
+              {props.title ?? ''}
             </h1>
             <p className="mt-1.5 text-sm text-ink-500">…</p>
           </div>

@@ -1,4 +1,5 @@
 'use client';
+import { T } from '@/components/t';
 
 export interface CampaignFormValues {
   title: string;
@@ -102,7 +103,7 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Starts at</span>
+          <span className="mb-1 block font-medium"><T id="ui.startsAt" /></span>
           <input
             type="datetime-local"
             required
@@ -113,7 +114,7 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Ends at</span>
+          <span className="mb-1 block font-medium"><T id="ui.endsAt" /></span>
           <input
             type="datetime-local"
             required
@@ -124,7 +125,7 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Status</span>
+          <span className="mb-1 block font-medium"><T id="ui.status" /></span>
           <select
             value={values.status}
             onChange={(e) => set('status', e.target.value as CampaignFormValues['status'])}
@@ -136,7 +137,7 @@ export function CampaignForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Display order</span>
+          <span className="mb-1 block font-medium"><T id="ui.displayOrder" /></span>
           <input
             type="number"
             value={values.position}
@@ -145,7 +146,7 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm sm:col-span-2">
-          <span className="mb-1 block font-medium">Short description</span>
+          <span className="mb-1 block font-medium"><T id="ui.shortDescription" /></span>
           <input
             value={values.shortDescription}
             onChange={(e) => set('shortDescription', e.target.value)}
@@ -153,7 +154,7 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm sm:col-span-2">
-          <span className="mb-1 block font-medium">Full description</span>
+          <span className="mb-1 block font-medium"><T id="ui.fullDescription" /></span>
           <textarea
             rows={3}
             value={values.description}
@@ -166,9 +167,7 @@ export function CampaignForm({
             type="checkbox"
             checked={values.isVisible}
             onChange={(e) => set('isVisible', e.target.checked)}
-          />
-          Visible on the storefront
-        </label>
+          /><T id="ui.visibleStorefront" /></label>
       </div>
       <button
         data-testid="save-campaign"

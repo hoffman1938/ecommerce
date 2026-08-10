@@ -6,6 +6,7 @@ import type { DashboardStatsDto } from '@outlet/types';
 import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 function StatCard({ label, value, href }: { label: string; value: string; href?: string }) {
   const content = (
@@ -18,39 +19,39 @@ function StatCard({ label, value, href }: { label: string; value: string; href?:
 }
 
 export default function DashboardPage() {
-  const { money } = useI18n();
+  const { t, money  } = useI18n();
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get<DashboardStatsDto>('/admin/dashboard'),
     refetchInterval: 60_000,
   });
 
-  if (isLoading || !stats) return <p className="text-gray-500">Loading dashboard…</p>;
+  if (isLoading || !stats) return <p className="text-gray-500"><T id="ui.loadingDashboard" /></p>;
 
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Revenue" value={money(stats.revenueMinor)} />
-        <StatCard label="Orders" value={String(stats.orderCount)} href="/orders" />
-        <StatCard label="Avg. order value" value={money(stats.averageOrderValueMinor)} />
-        <StatCard label="Low stock SKUs" value={String(stats.lowStockCount)} href="/inventory" />
+        <StatCard label={t('ui.revenue')} value={money(stats.revenueMinor)} />
+        <StatCard label={t('ui.orders')} value={String(stats.orderCount)} href="/orders" />
+        <StatCard label={t('ui.avgOrderValue')} value={money(stats.averageOrderValueMinor)} />
+        <StatCard label={t('ui.lowStockSkus')} value={String(stats.lowStockCount)} href="/inventory" />
         <StatCard
-          label="Active reservations"
+          label={t('ui.activeReservations')}
           value={String(stats.activeReservationCount)}
           href="/reservations"
         />
-        <StatCard label="Expired reservations" value={String(stats.expiredReservationCount)} />
-        <StatCard label="Failed payments" value={String(stats.failedPaymentCount)} />
-        <StatCard label="Open returns" value={String(stats.openReturnCount)} href="/returns" />
+        <StatCard label={t('ui.expiredReservations')} value={String(stats.expiredReservationCount)} />
+        <StatCard label={t('ui.failedPayments')} value={String(stats.failedPaymentCount)} />
+        <StatCard label={t('ui.openReturns')} value={String(stats.openReturnCount)} href="/returns" />
         <StatCard
-          label="Active campaigns"
+          label={t('ui.activeCampaigns')}
           value={String(stats.activeCampaignCount)}
           href="/campaigns"
         />
         <StatCard
-          label="Upcoming campaigns"
+          label={t('ui.upcomingCampaigns')}
           value={String(stats.upcomingCampaignCount)}
           href="/campaigns"
         />
@@ -58,14 +59,14 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="mb-3 font-semibold">Recent orders</h2>
+          <h2 className="mb-3 font-semibold"><T id="ui.recentOrders" /></h2>
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Order</th>
-                <th>Customer</th>
-                <th>Status</th>
-                <th className="text-right">Total</th>
+                <th><T id="ui.order" /></th>
+                <th><T id="ui.customer" /></th>
+                <th><T id="ui.status" /></th>
+                <th className="text-right"><T id="ui.total" /></th>
               </tr>
             </thead>
             <tbody>
@@ -93,12 +94,12 @@ export default function DashboardPage() {
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="mb-3 font-semibold">Low stock</h2>
+          <h2 className="mb-3 font-semibold"><T id="ui.lowStock" /></h2>
           <table className="admin-table">
             <thead>
               <tr>
                 <th>SKU</th>
-                <th>Product</th>
+                <th><T id="ui.product" /></th>
                 <th className="text-right">Available</th>
               </tr>
             </thead>
@@ -116,9 +117,7 @@ export default function DashboardPage() {
               ))}
               {stats.lowStockVariants.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="text-gray-400">
-                    All good — nothing running low.
-                  </td>
+                  <td colSpan={3} className="text-gray-400"><T id="ui.allGoodNothingRunningLow" /></td>
                 </tr>
               ) : null}
             </tbody>
@@ -126,13 +125,13 @@ export default function DashboardPage() {
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="mb-3 font-semibold">Sales by day (14 days)</h2>
+          <h2 className="mb-3 font-semibold"><T id="ui.salesByDay14Days" /></h2>
           <table className="admin-table">
             <thead>
               <tr>
                 <th>Day</th>
-                <th className="text-right">Orders</th>
-                <th className="text-right">Revenue</th>
+                <th className="text-right"><T id="ui.orders" /></th>
+                <th className="text-right"><T id="ui.revenue" /></th>
               </tr>
             </thead>
             <tbody>
@@ -145,9 +144,7 @@ export default function DashboardPage() {
               ))}
               {stats.salesByDay.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="text-gray-400">
-                    No sales yet.
-                  </td>
+                  <td colSpan={3} className="text-gray-400"><T id="ui.noSalesYet" /></td>
                 </tr>
               ) : null}
             </tbody>
@@ -155,13 +152,13 @@ export default function DashboardPage() {
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="mb-3 font-semibold">Sales by brand &amp; campaign</h2>
+          <h2 className="mb-3 font-semibold"><T id="ui.salesByBrandAmpCampaign" /></h2>
           <table className="admin-table">
             <thead>
               <tr>
                 <th>Brand</th>
                 <th className="text-right">Units</th>
-                <th className="text-right">Revenue</th>
+                <th className="text-right"><T id="ui.revenue" /></th>
               </tr>
             </thead>
             <tbody>
@@ -180,7 +177,7 @@ export default function DashboardPage() {
                 <tr>
                   <th>Campaign</th>
                   <th className="text-right">Units</th>
-                  <th className="text-right">Revenue</th>
+                  <th className="text-right"><T id="ui.revenue" /></th>
                 </tr>
               </thead>
               <tbody>

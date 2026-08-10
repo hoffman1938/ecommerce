@@ -7,6 +7,7 @@ import type { OrderDto } from '@outlet/types';
 import { formatDate, Badge } from '@outlet/ui';
 import { api, API_BASE_URL, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 interface AdminOrderDetail extends OrderDto {
   internalNote: string | null;
@@ -29,7 +30,7 @@ interface AdminOrderDetail extends OrderDto {
 }
 
 export default function AdminOrderDetailPage() {
-  const { money } = useI18n();
+  const { t, money  } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +49,7 @@ export default function AdminOrderDetailPage() {
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-order', params.id] });
-  if (!order) return <p className="text-gray-500">Loading order…</p>;
+  if (!order) return <p className="text-gray-500"><T id="ui.loadingOrder" /></p>;
 
   const paidPayment = order.payments.find((p) => ['PAID', 'PARTIALLY_REFUNDED'].includes(p.status));
   const refundableMinor = paidPayment
@@ -85,9 +86,7 @@ export default function AdminOrderDetailPage() {
             target="_blank"
             rel="noreferrer"
             className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:border-gray-900"
-          >
-            Packing slip
-          </a>
+          ><T id="ui.packingSlip" /></a>
           <button
             type="button"
             onClick={async () => {
@@ -96,23 +95,21 @@ export default function AdminOrderDetailPage() {
                 .catch(() => undefined);
             }}
             className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:border-gray-900"
-          >
-            Resend email
-          </button>
+          ><T id="ui.resendEmail" /></button>
         </div>
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Items</h2>
+        <h2 className="mb-3 font-semibold"><T id="ui.items" /></h2>
         <table className="admin-table">
           <thead>
             <tr>
               <th>SKU</th>
-              <th>Item</th>
+              <th><T id="ui.item" /></th>
               <th className="text-right">Qty</th>
               <th className="text-right">Unit</th>
-              <th className="text-right">Total</th>
+              <th className="text-right"><T id="ui.total" /></th>
             </tr>
           </thead>
           <tbody>
@@ -148,7 +145,7 @@ export default function AdminOrderDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white p-5">
-          <h2 className="mb-3 font-semibold">Update fulfillment</h2>
+          <h2 className="mb-3 font-semibold"><T id="ui.updateFulfillment" /></h2>
           <form
             className="space-y-3"
             onSubmit={async (e) => {
@@ -180,13 +177,13 @@ export default function AdminOrderDetailPage() {
             {statusForm.status === 'SHIPPED' ? (
               <div className="grid grid-cols-2 gap-2">
                 <input
-                  placeholder="Carrier"
+                  placeholder={t('ui.carrier')}
                   value={statusForm.carrier}
                   onChange={(e) => setStatusForm((f) => ({ ...f, carrier: e.target.value }))}
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
                 <input
-                  placeholder="Tracking number"
+                  placeholder={t('ui.trackingNumber')}
                   value={statusForm.trackingNumber}
                   onChange={(e) => setStatusForm((f) => ({ ...f, trackingNumber: e.target.value }))}
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -195,7 +192,7 @@ export default function AdminOrderDetailPage() {
               </div>
             ) : null}
             <input
-              placeholder="Note (optional; required context for cancellations)"
+              placeholder={t('ui.noteOptionalRequiredContextCancellations')}
               value={statusForm.note}
               onChange={(e) => setStatusForm((f) => ({ ...f, note: e.target.value }))}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -203,9 +200,7 @@ export default function AdminOrderDetailPage() {
             <button
               data-testid="order-status-submit"
               className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-            >
-              Apply status
-            </button>
+            ><T id="ui.applyStatus" /></button>
           </form>
         </section>
 
@@ -253,7 +248,7 @@ export default function AdminOrderDetailPage() {
                 min={1}
                 max={refundableMinor}
                 required
-                placeholder="Amount in minor units"
+                placeholder={t('ui.amountMinorUnits')}
                 value={refundForm.amount}
                 onChange={(e) => setRefundForm((f) => ({ ...f, amount: e.target.value }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -261,7 +256,7 @@ export default function AdminOrderDetailPage() {
               />
               <input
                 required
-                placeholder="Reason"
+                placeholder={t('ui.reason')}
                 value={refundForm.reason}
                 onChange={(e) => setRefundForm((f) => ({ ...f, reason: e.target.value }))}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -270,9 +265,7 @@ export default function AdminOrderDetailPage() {
               <button
                 data-testid="refund-submit"
                 className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
-              >
-                Issue refund
-              </button>
+              ><T id="ui.issueRefund" /></button>
             </form>
           ) : (
             <p className="text-sm text-gray-500">
@@ -283,7 +276,7 @@ export default function AdminOrderDetailPage() {
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">History &amp; notes</h2>
+        <h2 className="mb-3 font-semibold"><T id="ui.historyAmpNotes" /></h2>
         <ul className="space-y-1 text-sm">
           {order.statusHistory.map((entry) => (
             <li key={entry.id} className="text-gray-600">
@@ -312,7 +305,7 @@ export default function AdminOrderDetailPage() {
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Add internal note…"
+            placeholder={t('ui.addInternalNote')}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
           <button className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium hover:bg-gray-200">

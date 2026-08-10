@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { T } from '@/components/t';
 import {
   CampaignForm,
   EMPTY_CAMPAIGN,
@@ -17,7 +18,7 @@ export default function NewCampaignPage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="mb-4 text-2xl font-bold">New campaign</h1>
+      <h1 className="mb-4 text-2xl font-bold"><T id="ui.newCampaign" /></h1>
       <CampaignForm
         values={values}
         onChange={setValues}

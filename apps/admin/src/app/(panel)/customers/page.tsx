@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
+import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 interface CustomerRow {
   id: string;
@@ -18,6 +20,7 @@ interface CustomerRow {
 }
 
 export default function CustomersPage() {
+  const { t } = useI18n();
   const [q, setQ] = useState('');
   const { data } = useQuery({
     queryKey: ['admin-customers', q],
@@ -33,15 +36,15 @@ export default function CustomersPage() {
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search by email or name…"
+        placeholder={t('ui.searchByEmailName')}
         className="mb-4 w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Customer</th>
-              <th>Status</th>
+              <th><T id="ui.customer" /></th>
+              <th><T id="ui.status" /></th>
               <th>Verified</th>
               <th className="text-right">Orders</th>
               <th>Joined</th>

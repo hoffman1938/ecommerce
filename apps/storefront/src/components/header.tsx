@@ -32,6 +32,7 @@ import { useI18n } from '@/lib/i18n';
 import { LocaleSwitcher } from './locale-switcher';
 import { ThemeToggle } from './theme';
 import { CartDrawer } from './cart-drawer';
+import { T } from '@/components/t';
 
 /**
  * The shop's information architecture, declared once.
@@ -97,10 +98,11 @@ function categoryLabel(key: string, t: (k: string) => string): string {
 }
 
 function Wordmark({ className }: { className?: string }) {
+  const { t } = useI18n();
   return (
     <Link
       href="/"
-      aria-label="Outlet Marketplace — home"
+      aria-label={t('ui.outletMarketplaceHome')}
       className={cx(
         'shrink-0 text-[1.0625rem] font-extrabold uppercase tracking-[-0.02em] text-ink-950',
         // A heavy uppercase wordmark gains apparent weight light-on-dark, so
@@ -281,7 +283,7 @@ function SearchForm({
         <div
           id="search-suggestions"
           role="listbox"
-          aria-label="Search suggestions"
+          aria-label={t('ui.searchSuggestions')}
           className="surface-overlay absolute left-0 right-0 top-full z-50 mt-1.5 max-h-[70vh] animate-slide-up overflow-y-auto py-1.5"
         >
           {options.length === 0 ? (
@@ -291,7 +293,7 @@ function SearchForm({
           ) : (
             <>
               {data!.products.length > 0 ? (
-                <SuggestionGroup label="Products">
+                <SuggestionGroup label={t('ui.products')}>
                   {data!.products.map((product) => {
                     const index = options.findIndex((o) => o.key === `p:${product.slug}`);
                     return (
@@ -321,7 +323,7 @@ function SearchForm({
               ) : null}
 
               {data!.brands.length > 0 ? (
-                <SuggestionGroup label="Brands">
+                <SuggestionGroup label={t('ui.brands')}>
                   {data!.brands.map((brand) => {
                     const index = options.findIndex((o) => o.key === `b:${brand.slug}`);
                     return (
@@ -340,7 +342,7 @@ function SearchForm({
               ) : null}
 
               {data!.categories.length > 0 ? (
-                <SuggestionGroup label="Categories">
+                <SuggestionGroup label={t('ui.categories')}>
                   {data!.categories.map((category) => {
                     const index = options.findIndex((o) => o.key === `c:${category.slug}`);
                     return (
@@ -635,7 +637,7 @@ export function Header() {
           hidden behind the hamburger, so browsing stays one tap away. */}
       <nav
         ref={navRef}
-        aria-label="Categories"
+        aria-label={t('ui.categories')}
         className="relative hidden border-t border-ink-100 dark:border-line md:block"
         onMouseLeave={scheduleClose}
       >
@@ -755,7 +757,7 @@ function CategoryPanel({
       </div>
 
       <div>
-        <p className="eyebrow mb-3">Find fast</p>
+        <p className="eyebrow mb-3"><T id="ui.findFast" /></p>
         <ul className="space-y-2 text-sm">
           {QUICK_LINKS.map((link) => (
             <li key={link.href}>
@@ -772,7 +774,7 @@ function CategoryPanel({
       </div>
 
       <div>
-        <p className="eyebrow mb-3">Brands</p>
+        <p className="eyebrow mb-3"><T id="ui.brands" /></p>
         <ul className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           {FEATURED_BRANDS.map((brand) => (
             <li key={brand.slug}>
@@ -794,14 +796,10 @@ function CategoryPanel({
         className="group flex flex-col justify-between rounded bg-accent p-5 text-accent-contrast dark:rounded-lg"
       >
         <div>
-          <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-accent-contrast/60">
-            Live campaigns
-          </p>
-          <p className="mt-2 text-lg font-bold leading-tight">Short windows, limited stock.</p>
+          <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-accent-contrast/60"><T id="ui.liveCampaigns" /></p>
+          <p className="mt-2 text-lg font-bold leading-tight"><T id="ui.shortWindowsLimitedStock" /></p>
         </div>
-        <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium">
-          See what’s on
-          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium"><T id="ui.seeWhatS" /><ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </span>
       </Link>
     </div>

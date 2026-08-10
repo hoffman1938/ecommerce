@@ -7,6 +7,7 @@ import { track } from '@/lib/analytics';
 import { rememberViewedProduct, recentlyViewedSlugs } from '@/lib/hooks';
 import { ProductGrid } from './product-card';
 import { Section, SectionHeader } from './section';
+import { useI18n } from '@/lib/i18n';
 
 /** Records a product view in localStorage and emits the analytics event. */
 export function TrackProductView({
@@ -34,6 +35,7 @@ export function TrackProductView({
 }
 
 export function RecentlyViewed({ excludeSlug }: { excludeSlug?: string }) {
+  const { t } = useI18n();
   const [products, setProducts] = useState<ProductDetailDto[]>([]);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function RecentlyViewed({ excludeSlug }: { excludeSlug?: string }) {
 
   return (
     <Section>
-      <SectionHeader title="Recently viewed" />
+      <SectionHeader title={t('ui.recentlyViewed')} />
       {/* Reuses the catalog tile so a product looks identical wherever it
           appears, rather than having a second, smaller card style. */}
       <ProductGrid products={products} />

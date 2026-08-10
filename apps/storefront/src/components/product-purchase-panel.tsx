@@ -18,6 +18,7 @@ import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 import { track } from '@/lib/analytics';
 import { SizeGuide } from '@/components/size-guide';
+import { T } from '@/components/t';
 
 const MAX_QUANTITY = 5;
 /** Below this, a size is called out as nearly gone. Backed by real inventory. */
@@ -385,9 +386,7 @@ export function ProductPurchasePanel({
         <TrustRow icon={<ReturnIcon className="h-[18px] w-[18px]" />} title={t('product.freeReturns')}>
           30 days from delivery. Request a return from your order page — no reason needed.
         </TrustRow>
-        <TrustRow icon={<ShieldIcon className="h-[18px] w-[18px]" />} title={t('product.secureCheckout')}>
-          Card or cash on delivery. Card details are never stored by this shop.
-        </TrustRow>
+        <TrustRow icon={<ShieldIcon className="h-[18px] w-[18px]" />} title={t('product.secureCheckout')}><T id="ui.cardCashDeliveryCardDetails" /></TrustRow>
       </ul>
 
       <p className="mt-5 text-xs leading-relaxed text-ink-500">
@@ -427,9 +426,7 @@ export function ProductPurchasePanel({
             disabled={soldOut}
             tabIndex={ctaOffscreen ? 0 : -1}
             className="shrink-0 px-8"
-          >
-            Add to bag
-          </Button>
+          ><T id="ui.addBag" /></Button>
         </div>
       </div>
     </div>

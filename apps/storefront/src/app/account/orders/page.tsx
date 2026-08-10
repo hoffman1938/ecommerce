@@ -6,6 +6,7 @@ import type { OrderDto } from '@outlet/types';
 import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 export default function OrdersPage() {
   const { money } = useI18n();
@@ -16,11 +17,11 @@ export default function OrdersPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">Order history</h1>
+      <h1 className="mb-4 text-2xl font-bold"><T id="ui.orderHistory" /></h1>
       {isLoading ? (
-        <p className="text-ink-500">Loading…</p>
+        <p className="text-ink-500"><T id="ui.loading" /></p>
       ) : !orders || orders.length === 0 ? (
-        <p className="text-ink-500">No orders yet.</p>
+        <p className="text-ink-500"><T id="ui.noOrdersYet" /></p>
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (

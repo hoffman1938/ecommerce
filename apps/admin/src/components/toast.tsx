@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { CloseIcon, cx } from '@outlet/ui';
+import { useI18n } from '@/lib/i18n';
 
 type ToastTone = 'success' | 'error' | 'info';
 
@@ -110,6 +111,7 @@ function ToastViewport({
   toasts: Toast[];
   onDismiss: (id: number) => void;
 }) {
+  const { t } = useI18n();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   if (!mounted || toasts.length === 0) return null;
@@ -148,7 +150,7 @@ function ToastViewport({
           <button
             type="button"
             onClick={() => onDismiss(toast.id)}
-            aria-label="Dismiss notification"
+            aria-label={t('ui.dismissNotification')}
             className="-mr-1 shrink-0 rounded p-0.5 opacity-60 transition-opacity hover:opacity-100"
           >
             <CloseIcon className="h-4 w-4" />

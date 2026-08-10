@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { cx, formatCountdown } from '@outlet/ui';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Visual countdown to a server-provided expiration timestamp. The server is
@@ -31,6 +32,7 @@ export function Countdown({
    */
   tone?: 'default' | 'inverse';
 }) {
+  const { t } = useI18n();
   const [secondsLeft, setSecondsLeft] = useState(() =>
     Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)),
   );
@@ -61,7 +63,7 @@ export function Countdown({
         className,
       )}
       data-testid="reservation-countdown"
-      title="Reserved until the timer runs out"
+      title={t('ui.reservedUntilTimerRunsOut')}
     >
       {formatCountdown(secondsLeft)}
     </span>

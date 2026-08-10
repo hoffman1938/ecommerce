@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { T } from '@/components/t';
 
 export default function SecurityPage() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -10,10 +11,8 @@ export default function SecurityPage() {
 
   return (
     <div className="max-w-md">
-      <h1 className="text-2xl font-bold">Password &amp; security</h1>
-      <p className="mt-1 text-sm text-ink-500">
-        Changing your password signs out every other device.
-      </p>
+      <h1 className="text-2xl font-bold"><T id="ui.passwordAmpSecurity" /></h1>
+      <p className="mt-1 text-sm text-ink-500"><T id="ui.changingPasswordSignsOutEvery" /></p>
       {message ? (
         <p className={`mt-4 text-sm ${message.ok ? 'text-success-700' : 'text-sale-500'}`}>
           {message.text}
@@ -38,7 +37,7 @@ export default function SecurityPage() {
         }}
       >
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Current password</span>
+          <span className="mb-1 block font-medium"><T id="ui.currentPassword" /></span>
           <input
             type="password"
             required
@@ -48,7 +47,7 @@ export default function SecurityPage() {
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">New password</span>
+          <span className="mb-1 block font-medium"><T id="ui.newPassword" /></span>
           <input
             type="password"
             required
@@ -58,9 +57,7 @@ export default function SecurityPage() {
             className="w-full rounded border border-ink-300 px-3 py-2"
           />
         </label>
-        <button className="rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-ink-800">
-          Change password
-        </button>
+        <button className="rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-ink-800"><T id="ui.changePassword" /></button>
       </form>
     </div>
   );

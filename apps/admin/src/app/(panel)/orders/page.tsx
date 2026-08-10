@@ -7,6 +7,7 @@ import type { OrderDto } from '@outlet/types';
 import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 const STATUSES = [
   '',
@@ -23,7 +24,7 @@ const STATUSES = [
 ];
 
 export default function OrdersAdminPage() {
-  const { money } = useI18n();
+  const { t, money  } = useI18n();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -46,7 +47,7 @@ export default function OrdersAdminPage() {
             setQ(e.target.value);
             setPage(1);
           }}
-          placeholder="Search order number or email…"
+          placeholder={t('ui.searchOrderNumberEmail')}
           className="w-72 rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <select
@@ -69,11 +70,11 @@ export default function OrdersAdminPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Order</th>
-              <th>Customer</th>
-              <th>Status</th>
-              <th>Payment</th>
-              <th className="text-right">Total</th>
+              <th><T id="ui.order" /></th>
+              <th><T id="ui.customer" /></th>
+              <th><T id="ui.status" /></th>
+              <th><T id="ui.payment" /></th>
+              <th className="text-right"><T id="ui.total" /></th>
             </tr>
           </thead>
           <tbody>
@@ -144,9 +145,7 @@ export default function OrdersAdminPage() {
             disabled={page >= data.totalPages}
             onClick={() => setPage((p) => p + 1)}
             className="rounded border px-3 py-1.5 disabled:opacity-40"
-          >
-            Next →
-          </button>
+          ><T id="ui.next2" /></button>
         </div>
       ) : null}
     </div>

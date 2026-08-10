@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 import {
   CampaignForm,
   EMPTY_CAMPAIGN,
@@ -70,7 +71,7 @@ export default function EditCampaignPage() {
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-campaign', params.id] });
 
-  if (!campaign) return <p className="text-gray-500">Loading campaign…</p>;
+  if (!campaign) return <p className="text-gray-500"><T id="ui.loadingCampaign" /></p>;
 
   return (
     <div className="max-w-3xl space-y-8">
@@ -95,13 +96,13 @@ export default function EditCampaignPage() {
       />
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Assigned products</h2>
+        <h2 className="mb-3 font-semibold"><T id="ui.assignedProducts" /></h2>
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Product</th>
-              <th className="text-right">Outlet price</th>
-              <th className="text-right">Campaign price</th>
+              <th><T id="ui.product" /></th>
+              <th className="text-right"><T id="ui.outletPrice" /></th>
+              <th className="text-right"><T id="ui.campaignPrice" /></th>
               <th></th>
             </tr>
           </thead>
@@ -124,9 +125,7 @@ export default function EditCampaignPage() {
                       refresh();
                     }}
                     className="text-xs text-red-600 underline"
-                  >
-                    Remove
-                  </button>
+                  ><T id="ui.remove" /></button>
                 </td>
               </tr>
             ))}
@@ -154,14 +153,14 @@ export default function EditCampaignPage() {
           }}
         >
           <label className="block text-sm">
-            <span className="mb-1 block text-xs font-medium text-gray-500">Product</span>
+            <span className="mb-1 block text-xs font-medium text-gray-500"><T id="ui.product" /></span>
             <select
               value={assignForm.productId}
               onChange={(e) => setAssignForm((f) => ({ ...f, productId: e.target.value }))}
               className="w-64 rounded-md border border-gray-300 px-2 py-1.5"
               data-testid="assign-product"
             >
-              <option value="">Select a product…</option>
+              <option value=""><T id="ui.selectProduct" /></option>
               {(products?.items ?? []).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -170,9 +169,7 @@ export default function EditCampaignPage() {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block text-xs font-medium text-gray-500">
-              Campaign price (minor units, optional)
-            </span>
+            <span className="mb-1 block text-xs font-medium text-gray-500"><T id="ui.campaignPriceMinorUnitsOptional" /></span>
             <input
               type="number"
               min={1}
@@ -185,9 +182,7 @@ export default function EditCampaignPage() {
           <button
             data-testid="assign-submit"
             className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-          >
-            Assign product
-          </button>
+          ><T id="ui.assignProduct" /></button>
         </form>
       </section>
     </div>

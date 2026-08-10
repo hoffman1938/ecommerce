@@ -5,6 +5,7 @@ import type { ReturnRequestDto } from '@outlet/types';
 import { formatDate, Badge } from '@outlet/ui';
 import { api } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
+import { T } from '@/components/t';
 
 const TONE: Record<string, 'gray' | 'green' | 'red' | 'yellow' | 'blue'> = {
   REQUESTED: 'yellow',
@@ -24,14 +25,12 @@ export default function ReturnsPage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-bold">Returns &amp; refunds</h1>
-      <p className="mb-4 text-sm text-ink-500">
-        Start a return from the order page of a shipped or delivered order.
-      </p>
+      <h1 className="mb-2 text-2xl font-bold"><T id="ui.returnsAmpRefunds" /></h1>
+      <p className="mb-4 text-sm text-ink-500"><T id="ui.startReturnFromOrderPage" /></p>
       {isLoading ? (
-        <p className="text-ink-500">Loading…</p>
+        <p className="text-ink-500"><T id="ui.loading" /></p>
       ) : !returns || returns.length === 0 ? (
-        <p className="text-ink-500">No return requests yet.</p>
+        <p className="text-ink-500"><T id="ui.noReturnRequestsYet" /></p>
       ) : (
         <div className="space-y-3">
           {returns.map((request) => (
