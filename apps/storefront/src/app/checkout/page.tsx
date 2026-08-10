@@ -281,9 +281,6 @@ export default function CheckoutPage() {
                     : money(totals.shipping)}
                 </dd>
               </div>
-              {/* The figure the whole page exists to state. It gets its own
-                  rule, a step up in size, and the primary content colour —
-                  everything above it is deliberately quieter. */}
               <div className="flex items-baseline justify-between border-t border-line pt-3">
                 <dt className="text-base font-semibold text-ink-950"><T id="ui.total" /></dt>
                 <dd

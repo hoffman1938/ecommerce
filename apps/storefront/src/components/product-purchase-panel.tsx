@@ -164,10 +164,7 @@ export function ProductPurchasePanel({
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span
           data-numeric
-          className={cx(
-            'price-now text-3xl',
-            product.discountPercent > 0 && 'price-now--reduced',
-          )}
+          className={cx('price-now text-3xl', product.discountPercent > 0 && 'price-now--reduced')}
         >
           {money(price)}
         </span>
