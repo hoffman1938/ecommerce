@@ -184,7 +184,10 @@ export default async function HomePage() {
               so the wrapper colour is a divider, not a surface. */}
           <dl className="grid gap-px border-t border-ink-950 bg-ink-200 pt-px dark:border-ink-700 dark:bg-line-strong sm:grid-cols-3">
             {PROPOSITIONS.map(([index, title, body]) => (
-              <div key={index as string} className="bg-ink-25 py-6 dark:bg-surface sm:px-5 sm:first:pl-0">
+              <div
+                key={index as string}
+                className="bg-ink-25 py-6 dark:bg-surface sm:px-5 sm:first:pl-0"
+              >
                 <span className="eyebrow">{index as string}</span>
                 <dt className="mt-2 text-base font-semibold text-ink-950">{title}</dt>
                 <dd className="mt-1 text-sm leading-relaxed text-ink-600">{body}</dd>

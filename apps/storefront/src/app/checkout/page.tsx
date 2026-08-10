@@ -177,11 +177,7 @@ export default function CheckoutPage() {
             <h2 className="mb-3 font-semibold">1 · Contact</h2>
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink-700">Email</span>
-              <input
-                type="email"
-                {...form.register('email')}
-                className="field-input"
-              />
+              <input type="email" {...form.register('email')} className="field-input" />
               {form.formState.errors.email ? (
                 <span className="text-xs text-sale-500">{form.formState.errors.email.message}</span>
               ) : null}
@@ -242,11 +238,7 @@ export default function CheckoutPage() {
             </div>
             <label className="mt-4 block text-sm">
               <span className="mb-1 block font-medium text-ink-700">Order note (optional)</span>
-              <textarea
-                {...form.register('customerNote')}
-                rows={2}
-                className="field-input"
-              />
+              <textarea {...form.register('customerNote')} rows={2} className="field-input" />
             </label>
           </section>
         </div>
