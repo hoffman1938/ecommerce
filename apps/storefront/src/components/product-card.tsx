@@ -55,7 +55,7 @@ export function ProductCard({
         // The dark-only card. `-translate-y-0.5` is the whole lift: enough to
         // register as a response, small enough that a 24-tile grid does not
         // ripple when the pointer crosses it.
-        'dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-2.5',
+        'dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-1.5 dark:sm:p-2.5',
         'dark:transition-[transform,background-color,border-color,box-shadow] dark:duration-200 dark:ease-out',
         'dark:hover:-translate-y-0.5 dark:hover:border-line-strong dark:hover:bg-surface-hover dark:hover:shadow-lift',
       )}
@@ -223,13 +223,13 @@ export function ProductGrid({
 }) {
   if (products.length === 0) {
     return (
-      <p className="border-t border-line py-16 text-center text-sm text-ink-500">
+      <p className="border-t border-line py-10 text-center lg:py-16 text-sm text-ink-500">
         No products found.
       </p>
     );
   }
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
       {products.map((p, i) => (
         <ProductCard key={p.id} product={p} priority={i < priorityCount} />
       ))}
@@ -241,7 +241,7 @@ export function ProductGrid({
 export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div
-      className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10"
+      className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-10"
       aria-hidden="true"
     >
       {/* Mirrors the dark card's border and padding as well as its rhythm, so
@@ -249,7 +249,7 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-2.5"
+          className="dark:rounded-xl dark:border dark:border-line dark:bg-surface-card dark:p-1.5 dark:sm:p-2.5"
         >
           <Skeleton className="aspect-[4/5] w-full dark:rounded-lg" />
           <Skeleton className="mt-3 h-2.5 w-16" />

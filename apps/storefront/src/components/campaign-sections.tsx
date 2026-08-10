@@ -65,7 +65,7 @@ export function CampaignSections({ limit }: { limit?: number }) {
             ))}
           </div>
         ) : (
-          <p className="border-t border-line py-12 text-center text-sm text-ink-500">
+          <p className="border-t border-line py-10 text-center lg:py-12 text-sm text-ink-500">
             No campaigns are running right now.
           </p>
         )}
@@ -82,7 +82,7 @@ export function CampaignSections({ limit }: { limit?: number }) {
             ))}
           </div>
         ) : (
-          <p className="border-t border-line py-12 text-center text-sm text-ink-500">
+          <p className="border-t border-line py-10 text-center lg:py-12 text-sm text-ink-500">
             Nothing scheduled yet — check back soon.
           </p>
         )}
@@ -104,7 +104,7 @@ export function CampaignDetail({ slug }: { slug: string }) {
 
   if (isPending) {
     return (
-      <div className="container-page py-8">
+      <div className="container-page py-5 lg:py-8">
         <Skeleton className="h-56 w-full rounded lg:h-72" />
         <Skeleton className="mt-8 h-6 w-40" />
         <div className="mt-6">
@@ -128,7 +128,7 @@ export function CampaignDetail({ slug }: { slug: string }) {
   const isUpcoming = new Date(campaign.startsAt) > new Date();
 
   return (
-    <div className="container-page py-6 lg:py-8">
+    <div className="container-page py-5 lg:py-8">
       {/* Fixed scrim colours: the copy over this artwork is white in both
           themes, so the gradient beneath it must stay dark in both. */}
       <div className="relative overflow-hidden rounded bg-scrim-900 dark:rounded-lg dark:ring-1 dark:ring-inset dark:ring-line">

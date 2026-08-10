@@ -90,7 +90,7 @@ export function QaConsole() {
   const offsetLabel = describeOffset(status.data?.clockOffsetMs ?? 0);
 
   return (
-    <div className="container-page py-8 lg:py-12">
+    <div className="container-page py-6 lg:py-12">
       <header className="border-b border-line pb-6">
         <div className="flex flex-wrap items-center gap-3">
           <span className="rounded-xs bg-warning-100 px-2 py-1 text-2xs font-bold uppercase tracking-[0.08em] text-warning-700">

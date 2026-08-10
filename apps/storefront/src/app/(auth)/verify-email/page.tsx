@@ -30,7 +30,7 @@ function VerifyInner() {
   }, [token]);
 
   return (
-    <div className="mx-auto max-w-sm py-16 text-center">
+    <div className="mx-auto max-w-sm py-12 text-center lg:py-16">
       <h1 className="text-2xl font-bold" data-testid="verify-result">
         {state === 'working'
           ? 'One moment…'

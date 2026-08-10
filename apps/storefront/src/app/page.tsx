@@ -30,7 +30,7 @@ export default async function HomePage() {
           immediately below carries the photography, so competing with it would
           only crowd the fold. */}
       <section className="masthead-wash container-page">
-        <div className="grid items-end gap-8 border-b border-line pb-10 pt-10 lg:grid-cols-12 lg:pb-14 lg:pt-16 dark:lg:pb-16 dark:lg:pt-20">
+        <div className="grid items-end gap-8 border-b border-line pb-8 pt-8 lg:grid-cols-12 lg:pb-14 lg:pt-16 dark:lg:pb-16 dark:lg:pt-20">
           <div className="lg:col-span-8">
             <p className="eyebrow">
               <T id="home.eyebrow" />
@@ -119,7 +119,7 @@ export default async function HomePage() {
           </Section>
         ) : (
           <Section>
-            <p className="border-t border-line py-16 text-center text-sm text-ink-500">
+            <p className="border-t border-line py-10 text-center lg:py-16 text-sm text-ink-500">
               <T id="product.noCatalog" />
             </p>
           </Section>

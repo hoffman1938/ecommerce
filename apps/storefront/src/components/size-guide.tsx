@@ -125,7 +125,7 @@ export function SizeGuide({ sizes }: { sizes: Array<string | null> }) {
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="max-h-[85vh] w-full max-w-xl animate-slide-up overflow-y-auto rounded-t bg-ink-25 p-6 shadow-xl dark:border dark:border-line dark:bg-surface-raised dark:shadow-lg sm:rounded">
+          <div className="max-h-[85vh] w-full max-w-xl animate-slide-up overflow-y-auto rounded-t bg-ink-25 p-5 shadow-xl sm:p-6 dark:border dark:border-line dark:bg-surface-raised dark:shadow-lg sm:rounded">
             <div className="flex items-start justify-between gap-4">
               <h2 id="size-guide-title" className="text-lg font-bold text-ink-950">
                 {table.title}

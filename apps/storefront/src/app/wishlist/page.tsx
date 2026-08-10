@@ -29,7 +29,7 @@ export default function WishlistPage() {
 
   if (meLoading) {
     return (
-      <div className="container-page py-8 lg:py-12">
+      <div className="container-page py-6 lg:py-12">
         <Skeleton className="h-8 w-48" />
       </div>
     );
@@ -37,7 +37,7 @@ export default function WishlistPage() {
 
   if (!me?.user) {
     return (
-      <div className="container-page py-8 lg:py-12">
+      <div className="container-page py-6 lg:py-12">
         <PageHeader title="Your wishlist" />
         <EmptyState
           title="Sign in to see your wishlist"
@@ -56,7 +56,7 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="container-page py-8 lg:py-12">
+    <div className="container-page py-6 lg:py-12">
       <PageHeader
         title="Your wishlist"
         meta={

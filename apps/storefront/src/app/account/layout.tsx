@@ -32,7 +32,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
 
   if (isLoading || !me?.user) {
     return (
-      <div className="container-page py-10">
+      <div className="container-page py-6 lg:py-10">
         <Skeleton className="h-8 w-48" />
         <div className="mt-8 grid gap-10 lg:grid-cols-[13rem_minmax(0,1fr)]">
           <Skeleton className="h-64 w-full" />
@@ -43,7 +43,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="container-page py-8 lg:py-12">
+    <div className="container-page py-6 lg:py-12">
       <div className="border-b border-line pb-5">
         <p className="eyebrow">Your account</p>
         <h1 className="mt-2 text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
@@ -55,9 +55,14 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
       <div className="mt-8 grid gap-8 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-14">
         {/* Horizontal, scrollable tab rail on small screens; vertical list on
             desktop. Both use the same source list and active treatment. */}
+        {/* `min-w-0` is load-bearing: a grid item defaults to a min-content
+            width, so without it the column stretched to fit the whole tab rail
+            (1107px) instead of letting the rail scroll inside it, and every
+            sibling — heading, panels — inherited that width and pushed the
+            phone layout into a horizontal scroll. */}
         <nav
           aria-label="Account"
-          className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit"
+          className="min-w-0 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit"
         >
           <ul className="-mx-4 flex gap-1 overflow-x-auto scrollbar-none px-4 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
             {NAV.map((item) => {

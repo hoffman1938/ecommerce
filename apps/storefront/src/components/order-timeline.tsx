@@ -37,7 +37,7 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
   // stages as "still to come" would be a lie.
   if (order.status === 'CANCELLED') {
     return (
-      <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5">
+      <section className="rounded border border-line bg-ink-25 p-4 dark:bg-surface-card sm:p-5">
         <h2 className="mb-3 font-semibold text-ink-950">Order progress</h2>
         <ol className="space-y-3">
           {order.timeline.map((entry, index) => (
@@ -66,7 +66,7 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
   const shipment = order.shipments[0];
 
   return (
-    <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5">
+    <section className="rounded border border-line bg-ink-25 p-4 dark:bg-surface-card sm:p-5">
       <h2 className="mb-4 font-semibold text-ink-950">Order progress</h2>
 
       <ol className="relative space-y-4 border-l border-line pl-5">

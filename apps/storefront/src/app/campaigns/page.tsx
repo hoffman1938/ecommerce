@@ -5,7 +5,7 @@ export const metadata = { title: 'Campaigns' };
 
 export default function CampaignsPage() {
   return (
-    <div className="container-page py-8 lg:py-12">
+    <div className="container-page py-6 lg:py-12">
       <PageHeader
         title="Campaigns"
         description="Limited-time releases of surplus stock. Each campaign runs until its timer ends or the stock is gone."

@@ -14,7 +14,7 @@ function ResetInner() {
 
   if (state === 'ok') {
     return (
-      <div className="mx-auto max-w-sm py-16 text-center">
+      <div className="mx-auto max-w-sm py-12 text-center lg:py-16">
         <h1 className="text-2xl font-bold">Password updated ✓</h1>
         <p className="mt-3 text-ink-600">All other sessions were signed out for your security.</p>
         <Link
@@ -28,7 +28,7 @@ function ResetInner() {
   }
 
   return (
-    <div className="mx-auto max-w-sm py-10">
+    <div className="mx-auto max-w-sm py-8 lg:py-10">
       <h1 className="text-2xl font-bold">Choose a new password</h1>
       {message ? <p className="mt-4 text-sm text-sale-500">{message}</p> : null}
       <form

@@ -73,7 +73,7 @@ export function AccountOrderDetail() {
 
       <OrderTimeline order={order} />
 
-      <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5">
+      <section className="rounded border border-line bg-ink-25 p-4 dark:bg-surface-card sm:p-5">
         <h2 className="mb-3 font-semibold">Items</h2>
         <div className="space-y-3">
           {order.items.map((item) => (
@@ -105,7 +105,7 @@ export function AccountOrderDetail() {
       </section>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5 text-sm">
+        <section className="rounded border border-line bg-ink-25 p-4 text-sm dark:bg-surface-card sm:p-5">
           <h2 className="mb-2 font-semibold">Delivery</h2>
           <p className="text-ink-600">
             {order.shippingAddress.firstName} {order.shippingAddress.lastName}
@@ -128,7 +128,7 @@ export function AccountOrderDetail() {
           ) : null}
         </section>
 
-        <section className="rounded border border-line bg-ink-25 dark:bg-surface-card p-5 text-sm">
+        <section className="rounded border border-line bg-ink-25 p-4 text-sm dark:bg-surface-card sm:p-5">
           <h2 className="mb-2 font-semibold">Payment</h2>
           <dl className="space-y-1">
             <div className="flex justify-between">

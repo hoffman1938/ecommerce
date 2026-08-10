@@ -74,7 +74,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
   return (
     // Bottom padding on small screens clears the sticky Add to bag bar, so the
     // last section is never trapped underneath it.
-    <div className="container-page py-5 pb-24 lg:py-8 lg:pb-8">
+    <div className="container-page py-4 pb-20 lg:py-8 lg:pb-8">
       <TrackProductView
         slug={product.slug}
         productId={product.id}
@@ -130,7 +130,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
           column, which is what used to leave a column-height void beside the
           sticky gallery. */}
       {product.description || rows.length > 0 ? (
-        <section className="mt-14 border-t border-line pt-8 lg:mt-20">
+        <section className="mt-10 border-t border-line pt-6 sm:mt-12 lg:mt-20 lg:pt-8">
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
             {product.description ? (
               <div>

@@ -62,7 +62,7 @@ export function ProductReviews({
 
   if (reviewCount === 0 || ratingAverage === null) {
     return (
-      <section id="reviews" className="mt-14 border-t border-line pt-8 lg:mt-20">
+      <section id="reviews" className="mt-10 border-t border-line pt-6 sm:mt-12 lg:mt-20 lg:pt-8">
         <h2 className="text-xl font-bold tracking-[-0.02em] text-ink-950">Reviews</h2>
         <p className="mt-3 max-w-md text-sm text-ink-600">
           No reviews yet. This is a recent addition to the outlet — check the size and materials in
@@ -75,7 +75,7 @@ export function ProductReviews({
   const totalPages = data?.totalPages ?? 1;
 
   return (
-    <section id="reviews" className="mt-14 border-t border-line pt-8 lg:mt-20">
+    <section id="reviews" className="mt-10 border-t border-line pt-6 sm:mt-12 lg:mt-20 lg:pt-8">
       <h2 className="text-xl font-bold tracking-[-0.02em] text-ink-950">Reviews</h2>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-14">

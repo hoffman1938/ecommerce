@@ -122,7 +122,7 @@ export default function CheckoutPage() {
 
   if (!quote) {
     return (
-      <div className="container-page py-16 text-center text-sm text-ink-500">
+      <div className="container-page py-12 text-center lg:py-16 text-sm text-ink-500">
         {error ?? 'Preparing checkout…'}
       </div>
     );
@@ -148,7 +148,7 @@ export default function CheckoutPage() {
   );
 
   return (
-    <div className="container-page py-8 lg:py-12">
+    <div className="container-page py-6 lg:py-12">
       <div className="border-b border-line pb-5">
         <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">Checkout</h1>
         {quote.reservationDeadline ? (
@@ -171,9 +171,9 @@ export default function CheckoutPage() {
       ) : null}
       <div className="h-8" />
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-8 lg:col-span-2">
-          <section className="rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-3 lg:gap-8">
+        <div className="space-y-6 lg:col-span-2 lg:space-y-8">
+          <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
             <h2 className="mb-3 font-semibold">1 · Contact</h2>
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink-700">Email</span>
@@ -188,7 +188,7 @@ export default function CheckoutPage() {
             </label>
           </section>
 
-          <section className="rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised">
+          <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
             <h2 className="mb-3 font-semibold">2 · Shipping address</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {field('shippingAddress.firstName', 'First name')}
@@ -217,7 +217,7 @@ export default function CheckoutPage() {
             ) : null}
           </section>
 
-          <section className="rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised">
+          <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
             <h2 className="mb-3 font-semibold">3 · Delivery</h2>
             <div className="space-y-2">
               {quote.shippingMethods.map((method) => (
@@ -251,7 +251,7 @@ export default function CheckoutPage() {
           </section>
         </div>
 
-        <aside className="h-fit rounded border border-line bg-ink-25 p-5 dark:rounded-lg dark:bg-surface-raised lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]">
+        <aside className="h-fit rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]">
           <h2 className="font-semibold">4 · Review &amp; pay</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {quote.cart.items.map((item) => (

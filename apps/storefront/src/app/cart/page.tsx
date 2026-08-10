@@ -35,7 +35,7 @@ export default function CartPage() {
 
   if (isLoading) {
     return (
-      <div className="container-page py-8 lg:py-12">
+      <div className="container-page py-6 lg:py-12">
         <Skeleton className="h-8 w-40" />
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="space-y-6">
@@ -58,7 +58,7 @@ export default function CartPage() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="container-page py-8 lg:py-12">
+      <div className="container-page py-6 lg:py-12">
         <PageHeader title="Your bag" />
         <EmptyState
           title="Your bag is empty"
@@ -93,7 +93,7 @@ export default function CartPage() {
   const liveItems = cart.items.filter((i) => !i.isExpired);
 
   return (
-    <div className="container-page py-8 lg:py-12">
+    <div className="container-page py-6 lg:py-12">
       <PageHeader
         title="Your bag"
         meta={
@@ -155,7 +155,7 @@ export default function CartPage() {
             and a heading plus a rule is enough; on near-black an unbounded
             column of figures beside an unbounded column of items reads as one
             undifferentiated list, and the total stops being the answer. */}
-        <aside className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit dark:rounded-lg dark:border dark:border-line dark:bg-surface-card dark:p-5">
+        <aside className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit dark:rounded-lg dark:border dark:border-line dark:bg-surface-card dark:p-4 dark:sm:p-5">
           <h2 className="text-sm font-semibold text-ink-950">Order summary</h2>
 
           <dl className="mt-4 space-y-2.5 border-t border-line pt-4 text-sm">
@@ -395,7 +395,7 @@ function SavedForLater({
   onDiscard: (id: string) => void;
 }) {
   return (
-    <section className="mt-12 border-t border-line pt-8">
+    <section className="mt-10 border-t border-line pt-6 lg:mt-12 lg:pt-8">
       <h2 className="text-lg font-bold tracking-[-0.02em] text-ink-950">
         Saved for later{' '}
         <span data-numeric className="font-normal text-ink-500">

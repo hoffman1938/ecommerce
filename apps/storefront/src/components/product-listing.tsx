@@ -223,7 +223,7 @@ function Pagination({
 
   return (
     <nav
-      className="mt-12 flex items-center justify-between gap-3 border-t border-line pt-6"
+      className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5 lg:mt-12 lg:pt-6"
       aria-label="Pagination"
     >
       {page > 1 ? (
@@ -402,7 +402,7 @@ export function ProductListing(props: {
             </h1>
             <p className="mt-1.5 text-sm text-ink-500">Loading…</p>
           </div>
-          <div className="pt-8">
+          <div className="pt-6 lg:pt-8">
             <ProductGridSkeleton count={12} />
           </div>
         </div>

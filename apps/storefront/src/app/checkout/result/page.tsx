@@ -90,7 +90,7 @@ function ResultInner() {
     });
   }, [order]);
 
-  if (!orderId) return <p className="py-10 text-center text-ink-500">Missing order reference.</p>;
+  if (!orderId) return <p className="py-8 text-center lg:py-10 text-ink-500">Missing order reference.</p>;
 
   const paid =
     order && ['PAID', 'PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED'].includes(order.status);
@@ -181,7 +181,7 @@ function ResultInner() {
 
 export default function CheckoutResultPage() {
   return (
-    <Suspense fallback={<p className="py-10 text-center text-ink-500">Loading…</p>}>
+    <Suspense fallback={<p className="py-8 text-center lg:py-10 text-ink-500">Loading…</p>}>
       <ResultInner />
     </Suspense>
   );

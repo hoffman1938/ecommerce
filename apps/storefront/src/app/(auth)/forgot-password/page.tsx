@@ -10,7 +10,7 @@ export default function ForgotPasswordPage() {
   const [resetUrl, setResetUrl] = useState<string | null>(null);
 
   return (
-    <div className="mx-auto max-w-sm py-10">
+    <div className="mx-auto max-w-sm py-8 lg:py-10">
       <h1 className="text-2xl font-bold">Reset your password</h1>
       {sent ? (
         <div className="mt-4 space-y-3 text-ink-600">

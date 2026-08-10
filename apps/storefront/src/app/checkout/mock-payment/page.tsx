@@ -105,7 +105,7 @@ function MockPaymentInner() {
   };
 
   if (!paymentId) {
-    return <p className="py-10 text-center text-ink-500">Missing payment reference.</p>;
+    return <p className="py-8 text-center lg:py-10 text-ink-500">Missing payment reference.</p>;
   }
 
   return (
@@ -249,7 +249,7 @@ function MockPaymentInner() {
 
 export default function MockPaymentPage() {
   return (
-    <Suspense fallback={<p className="py-10 text-center text-ink-500">Loading…</p>}>
+    <Suspense fallback={<p className="py-8 text-center lg:py-10 text-ink-500">Loading…</p>}>
       <MockPaymentInner />
     </Suspense>
   );
