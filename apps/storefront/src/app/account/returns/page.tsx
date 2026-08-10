@@ -33,7 +33,10 @@ export default function ReturnsPage() {
       ) : (
         <div className="space-y-3">
           {returns.map((request) => (
-            <div key={request.id} className="rounded border border-line bg-ink-25 dark:bg-surface-card p-4">
+            <div
+              key={request.id}
+              className="rounded border border-line bg-ink-25 dark:bg-surface-card p-4"
+            >
               <div className="flex items-center justify-between">
                 <p className="font-semibold">
                   {request.rmaNumber}{' '}
