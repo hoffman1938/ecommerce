@@ -52,7 +52,9 @@ export default function CampaignsAdminPage() {
           href="/campaigns/new"
           data-testid="new-campaign"
           className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-        ><T id="ui.newCampaign" /></Link>
+        >
+          <T id="ui.newCampaign" />
+        </Link>
       </div>
       {error ? <p className="mb-3 text-sm text-red-600">{error}</p> : null}
 
@@ -62,8 +64,12 @@ export default function CampaignsAdminPage() {
             <tr>
               <th>Campaign</th>
               <th>Window</th>
-              <th><T id="ui.status" /></th>
-              <th className="text-right"><T id="ui.products" /></th>
+              <th>
+                <T id="ui.status" />
+              </th>
+              <th className="text-right">
+                <T id="ui.products" />
+              </th>
               <th>Actions</th>
             </tr>
           </thead>

@@ -54,10 +54,16 @@ export default function ReservationsPage() {
           <thead>
             <tr>
               <th>SKU</th>
-              <th><T id="ui.product" /></th>
+              <th>
+                <T id="ui.product" />
+              </th>
               <th className="text-right">Qty</th>
-              <th><T id="ui.status" /></th>
-              <th><T id="ui.customer" /></th>
+              <th>
+                <T id="ui.status" />
+              </th>
+              <th>
+                <T id="ui.customer" />
+              </th>
               <th>Expires</th>
               <th></th>
             </tr>
@@ -112,7 +118,9 @@ export default function ReservationsPage() {
             })}
             {data && data.items.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-gray-400"><T id="ui.noReservationsWithThisStatus" /></td>
+                <td colSpan={7} className="text-gray-400">
+                  <T id="ui.noReservationsWithThisStatus" />
+                </td>
               </tr>
             ) : null}
           </tbody>

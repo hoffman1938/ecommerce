@@ -17,11 +17,17 @@ export default function OrdersPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold"><T id="ui.orderHistory" /></h1>
+      <h1 className="mb-4 text-2xl font-bold">
+        <T id="ui.orderHistory" />
+      </h1>
       {isLoading ? (
-        <p className="text-ink-500"><T id="ui.loading" /></p>
+        <p className="text-ink-500">
+          <T id="ui.loading" />
+        </p>
       ) : !orders || orders.length === 0 ? (
-        <p className="text-ink-500"><T id="ui.noOrdersYet" /></p>
+        <p className="text-ink-500">
+          <T id="ui.noOrdersYet" />
+        </p>
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
@@ -48,9 +54,7 @@ export default function OrdersPage() {
                 >
                   {order.status}
                 </Badge>
-                <p className="mt-1 font-medium">
-                  {money(order.totalMinor)}
-                </p>
+                <p className="mt-1 font-medium">{money(order.totalMinor)}</p>
               </div>
             </Link>
           ))}

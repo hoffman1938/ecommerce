@@ -48,7 +48,9 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
   return (
     <div className="container-page py-6 lg:py-12">
       <div className="border-b border-line pb-5">
-        <p className="eyebrow"><T id="ui.account" /></p>
+        <p className="eyebrow">
+          <T id="ui.account" />
+        </p>
         <h1 className="mt-2 text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
           {me.user.firstName} {me.user.lastName}
         </h1>
@@ -93,7 +95,9 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => logout.mutate()}
               className="px-2.5 text-sm text-ink-500 transition-colors hover:text-ink-950"
-            ><T id="ui.signOut" /></button>
+            >
+              <T id="ui.signOut" />
+            </button>
           </div>
         </nav>
 

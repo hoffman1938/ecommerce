@@ -24,7 +24,7 @@ const STATUSES = [
 ];
 
 export default function OrdersAdminPage() {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -70,11 +70,21 @@ export default function OrdersAdminPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th><T id="ui.order" /></th>
-              <th><T id="ui.customer" /></th>
-              <th><T id="ui.status" /></th>
-              <th><T id="ui.payment" /></th>
-              <th className="text-right"><T id="ui.total" /></th>
+              <th>
+                <T id="ui.order" />
+              </th>
+              <th>
+                <T id="ui.customer" />
+              </th>
+              <th>
+                <T id="ui.status" />
+              </th>
+              <th>
+                <T id="ui.payment" />
+              </th>
+              <th className="text-right">
+                <T id="ui.total" />
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -121,9 +131,7 @@ export default function OrdersAdminPage() {
                     '—'
                   )}
                 </td>
-                <td className="text-right font-medium">
-                  {money(order.totalMinor)}
-                </td>
+                <td className="text-right font-medium">{money(order.totalMinor)}</td>
               </tr>
             ))}
           </tbody>
@@ -145,7 +153,9 @@ export default function OrdersAdminPage() {
             disabled={page >= data.totalPages}
             onClick={() => setPage((p) => p + 1)}
             className="rounded border px-3 py-1.5 disabled:opacity-40"
-          ><T id="ui.next2" /></button>
+          >
+            <T id="ui.next2" />
+          </button>
         </div>
       ) : null}
     </div>

@@ -32,7 +32,9 @@ export default function AuditLogsPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold"><T id="ui.auditLogs" /></h1>
+      <h1 className="mb-4 text-2xl font-bold">
+        <T id="ui.auditLogs" />
+      </h1>
       <input
         value={action}
         onChange={(e) => {
@@ -90,7 +92,9 @@ export default function AuditLogsPage() {
             disabled={page >= data.totalPages}
             onClick={() => setPage((p) => p + 1)}
             className="rounded border px-3 py-1.5 disabled:opacity-40"
-          ><T id="ui.next2" /></button>
+          >
+            <T id="ui.next2" />
+          </button>
         </div>
       ) : null}
     </div>

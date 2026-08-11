@@ -16,7 +16,13 @@ export const metadata = { title: 'Order' };
 
 export default function OrderDetailPage() {
   return (
-    <Suspense fallback={<p className="text-ink-500"><T id="ui.loadingOrder" /></p>}>
+    <Suspense
+      fallback={
+        <p className="text-ink-500">
+          <T id="ui.loadingOrder" />
+        </p>
+      }
+    >
       <AccountOrderDetail />
     </Suspense>
   );

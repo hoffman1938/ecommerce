@@ -28,7 +28,9 @@ export default function ReturnsAdminPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold"><T id="ui.returnRequests" /></h1>
+      <h1 className="mb-4 text-2xl font-bold">
+        <T id="ui.returnRequests" />
+      </h1>
       <div className="mb-4 flex gap-2">
         {STATUSES.map((s) => (
           <button
@@ -48,10 +50,16 @@ export default function ReturnsAdminPage() {
           <thead>
             <tr>
               <th>RMA</th>
-              <th><T id="ui.order" /></th>
-              <th><T id="ui.status" /></th>
+              <th>
+                <T id="ui.order" />
+              </th>
+              <th>
+                <T id="ui.status" />
+              </th>
               <th>Reason</th>
-              <th><T id="ui.items" /></th>
+              <th>
+                <T id="ui.items" />
+              </th>
               <th>Created</th>
             </tr>
           </thead>

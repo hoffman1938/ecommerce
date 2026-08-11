@@ -73,8 +73,12 @@ export default function RegisterPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950"><T id="ui.createAccount2" /></h1>
-      <p className="mt-1.5 text-sm text-ink-600"><T id="ui.trackOrdersSaveAddressesGet" /></p>
+      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">
+        <T id="ui.createAccount2" />
+      </h1>
+      <p className="mt-1.5 text-sm text-ink-600">
+        <T id="ui.trackOrdersSaveAddressesGet" />
+      </p>
 
       {error ? (
         <div className="mt-6">
@@ -122,9 +126,13 @@ export default function RegisterPage() {
             type="checkbox"
             className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded-xs border-ink-300 text-ink-950 focus:ring-ink-950"
             {...form.register('newsletterOptIn')}
-          /><T id="ui.sendMeCampaignAnnouncements" /></label>
+          />
+          <T id="ui.sendMeCampaignAnnouncements" />
+        </label>
 
-        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}><T id="ui.createAccount3" /></Button>
+        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}>
+          <T id="ui.createAccount3" />
+        </Button>
       </form>
 
       <p className="mt-8 border-t border-line pt-6 text-sm text-ink-600">
@@ -132,7 +140,9 @@ export default function RegisterPage() {
         <Link
           href="/login"
           className="font-medium text-ink-950 underline decoration-ink-300 underline-offset-2 transition-colors hover:decoration-ink-950"
-        ><T id="ui.sign" /></Link>
+        >
+          <T id="ui.sign" />
+        </Link>
       </p>
     </div>
   );

@@ -476,14 +476,18 @@ export function ActiveFilters() {
         >
           {chip.label}
           <CloseIcon className="h-3 w-3 text-ink-500 transition-colors group-hover:text-ink-900" />
-          <span className="sr-only"><T id="ui.removeFilter" /></span>
+          <span className="sr-only">
+            <T id="ui.removeFilter" />
+          </span>
         </button>
       ))}
       <button
         type="button"
         onClick={clearAll}
         className="ml-1 text-xs font-medium text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
-      ><T id="ui.clearAll" /></button>
+      >
+        <T id="ui.clearAll" />
+      </button>
     </div>
   );
 }
@@ -493,7 +497,9 @@ export function SortSelect() {
   const { params, setParam } = useFilters();
   return (
     <label className="flex items-center gap-2 text-sm">
-      <span className="shrink-0 text-ink-500"><T id="ui.sort" /></span>
+      <span className="shrink-0 text-ink-500">
+        <T id="ui.sort" />
+      </span>
       <select
         value={params.get('sort') ?? 'recommended'}
         onChange={(e) => setParam('sort', e.target.value === 'recommended' ? null : e.target.value)}

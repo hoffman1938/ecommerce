@@ -37,7 +37,7 @@ const DIRECT_OUTCOMES = [
 const EMPTY_FORM: CardFormValues = { number: '', name: '', expiry: '', cvc: '' };
 
 function MockPaymentInner() {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   const params = useSearchParams();
   const router = useRouter();
   const paymentId = params.get('paymentId') ?? '';
@@ -107,7 +107,11 @@ function MockPaymentInner() {
   };
 
   if (!paymentId) {
-    return <p className="py-8 text-center lg:py-10 text-ink-500"><T id="ui.missingPaymentReference" /></p>;
+    return (
+      <p className="py-8 text-center lg:py-10 text-ink-500">
+        <T id="ui.missingPaymentReference" />
+      </p>
+    );
   }
 
   return (
@@ -117,7 +121,9 @@ function MockPaymentInner() {
           <span className="rounded-xs bg-warning-100 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-[0.06em] text-warning-700">
             Sandbox
           </span>
-          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-400"><T id="ui.simulatedPaymentProvider" /></p>
+          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-400">
+            <T id="ui.simulatedPaymentProvider" />
+          </p>
         </div>
 
         <h1 className="mt-3 text-xl font-bold text-ink-950">Order {orderNumber}</h1>
@@ -220,7 +226,9 @@ function MockPaymentInner() {
         </div>
 
         <details className="mt-5 border-t border-line pt-5">
-          <summary className="cursor-pointer text-sm font-medium text-ink-700 hover:text-ink-950"><T id="ui.forceOutcomeDirectly" /></summary>
+          <summary className="cursor-pointer text-sm font-medium text-ink-700 hover:text-ink-950">
+            <T id="ui.forceOutcomeDirectly" />
+          </summary>
           <div className="mt-3 space-y-2">
             {DIRECT_OUTCOMES.map((outcome) => (
               <button
@@ -247,7 +255,13 @@ function MockPaymentInner() {
 
 export default function MockPaymentPage() {
   return (
-    <Suspense fallback={<p className="py-8 text-center lg:py-10 text-ink-500"><T id="ui.loading" /></p>}>
+    <Suspense
+      fallback={
+        <p className="py-8 text-center lg:py-10 text-ink-500">
+          <T id="ui.loading" />
+        </p>
+      }
+    >
       <MockPaymentInner />
     </Suspense>
   );

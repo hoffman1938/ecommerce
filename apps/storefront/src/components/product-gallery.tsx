@@ -68,7 +68,9 @@ export function ProductGallery({
 
   if (images.length === 0) {
     return (
-      <div className="media-well flex aspect-[4/5] items-center justify-center rounded text-sm text-scrim-700 dark:rounded-lg"><T id="ui.noImage" /></div>
+      <div className="media-well flex aspect-[4/5] items-center justify-center rounded text-sm text-scrim-700 dark:rounded-lg">
+        <T id="ui.noImage" />
+      </div>
     );
   }
 

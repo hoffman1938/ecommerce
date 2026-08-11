@@ -25,12 +25,20 @@ export default function ReturnsPage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-bold"><T id="ui.returnsAmpRefunds" /></h1>
-      <p className="mb-4 text-sm text-ink-500"><T id="ui.startReturnFromOrderPage" /></p>
+      <h1 className="mb-2 text-2xl font-bold">
+        <T id="ui.returnsAmpRefunds" />
+      </h1>
+      <p className="mb-4 text-sm text-ink-500">
+        <T id="ui.startReturnFromOrderPage" />
+      </p>
       {isLoading ? (
-        <p className="text-ink-500"><T id="ui.loading" /></p>
+        <p className="text-ink-500">
+          <T id="ui.loading" />
+        </p>
       ) : !returns || returns.length === 0 ? (
-        <p className="text-ink-500"><T id="ui.noReturnRequestsYet" /></p>
+        <p className="text-ink-500">
+          <T id="ui.noReturnRequestsYet" />
+        </p>
       ) : (
         <div className="space-y-3">
           {returns.map((request) => (

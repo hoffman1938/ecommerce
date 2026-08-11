@@ -21,7 +21,7 @@ interface WishlistItem {
 }
 
 export default function WishlistPage() {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   const { data: me, isLoading: meLoading } = useCurrentUser();
   const queryClient = useQueryClient();
   const { data: items, isLoading } = useQuery({
@@ -49,7 +49,9 @@ export default function WishlistPage() {
             <Link
               href="/login?next=/wishlist"
               className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
-            ><T id="ui.sign" /></Link>
+            >
+              <T id="ui.sign" />
+            </Link>
           }
         />
       </div>
@@ -87,7 +89,9 @@ export default function WishlistPage() {
               <Link
                 href="/products"
                 className="inline-flex h-10 items-center rounded bg-ink-950 px-5 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
-              ><T id="ui.browseOutlet" /></Link>
+              >
+                <T id="ui.browseOutlet" />
+              </Link>
             }
           />
         ) : (
@@ -147,7 +151,9 @@ export default function WishlistPage() {
                         queryClient.invalidateQueries({ queryKey: ['wishlist'] });
                       }}
                       className="relative z-10 mt-2 text-xs text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
-                    ><T id="ui.remove" /></button>
+                    >
+                      <T id="ui.remove" />
+                    </button>
                   </div>
                 </li>
               );

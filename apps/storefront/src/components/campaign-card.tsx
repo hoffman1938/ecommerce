@@ -62,7 +62,9 @@ export function CampaignCard({
             )}
           >
             {upcoming
-              ? t('campaign.startsOn', { date: formatDate(campaign.startsAt, { day: 'numeric', month: 'short' }) })
+              ? t('campaign.startsOn', {
+                  date: formatDate(campaign.startsAt, { day: 'numeric', month: 'short' }),
+                })
               : t('campaign.liveNow')}
           </span>
           {campaign.productCount ? (

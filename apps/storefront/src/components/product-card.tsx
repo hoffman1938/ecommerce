@@ -153,7 +153,9 @@ export function ProductCard({
         </button>
 
         {soldOut ? (
-          <span className="absolute inset-x-0 bottom-0 bg-scrim-950/85 py-1.5 text-center text-2xs font-semibold uppercase tracking-[0.08em] text-white"><T id="ui.soldOut" /></span>
+          <span className="absolute inset-x-0 bottom-0 bg-scrim-950/85 py-1.5 text-center text-2xs font-semibold uppercase tracking-[0.08em] text-white">
+            <T id="ui.soldOut" />
+          </span>
         ) : null}
       </div>
 
@@ -224,7 +226,9 @@ export function ProductGrid({
 }) {
   if (products.length === 0) {
     return (
-      <p className="border-t border-line py-10 text-center lg:py-16 text-sm text-ink-500"><T id="ui.noProductsFound" /></p>
+      <p className="border-t border-line py-10 text-center lg:py-16 text-sm text-ink-500">
+        <T id="ui.noProductsFound" />
+      </p>
     );
   }
   return (

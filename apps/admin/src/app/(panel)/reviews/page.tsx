@@ -291,7 +291,9 @@ export default function ReviewsPage() {
 
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold"><T id="ui.reviews" /></h1>
+          <h1 className="text-2xl font-bold">
+            <T id="ui.reviews" />
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
             Moderate customer reviews and respond as the shop. Published reviews are the only ones
             visible on the storefront.
@@ -304,7 +306,11 @@ export default function ReviewsPage() {
               value={stats.ratingAverage ? stats.ratingAverage.toFixed(2) : '—'}
             />
             <Stat label={t('ui.published')} value={String(stats.publishedCount)} />
-            <Stat label={t('ui.reported')} value={String(stats.reported)} tone={stats.reported > 0} />
+            <Stat
+              label={t('ui.reported')}
+              value={String(stats.reported)}
+              tone={stats.reported > 0}
+            />
             <Stat label={t('ui.unanswered')} value={String(stats.unanswered)} />
           </div>
         ) : null}
@@ -364,7 +370,9 @@ export default function ReviewsPage() {
           aria-label={t('ui.filterByRating')}
           className="h-9 rounded-md border border-gray-300 px-2 text-sm"
         >
-          <option value=""><T id="ui.anyRating" /></option>
+          <option value="">
+            <T id="ui.anyRating" />
+          </option>
           {[5, 4, 3, 2, 1].map((value) => (
             <option key={value} value={value}>
               {value} star{value === 1 ? '' : 's'}
@@ -377,9 +385,15 @@ export default function ReviewsPage() {
           aria-label={t('ui.filterByVerifiedPurchase')}
           className="h-9 rounded-md border border-gray-300 px-2 text-sm"
         >
-          <option value=""><T id="ui.anyPurchase" /></option>
-          <option value="true"><T id="ui.verifiedOnly" /></option>
-          <option value="false"><T id="ui.unverifiedOnly" /></option>
+          <option value="">
+            <T id="ui.anyPurchase" />
+          </option>
+          <option value="true">
+            <T id="ui.verifiedOnly" />
+          </option>
+          <option value="false">
+            <T id="ui.unverifiedOnly" />
+          </option>
         </select>
         <select
           value={replied}
@@ -387,8 +401,12 @@ export default function ReviewsPage() {
           aria-label={t('ui.filterByReplyState')}
           className="h-9 rounded-md border border-gray-300 px-2 text-sm"
         >
-          <option value=""><T id="ui.anyReplyState" /></option>
-          <option value="false"><T id="ui.awaitingReply" /></option>
+          <option value="">
+            <T id="ui.anyReplyState" />
+          </option>
+          <option value="false">
+            <T id="ui.awaitingReply" />
+          </option>
           <option value="true">Replied</option>
         </select>
         <label className="inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm">
@@ -396,7 +414,9 @@ export default function ReviewsPage() {
             type="checkbox"
             checked={reported}
             onChange={(event) => setReported(event.target.checked)}
-          /><T id="ui.reportedOnly" /></label>
+          />
+          <T id="ui.reportedOnly" />
+        </label>
       </div>
 
       {/* Bulk action bar — only present when there is a selection to act on. */}
@@ -409,21 +429,29 @@ export default function ReviewsPage() {
               <BulkButton onClick={() => runBulk('publish')} busy={bulkMutation.isPending}>
                 Publish
               </BulkButton>
-              <BulkButton onClick={() => runBulk('hide')} busy={bulkMutation.isPending}><T id="ui.hide" /></BulkButton>
+              <BulkButton onClick={() => runBulk('hide')} busy={bulkMutation.isPending}>
+                <T id="ui.hide" />
+              </BulkButton>
               <BulkButton onClick={() => runBulk('reject')} busy={bulkMutation.isPending}>
                 Reject
               </BulkButton>
-              <BulkButton onClick={() => runBulk('clearReports')} busy={bulkMutation.isPending}><T id="ui.clearReports" /></BulkButton>
+              <BulkButton onClick={() => runBulk('clearReports')} busy={bulkMutation.isPending}>
+                <T id="ui.clearReports" />
+              </BulkButton>
             </>
           ) : null}
           {canDelete ? (
-            <BulkButton onClick={() => runBulk('delete')} busy={bulkMutation.isPending} danger><T id="ui.delete" /></BulkButton>
+            <BulkButton onClick={() => runBulk('delete')} busy={bulkMutation.isPending} danger>
+              <T id="ui.delete" />
+            </BulkButton>
           ) : null}
           <button
             type="button"
             onClick={() => setSelected(new Set())}
             className="ml-1 text-xs underline underline-offset-2"
-          ><T id="ui.clear" /></button>
+          >
+            <T id="ui.clear" />
+          </button>
         </div>
       ) : null}
 
@@ -462,7 +490,9 @@ export default function ReviewsPage() {
                   setReplied('');
                   setReported(false);
                 }}
-              ><T id="ui.clearAllFilters" /></Button>
+              >
+                <T id="ui.clearAllFilters" />
+              </Button>
             }
           />
         ) : (
@@ -477,10 +507,18 @@ export default function ReviewsPage() {
                     aria-label={t('ui.selectAllReviewsThisPage')}
                   />
                 </th>
-                <th><T id="ui.review" /></th>
-                <th><T id="ui.product" /></th>
-                <th><T id="ui.status" /></th>
-                <th><T id="ui.date" /></th>
+                <th>
+                  <T id="ui.review" />
+                </th>
+                <th>
+                  <T id="ui.product" />
+                </th>
+                <th>
+                  <T id="ui.status" />
+                </th>
+                <th>
+                  <T id="ui.date" />
+                </th>
                 <th className="text-right">Actions</th>
               </tr>
             </thead>
@@ -523,13 +561,17 @@ export default function ReviewsPage() {
               size="sm"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-            ><T id="ui.previous" /></Button>
+            >
+              <T id="ui.previous" />
+            </Button>
             <Button
               variant="secondary"
               size="sm"
               disabled={page >= listQuery.data.totalPages}
               onClick={() => setPage((p) => p + 1)}
-            ><T id="ui.next" /></Button>
+            >
+              <T id="ui.next" />
+            </Button>
           </div>
         </div>
       ) : null}
@@ -670,14 +712,18 @@ function ReviewRowView({
               <RowButton onClick={() => onStatus('PUBLISHED')}>Publish</RowButton>
             ) : null}
             {canModerate && review.status === 'PUBLISHED' ? (
-              <RowButton onClick={() => onStatus('HIDDEN')}><T id="ui.hide" /></RowButton>
+              <RowButton onClick={() => onStatus('HIDDEN')}>
+                <T id="ui.hide" />
+              </RowButton>
             ) : null}
             {canModerate && review.status !== 'REJECTED' ? (
               <RowButton onClick={() => onStatus('REJECTED')}>Reject</RowButton>
             ) : null}
             <RowButton onClick={onExpand}>{expanded ? 'Close' : 'Open'}</RowButton>
             {canDelete ? (
-              <RowButton onClick={onDelete} danger><T id="ui.delete" /></RowButton>
+              <RowButton onClick={onDelete} danger>
+                <T id="ui.delete" />
+              </RowButton>
             ) : null}
           </div>
         </td>
@@ -806,7 +852,9 @@ function ReviewDetail({
   return (
     <div className="grid gap-6 p-4 lg:grid-cols-2">
       <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500"><T id="ui.reviewContent" /></h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <T id="ui.reviewContent" />
+        </h3>
         {canModerate ? (
           <>
             <input
@@ -822,8 +870,14 @@ function ReviewDetail({
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
             <div className="mt-2 flex items-center gap-2">
-              <Button size="sm" onClick={save} loading={saving} disabled={!dirty}><T id="ui.saveChanges" /></Button>
-              {dirty ? <span className="text-xs text-gray-500"><T id="ui.unsavedChanges" /></span> : null}
+              <Button size="sm" onClick={save} loading={saving} disabled={!dirty}>
+                <T id="ui.saveChanges" />
+              </Button>
+              {dirty ? (
+                <span className="text-xs text-gray-500">
+                  <T id="ui.unsavedChanges" />
+                </span>
+              ) : null}
             </div>
           </>
         ) : (
@@ -832,7 +886,10 @@ function ReviewDetail({
 
         {review.moderationNote ? (
           <p className="mt-3 rounded border border-gray-200 bg-white p-2 text-xs text-gray-600">
-            <span className="font-semibold"><T id="ui.moderationNote" /></span> {review.moderationNote}
+            <span className="font-semibold">
+              <T id="ui.moderationNote" />
+            </span>{' '}
+            {review.moderationNote}
             {review.moderatedBy ? ` — ${review.moderatedBy.email}` : ''}
             {review.moderatedAt ? ` (${formatDate(review.moderatedAt)})` : ''}
           </p>
@@ -840,7 +897,9 @@ function ReviewDetail({
       </div>
 
       <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500"><T id="ui.shopResponse" /></h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <T id="ui.shopResponse" />
+        </h3>
         {canReply ? (
           <>
             <textarea
@@ -869,7 +928,9 @@ function ReviewDetail({
         ) : review.adminReply ? (
           <p className="whitespace-pre-wrap text-sm text-gray-700">{review.adminReply}</p>
         ) : (
-          <p className="text-sm text-gray-400"><T id="ui.noResponseYet" /></p>
+          <p className="text-sm text-gray-400">
+            <T id="ui.noResponseYet" />
+          </p>
         )}
       </div>
     </div>

@@ -43,7 +43,9 @@ export default function AddressesPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="mb-4 text-2xl font-bold"><T id="ui.savedAddresses" /></h1>
+      <h1 className="mb-4 text-2xl font-bold">
+        <T id="ui.savedAddresses" />
+      </h1>
       <div className="space-y-3">
         {(addresses ?? []).map((address) => (
           <div
@@ -53,7 +55,9 @@ export default function AddressesPage() {
             <p className="font-medium">
               {address.firstName} {address.lastName}
               {address.isDefaultShipping ? (
-                <span className="ml-2 text-xs text-ink-500"><T id="ui.defaultShipping" /></span>
+                <span className="ml-2 text-xs text-ink-500">
+                  <T id="ui.defaultShipping" />
+                </span>
               ) : null}
             </p>
             <p className="text-ink-600">
@@ -69,11 +73,15 @@ export default function AddressesPage() {
                 refresh();
               }}
               className="mt-2 text-xs text-ink-500 underline"
-            ><T id="ui.delete" /></button>
+            >
+              <T id="ui.delete" />
+            </button>
           </div>
         ))}
         {addresses && addresses.length === 0 ? (
-          <p className="text-sm text-ink-500"><T id="ui.noSavedAddressesYet" /></p>
+          <p className="text-sm text-ink-500">
+            <T id="ui.noSavedAddressesYet" />
+          </p>
         ) : null}
       </div>
 
@@ -123,7 +131,9 @@ export default function AddressesPage() {
             ))}
           </div>
           <div className="flex gap-3">
-            <button className="rounded bg-ink-950 px-4 py-2 text-sm font-semibold text-ink-25"><T id="ui.saveAddress" /></button>
+            <button className="rounded bg-ink-950 px-4 py-2 text-sm font-semibold text-ink-25">
+              <T id="ui.saveAddress" />
+            </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
@@ -138,7 +148,9 @@ export default function AddressesPage() {
           type="button"
           onClick={() => setShowForm(true)}
           className="mt-6 rounded border border-ink-950 px-4 py-2 text-sm font-semibold hover:bg-ink-950 hover:text-ink-25"
-        ><T id="ui.addNewAddress" /></button>
+        >
+          <T id="ui.addNewAddress" />
+        </button>
       )}
     </div>
   );

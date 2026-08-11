@@ -43,8 +43,12 @@ export default function CustomersPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th><T id="ui.customer" /></th>
-              <th><T id="ui.status" /></th>
+              <th>
+                <T id="ui.customer" />
+              </th>
+              <th>
+                <T id="ui.status" />
+              </th>
               <th>Verified</th>
               <th className="text-right">Orders</th>
               <th>Joined</th>

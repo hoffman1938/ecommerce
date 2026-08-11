@@ -547,7 +547,9 @@ export function ImageViewer({
             ))}
           </div>
         ) : null}
-        <p className="mt-2 hidden text-center text-2xs text-white/35 lg:block"><T id="ui.scrollDoubleClickZoomDrag" /></p>
+        <p className="mt-2 hidden text-center text-2xs text-white/35 lg:block">
+          <T id="ui.scrollDoubleClickZoomDrag" />
+        </p>
       </div>
     </div>,
     document.body,

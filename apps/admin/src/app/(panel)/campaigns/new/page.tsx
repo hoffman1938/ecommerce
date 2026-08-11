@@ -18,7 +18,9 @@ export default function NewCampaignPage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="mb-4 text-2xl font-bold"><T id="ui.newCampaign" /></h1>
+      <h1 className="mb-4 text-2xl font-bold">
+        <T id="ui.newCampaign" />
+      </h1>
       <CampaignForm
         values={values}
         onChange={setValues}

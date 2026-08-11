@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 const LOCALES = Object.keys(LOCALE_LABELS) as Locale[];
 
 export function LocaleSwitcher() {
-  const { t, locale, setLocale  } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const router = useRouter();
 
   const handleLocaleChange = (l: Locale) => {

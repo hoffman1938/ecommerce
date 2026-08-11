@@ -120,10 +120,7 @@ export function CampaignDetail({ slug }: { slug: string }) {
   if (isError || !campaign) {
     return (
       <div className="container-page">
-        <EmptyState
-          title={t('campaign.notFound')}
-          description={t('campaign.notFoundDesc')}
-        />
+        <EmptyState title={t('campaign.notFound')} description={t('campaign.notFoundDesc')} />
       </div>
     );
   }

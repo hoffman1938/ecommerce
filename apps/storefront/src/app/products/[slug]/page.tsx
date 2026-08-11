@@ -97,7 +97,9 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
       <Breadcrumb className="mb-6 text-xs text-ink-500">
         <ol className="flex flex-wrap items-center gap-1.5">
           <li>
-            <Link href="/products" className="transition-colors hover:text-ink-950"><T id="ui.allProducts" /></Link>
+            <Link href="/products" className="transition-colors hover:text-ink-950">
+              <T id="ui.allProducts" />
+            </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
@@ -134,7 +136,9 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
             {product.description ? (
               <div>
-                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950"><T id="ui.aboutThisPiece" /></h2>
+                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950">
+                  <T id="ui.aboutThisPiece" />
+                </h2>
                 <p className="mt-3 max-w-prose whitespace-pre-line text-[15px] leading-relaxed text-ink-600">
                   {product.description}
                 </p>
@@ -143,7 +147,9 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
 
             {rows.length > 0 ? (
               <div>
-                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950"><T id="ui.productDetails" /></h2>
+                <h2 className="text-lg font-bold tracking-[-0.015em] text-ink-950">
+                  <T id="ui.productDetails" />
+                </h2>
                 <dl className="mt-3 divide-y divide-ink-100 dark:divide-line border-t border-ink-100 text-sm">
                   {rows.map(([label, value]) => (
                     <div key={label} className="flex gap-4 py-3">

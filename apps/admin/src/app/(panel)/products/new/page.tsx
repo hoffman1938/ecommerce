@@ -18,7 +18,9 @@ export default function NewProductPage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="mb-4 text-2xl font-bold"><T id="ui.newProduct" /></h1>
+      <h1 className="mb-4 text-2xl font-bold">
+        <T id="ui.newProduct" />
+      </h1>
       <ProductForm
         values={values}
         onChange={setValues}

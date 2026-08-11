@@ -18,8 +18,12 @@ export default function AdminLoginPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
         <h1 className="text-xl font-bold">
-          OUTLET<span className="text-red-600">.</span><T id="ui.admin" /></h1>
-        <p className="mt-1 text-sm text-gray-500"><T id="ui.signWithAdministratorAccount" /></p>
+          OUTLET<span className="text-red-600">.</span>
+          <T id="ui.admin" />
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          <T id="ui.signWithAdministratorAccount" />
+        </p>
         {error ? (
           <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
@@ -49,7 +53,9 @@ export default function AdminLoginPage() {
           }}
         >
           <label className="block text-sm">
-            <span className="mb-1 block font-medium"><T id="ui.email" /></span>
+            <span className="mb-1 block font-medium">
+              <T id="ui.email" />
+            </span>
             <input
               type="email"
               required
@@ -60,7 +66,9 @@ export default function AdminLoginPage() {
             />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium"><T id="ui.password" /></span>
+            <span className="mb-1 block font-medium">
+              <T id="ui.password" />
+            </span>
             <input
               type="password"
               required
@@ -87,12 +95,18 @@ export default function AdminLoginPage() {
            * is plain localStorage.
            */
           <p className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            <strong><T id="ui.demoBuildThisNotAuthentication" /></strong> Any email and password are
-            accepted, and nothing is checked or encrypted.{' '}
-            <strong><T id="ui.doNotEnterRealPassword" /></strong>
+            <strong>
+              <T id="ui.demoBuildThisNotAuthentication" />
+            </strong>{' '}
+            Any email and password are accepted, and nothing is checked or encrypted.{' '}
+            <strong>
+              <T id="ui.doNotEnterRealPassword" />
+            </strong>
           </p>
         ) : (
-          <p className="mt-4 text-xs text-gray-400"><T id="ui.localSeedAdminExampleLocal" /></p>
+          <p className="mt-4 text-xs text-gray-400">
+            <T id="ui.localSeedAdminExampleLocal" />
+          </p>
         )}
       </div>
     </div>

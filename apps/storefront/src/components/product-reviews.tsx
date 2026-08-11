@@ -66,7 +66,9 @@ export function ProductReviews({
   if (reviewCount === 0 || ratingAverage === null) {
     return (
       <section id="reviews" className="mt-10 border-t border-line pt-6 sm:mt-12 lg:mt-20 lg:pt-8">
-        <h2 className="text-xl font-bold tracking-[-0.02em] text-ink-950"><T id="ui.reviews" /></h2>
+        <h2 className="text-xl font-bold tracking-[-0.02em] text-ink-950">
+          <T id="ui.reviews" />
+        </h2>
         <p className="mt-3 max-w-md text-sm text-ink-600">
           No reviews yet. This is a recent addition to the outlet — check the size and materials in
           the details above, and our 30-day returns apply either way.
@@ -79,7 +81,9 @@ export function ProductReviews({
 
   return (
     <section id="reviews" className="mt-10 border-t border-line pt-6 sm:mt-12 lg:mt-20 lg:pt-8">
-      <h2 className="text-xl font-bold tracking-[-0.02em] text-ink-950"><T id="ui.reviews" /></h2>
+      <h2 className="text-xl font-bold tracking-[-0.02em] text-ink-950">
+        <T id="ui.reviews" />
+      </h2>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-14">
         {/* Summary + histogram */}
@@ -139,7 +143,9 @@ export function ProductReviews({
         {/* List */}
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-4 border-b border-line pb-3">
-            <label htmlFor="review-sort" className="text-sm text-ink-600"><T id="ui.sortBy" /></label>
+            <label htmlFor="review-sort" className="text-sm text-ink-600">
+              <T id="ui.sortBy" />
+            </label>
             <select
               id="review-sort"
               value={sort}
@@ -185,7 +191,9 @@ export function ProductReviews({
                     {review.isVerifiedPurchase ? (
                       <>
                         <span aria-hidden="true">·</span>
-                        <span className="font-medium text-success-700"><T id="ui.verifiedPurchase" /></span>
+                        <span className="font-medium text-success-700">
+                          <T id="ui.verifiedPurchase" />
+                        </span>
                       </>
                     ) : null}
                     {review.helpfulCount > 0 ? (
@@ -235,7 +243,9 @@ export function ProductReviews({
                     ? 'cursor-not-allowed text-ink-300 no-underline dark:text-content-disabled'
                     : 'text-ink-600 hover:text-ink-950',
                 )}
-              ><T id="ui.previous" /></button>
+              >
+                <T id="ui.previous" />
+              </button>
               <span data-numeric className="text-sm text-ink-500">
                 Page {page} of {totalPages}
               </span>
@@ -249,7 +259,9 @@ export function ProductReviews({
                     ? 'cursor-not-allowed text-ink-300 dark:text-content-disabled'
                     : 'text-ink-600 hover:text-ink-950',
                 )}
-              ><T id="ui.next" /></button>
+              >
+                <T id="ui.next" />
+              </button>
             </div>
           ) : null}
         </div>

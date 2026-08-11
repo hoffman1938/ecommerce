@@ -44,11 +44,15 @@ export default function InventoryPage() {
           <a
             href={`${API_BASE_URL}/admin/inventory/export/csv`}
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
-          ><T id="ui.exportCsv" /></a>
+          >
+            <T id="ui.exportCsv" />
+          </a>
           <Link
             href="/reservations"
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
-          ><T id="ui.viewReservations" /></Link>
+          >
+            <T id="ui.viewReservations" />
+          </Link>
           <button
             type="button"
             onClick={() => setShowMovements((s) => !s)}
@@ -71,8 +75,12 @@ export default function InventoryPage() {
           <thead>
             <tr>
               <th>SKU</th>
-              <th><T id="ui.product" /></th>
-              <th className="text-right"><T id="ui.hand" /></th>
+              <th>
+                <T id="ui.product" />
+              </th>
+              <th className="text-right">
+                <T id="ui.hand" />
+              </th>
               <th className="text-right">Reserved</th>
               <th className="text-right">Available</th>
               <th className="text-right">Sold</th>
@@ -124,7 +132,9 @@ export default function InventoryPage() {
       {adjusting ? (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="font-semibold"><T id="ui.adjustStock" /><span className="font-mono text-sm">{adjusting.sku}</span>
+            <h2 className="font-semibold">
+              <T id="ui.adjustStock" />
+              <span className="font-mono text-sm">{adjusting.sku}</span>
             </h2>
             <p className="mt-1 text-sm text-gray-500">
               On hand {adjusting.onHandQuantity}, reserved {adjusting.reservedQuantity}.
@@ -157,11 +167,21 @@ export default function InventoryPage() {
                   className="w-full rounded-md border border-gray-300 px-3 py-2"
                   data-testid="adjust-type"
                 >
-                  <option value="RESTOCK"><T id="ui.restockAddUnits" /></option>
-                  <option value="ADJUSTMENT_INCREASE"><T id="ui.adjustmentIncrease" /></option>
-                  <option value="ADJUSTMENT_DECREASE"><T id="ui.adjustmentDecrease" /></option>
-                  <option value="CORRECTION"><T id="ui.correctionSetAbsoluteHand" /></option>
-                  <option value="DAMAGED"><T id="ui.markDamaged" /></option>
+                  <option value="RESTOCK">
+                    <T id="ui.restockAddUnits" />
+                  </option>
+                  <option value="ADJUSTMENT_INCREASE">
+                    <T id="ui.adjustmentIncrease" />
+                  </option>
+                  <option value="ADJUSTMENT_DECREASE">
+                    <T id="ui.adjustmentDecrease" />
+                  </option>
+                  <option value="CORRECTION">
+                    <T id="ui.correctionSetAbsoluteHand" />
+                  </option>
+                  <option value="DAMAGED">
+                    <T id="ui.markDamaged" />
+                  </option>
                 </select>
               </label>
               <label className="block text-sm">
@@ -180,7 +200,9 @@ export default function InventoryPage() {
                 />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block font-medium"><T id="ui.reasonRequiredAudited" /></span>
+                <span className="mb-1 block font-medium">
+                  <T id="ui.reasonRequiredAudited" />
+                </span>
                 <input
                   required
                   value={adjustForm.reason}
@@ -193,7 +215,9 @@ export default function InventoryPage() {
                 <button
                   data-testid="adjust-submit"
                   className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white"
-                ><T id="ui.applyAdjustment" /></button>
+                >
+                  <T id="ui.applyAdjustment" />
+                </button>
                 <button
                   type="button"
                   onClick={() => setAdjusting(null)}
@@ -209,7 +233,9 @@ export default function InventoryPage() {
 
       {showMovements ? (
         <section className="mt-8 overflow-hidden rounded-lg border border-gray-200 bg-white">
-          <h2 className="border-b border-gray-100 px-4 py-3 font-semibold"><T id="ui.recentMovements" /></h2>
+          <h2 className="border-b border-gray-100 px-4 py-3 font-semibold">
+            <T id="ui.recentMovements" />
+          </h2>
           <table className="admin-table">
             <thead>
               <tr>
@@ -217,7 +243,9 @@ export default function InventoryPage() {
                 <th>SKU</th>
                 <th>Type</th>
                 <th className="text-right">Change</th>
-                <th className="text-right"><T id="ui.beforeAfter" /></th>
+                <th className="text-right">
+                  <T id="ui.beforeAfter" />
+                </th>
                 <th>Reason</th>
                 <th>By</th>
               </tr>

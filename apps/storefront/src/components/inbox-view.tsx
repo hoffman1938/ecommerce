@@ -53,23 +53,31 @@ export function InboxView() {
               await api.post('/account/notifications/read-all', {});
               refresh();
             }}
-          ><T id="ui.markAllRead" /></Button>
+          >
+            <T id="ui.markAllRead" />
+          </Button>
         ) : null}
       </div>
 
-      <Alert tone="info"><T id="ui.thisSandboxMailboxMessagesGenerated" /></Alert>
+      <Alert tone="info">
+        <T id="ui.thisSandboxMailboxMessagesGenerated" />
+      </Alert>
 
       <div role="tablist" className="flex gap-1 border-b border-line">
         <TabButton
           active={tab === 'notifications'}
           onClick={() => setTab('notifications')}
           count={notifications.data?.unreadCount ?? 0}
-        ><T id="ui.app" /></TabButton>
+        >
+          <T id="ui.app" />
+        </TabButton>
         <TabButton
           active={tab === 'emails'}
           onClick={() => setTab('emails')}
           count={emails.data?.unreadCount ?? 0}
-        ><T id="ui.emailInbox" /></TabButton>
+        >
+          <T id="ui.emailInbox" />
+        </TabButton>
       </div>
 
       {tab === 'notifications' ? (
@@ -78,7 +86,9 @@ export function InboxView() {
             title={t('ui.noNotificationsYet')}
             description={t('ui.orderUpdatesAppearHereAs')}
             action={
-              <Link href="/products" className="text-sm underline underline-offset-2"><T id="ui.browseOutlet" /></Link>
+              <Link href="/products" className="text-sm underline underline-offset-2">
+                <T id="ui.browseOutlet" />
+              </Link>
             }
           />
         ) : (
@@ -114,7 +124,9 @@ export function InboxView() {
                         refresh();
                       }}
                       className="shrink-0 text-xs text-ink-500 underline underline-offset-2 hover:text-ink-950"
-                    ><T id="ui.markRead" /></button>
+                    >
+                      <T id="ui.markRead" />
+                    </button>
                   ) : null}
                 </div>
               </li>
@@ -177,7 +189,9 @@ export function InboxView() {
                       <Link
                         href="/account/orders"
                         className="mt-3 inline-block text-sm underline underline-offset-2"
-                      ><T id="ui.viewOrder" /></Link>
+                      >
+                        <T id="ui.viewOrder" />
+                      </Link>
                     ) : null}
                   </div>
                 ) : null}

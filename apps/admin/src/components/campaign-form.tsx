@@ -103,7 +103,9 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.startsAt" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.startsAt" />
+          </span>
           <input
             type="datetime-local"
             required
@@ -114,7 +116,9 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.endsAt" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.endsAt" />
+          </span>
           <input
             type="datetime-local"
             required
@@ -125,7 +129,9 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.status" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.status" />
+          </span>
           <select
             value={values.status}
             onChange={(e) => set('status', e.target.value as CampaignFormValues['status'])}
@@ -137,7 +143,9 @@ export function CampaignForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.displayOrder" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.displayOrder" />
+          </span>
           <input
             type="number"
             value={values.position}
@@ -146,7 +154,9 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm sm:col-span-2">
-          <span className="mb-1 block font-medium"><T id="ui.shortDescription" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.shortDescription" />
+          </span>
           <input
             value={values.shortDescription}
             onChange={(e) => set('shortDescription', e.target.value)}
@@ -154,7 +164,9 @@ export function CampaignForm({
           />
         </label>
         <label className="block text-sm sm:col-span-2">
-          <span className="mb-1 block font-medium"><T id="ui.fullDescription" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.fullDescription" />
+          </span>
           <textarea
             rows={3}
             value={values.description}
@@ -167,7 +179,9 @@ export function CampaignForm({
             type="checkbox"
             checked={values.isVisible}
             onChange={(e) => set('isVisible', e.target.checked)}
-          /><T id="ui.visibleStorefront" /></label>
+          />
+          <T id="ui.visibleStorefront" />
+        </label>
       </div>
       <button
         data-testid="save-campaign"

@@ -86,7 +86,9 @@ export default function CouponsPage() {
             className="rounded-md border border-gray-300 px-2 py-1.5"
           >
             <option value="PERCENTAGE">Percentage</option>
-            <option value="FIXED"><T id="ui.fixedAmount" /></option>
+            <option value="FIXED">
+              <T id="ui.fixedAmount" />
+            </option>
           </select>
         </label>
         <label className="block text-sm">
@@ -103,7 +105,9 @@ export default function CouponsPage() {
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block text-xs font-medium text-gray-500"><T id="ui.minOrderMinor" /></span>
+          <span className="mb-1 block text-xs font-medium text-gray-500">
+            <T id="ui.minOrderMinor" />
+          </span>
           <input
             type="number"
             value={form.minOrderMinor}
@@ -112,7 +116,9 @@ export default function CouponsPage() {
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block text-xs font-medium text-gray-500"><T id="ui.maxDiscountMinor" /></span>
+          <span className="mb-1 block text-xs font-medium text-gray-500">
+            <T id="ui.maxDiscountMinor" />
+          </span>
           <input
             type="number"
             value={form.maxDiscountMinor}
@@ -125,8 +131,12 @@ export default function CouponsPage() {
             type="checkbox"
             checked={form.firstOrderOnly}
             onChange={(e) => setForm((f) => ({ ...f, firstOrderOnly: e.target.checked }))}
-          /><T id="ui.firstOrderOnly" /></label>
-        <button className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"><T id="ui.createCoupon" /></button>
+          />
+          <T id="ui.firstOrderOnly" />
+        </label>
+        <button className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700">
+          <T id="ui.createCoupon" />
+        </button>
         {error ? <p className="w-full text-sm text-red-600">{error}</p> : null}
       </form>
 
@@ -138,7 +148,9 @@ export default function CouponsPage() {
               <th>Discount</th>
               <th>Rules</th>
               <th className="text-right">Used</th>
-              <th><T id="ui.status" /></th>
+              <th>
+                <T id="ui.status" />
+              </th>
               <th></th>
             </tr>
           </thead>

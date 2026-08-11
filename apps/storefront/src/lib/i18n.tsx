@@ -138,9 +138,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [locale],
   );
 
-  const money = useCallback((amountMinorBase: number) => formatMoneyIn(locale, amountMinorBase), [
-    locale,
-  ]);
+  const money = useCallback(
+    (amountMinorBase: number) => formatMoneyIn(locale, amountMinorBase),
+    [locale],
+  );
 
   const formatDate = useCallback(
     (iso: string | Date, opts?: Intl.DateTimeFormatOptions) => {

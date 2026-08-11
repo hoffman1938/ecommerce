@@ -29,11 +29,18 @@ export default function ProfilePage() {
     }
   }, [profile]);
 
-  if (!profile) return <p className="text-ink-500"><T id="ui.loading" /></p>;
+  if (!profile)
+    return (
+      <p className="text-ink-500">
+        <T id="ui.loading" />
+      </p>
+    );
 
   return (
     <div className="max-w-md">
-      <h1 className="text-2xl font-bold"><T id="ui.personalInformation" /></h1>
+      <h1 className="text-2xl font-bold">
+        <T id="ui.personalInformation" />
+      </h1>
       <p className="mt-1 text-sm text-ink-500">
         {profile.email} {profile.isEmailVerified ? '· verified ✓' : '· not verified'}
       </p>
@@ -48,7 +55,9 @@ export default function ProfilePage() {
         }}
       >
         <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.firstName" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.firstName" />
+          </span>
           <input
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
@@ -56,14 +65,18 @@ export default function ProfilePage() {
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.lastName" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.lastName" />
+          </span>
           <input
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             className="w-full rounded border border-ink-300 px-3 py-2"
           />
         </label>
-        <button className="rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-ink-800"><T id="ui.saveChanges" /></button>
+        <button className="rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25 hover:bg-ink-800">
+          <T id="ui.saveChanges" />
+        </button>
       </form>
     </div>
   );

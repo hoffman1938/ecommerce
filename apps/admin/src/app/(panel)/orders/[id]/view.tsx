@@ -30,7 +30,7 @@ interface AdminOrderDetail extends OrderDto {
 }
 
 export default function AdminOrderDetailPage() {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,12 @@ export default function AdminOrderDetailPage() {
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-order', params.id] });
-  if (!order) return <p className="text-gray-500"><T id="ui.loadingOrder" /></p>;
+  if (!order)
+    return (
+      <p className="text-gray-500">
+        <T id="ui.loadingOrder" />
+      </p>
+    );
 
   const paidPayment = order.payments.find((p) => ['PAID', 'PARTIALLY_REFUNDED'].includes(p.status));
   const refundableMinor = paidPayment
@@ -86,7 +91,9 @@ export default function AdminOrderDetailPage() {
             target="_blank"
             rel="noreferrer"
             className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:border-gray-900"
-          ><T id="ui.packingSlip" /></a>
+          >
+            <T id="ui.packingSlip" />
+          </a>
           <button
             type="button"
             onClick={async () => {
@@ -95,21 +102,29 @@ export default function AdminOrderDetailPage() {
                 .catch(() => undefined);
             }}
             className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:border-gray-900"
-          ><T id="ui.resendEmail" /></button>
+          >
+            <T id="ui.resendEmail" />
+          </button>
         </div>
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold"><T id="ui.items" /></h2>
+        <h2 className="mb-3 font-semibold">
+          <T id="ui.items" />
+        </h2>
         <table className="admin-table">
           <thead>
             <tr>
               <th>SKU</th>
-              <th><T id="ui.item" /></th>
+              <th>
+                <T id="ui.item" />
+              </th>
               <th className="text-right">Qty</th>
               <th className="text-right">Unit</th>
-              <th className="text-right"><T id="ui.total" /></th>
+              <th className="text-right">
+                <T id="ui.total" />
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -125,27 +140,23 @@ export default function AdminOrderDetailPage() {
                   ) : null}
                 </td>
                 <td className="text-right">{item.quantity}</td>
-                <td className="text-right">
-                  {money(item.unitPriceMinor)}
-                </td>
-                <td className="text-right font-medium">
-                  {money(item.totalMinor)}
-                </td>
+                <td className="text-right">{money(item.unitPriceMinor)}</td>
+                <td className="text-right font-medium">{money(item.totalMinor)}</td>
               </tr>
             ))}
           </tbody>
         </table>
         <p className="mt-3 text-right text-sm">
-          Subtotal {money(order.subtotalMinor)} · Discount{' '}
-          {money(order.discountMinor)} · Shipping{' '}
-          {money(order.shippingMinor)} ·{' '}
-          <strong>Total {money(order.totalMinor)}</strong>
+          Subtotal {money(order.subtotalMinor)} · Discount {money(order.discountMinor)} · Shipping{' '}
+          {money(order.shippingMinor)} · <strong>Total {money(order.totalMinor)}</strong>
         </p>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white p-5">
-          <h2 className="mb-3 font-semibold"><T id="ui.updateFulfillment" /></h2>
+          <h2 className="mb-3 font-semibold">
+            <T id="ui.updateFulfillment" />
+          </h2>
           <form
             className="space-y-3"
             onSubmit={async (e) => {
@@ -200,7 +211,9 @@ export default function AdminOrderDetailPage() {
             <button
               data-testid="order-status-submit"
               className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-            ><T id="ui.applyStatus" /></button>
+            >
+              <T id="ui.applyStatus" />
+            </button>
           </form>
         </section>
 
@@ -240,9 +253,7 @@ export default function AdminOrderDetailPage() {
                 }
               }}
             >
-              <p className="text-sm text-gray-500">
-                Refundable: {money(refundableMinor)}
-              </p>
+              <p className="text-sm text-gray-500">Refundable: {money(refundableMinor)}</p>
               <input
                 type="number"
                 min={1}
@@ -265,7 +276,9 @@ export default function AdminOrderDetailPage() {
               <button
                 data-testid="refund-submit"
                 className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
-              ><T id="ui.issueRefund" /></button>
+              >
+                <T id="ui.issueRefund" />
+              </button>
             </form>
           ) : (
             <p className="text-sm text-gray-500">
@@ -276,7 +289,9 @@ export default function AdminOrderDetailPage() {
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold"><T id="ui.historyAmpNotes" /></h2>
+        <h2 className="mb-3 font-semibold">
+          <T id="ui.historyAmpNotes" />
+        </h2>
         <ul className="space-y-1 text-sm">
           {order.statusHistory.map((entry) => (
             <li key={entry.id} className="text-gray-600">

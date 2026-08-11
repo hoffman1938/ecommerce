@@ -15,12 +15,11 @@ import { T } from '@/components/t';
  */
 export function FreeShippingBar({
   progress,
-  
 }: {
   progress: FreeShippingProgressDto;
   currency: string;
 }) {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   const percent = progress.qualified
     ? 100
     : Math.max(
@@ -39,7 +38,9 @@ export function FreeShippingBar({
         {progress.qualified ? (
           <>
             <CheckIcon className="h-4 w-4 shrink-0 text-success-600" />
-            <span className="font-medium text-success-600"><T id="ui.standardDeliveryFreeThisOrder" /></span>
+            <span className="font-medium text-success-600">
+              <T id="ui.standardDeliveryFreeThisOrder" />
+            </span>
           </>
         ) : (
           <>

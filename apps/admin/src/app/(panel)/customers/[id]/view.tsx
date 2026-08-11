@@ -44,7 +44,7 @@ interface CustomerDetail {
 }
 
 export default function CustomerDetailPage() {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   const params = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [note, setNote] = useState('');
@@ -56,7 +56,12 @@ export default function CustomerDetailPage() {
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-customer', params.id] });
-  if (!customer) return <p className="text-gray-500"><T id="ui.loadingCustomer" /></p>;
+  if (!customer)
+    return (
+      <p className="text-gray-500">
+        <T id="ui.loadingCustomer" />
+      </p>
+    );
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -90,7 +95,9 @@ export default function CustomerDetailPage() {
               }
             }}
             className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm text-red-600 hover:border-red-600"
-          ><T id="ui.disableAccount" /></button>
+          >
+            <T id="ui.disableAccount" />
+          </button>
         ) : (
           <button
             type="button"
@@ -99,7 +106,9 @@ export default function CustomerDetailPage() {
               refresh();
             }}
             className="rounded-md border border-green-300 bg-white px-4 py-2 text-sm text-green-700 hover:border-green-600"
-          ><T id="ui.reEnableAccount" /></button>
+          >
+            <T id="ui.reEnableAccount" />
+          </button>
         )}
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -119,14 +128,14 @@ export default function CustomerDetailPage() {
                 <td>
                   <Badge tone={order.status === 'CANCELLED' ? 'red' : 'blue'}>{order.status}</Badge>
                 </td>
-                <td className="text-right font-medium">
-                  {money(order.totalMinor)}
-                </td>
+                <td className="text-right font-medium">{money(order.totalMinor)}</td>
               </tr>
             ))}
             {customer.orders.length === 0 ? (
               <tr>
-                <td className="text-gray-400"><T id="ui.noOrders" /></td>
+                <td className="text-gray-400">
+                  <T id="ui.noOrders" />
+                </td>
               </tr>
             ) : null}
           </tbody>
@@ -141,10 +150,16 @@ export default function CustomerDetailPage() {
               {address.line1}, {address.postalCode} {address.city}, {address.countryCode}
             </p>
           ))}
-          {customer.addresses.length === 0 ? <p className="text-gray-400"><T id="ui.noneSaved" /></p> : null}
+          {customer.addresses.length === 0 ? (
+            <p className="text-gray-400">
+              <T id="ui.noneSaved" />
+            </p>
+          ) : null}
         </section>
         <section className="rounded-lg border border-gray-200 bg-white p-5 text-sm">
-          <h2 className="mb-2 font-semibold"><T id="ui.returnsAmpRefunds" /></h2>
+          <h2 className="mb-2 font-semibold">
+            <T id="ui.returnsAmpRefunds" />
+          </h2>
           {customer.returnRequests.map((r) => (
             <p key={r.id} className="text-gray-600">
               <Link href={`/returns/${r.id}`} className="hover:underline">
@@ -165,7 +180,9 @@ export default function CustomerDetailPage() {
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold"><T id="ui.supportNotes" /></h2>
+        <h2 className="mb-3 font-semibold">
+          <T id="ui.supportNotes" />
+        </h2>
         <ul className="space-y-2 text-sm">
           {customer.supportNotes.map((supportNote) => (
             <li key={supportNote.id} className="rounded bg-gray-50 p-3">

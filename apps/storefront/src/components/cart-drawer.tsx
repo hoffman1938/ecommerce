@@ -124,14 +124,20 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
               <BagIcon className="h-6 w-6" />
             </span>
             <div>
-              <p className="text-base font-semibold text-ink-950"><T id="ui.bagEmpty" /></p>
-              <p className="mt-1 text-sm text-ink-500"><T id="ui.itemsYouReserveHeld20" /></p>
+              <p className="text-base font-semibold text-ink-950">
+                <T id="ui.bagEmpty" />
+              </p>
+              <p className="mt-1 text-sm text-ink-500">
+                <T id="ui.itemsYouReserveHeld20" />
+              </p>
             </div>
             <Link
               href="/products"
               onClick={onClose}
               className="inline-flex h-10 items-center rounded bg-accent px-5 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover"
-            ><T id="ui.browseOutlet" /></Link>
+            >
+              <T id="ui.browseOutlet" />
+            </Link>
           </div>
         ) : (
           <>
@@ -178,7 +184,9 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
                   {money(cart?.subtotalMinor ?? 0)}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-ink-500"><T id="ui.shippingAnyDiscountsCalculatedAt" /></p>
+              <p className="mt-1 text-xs text-ink-500">
+                <T id="ui.shippingAnyDiscountsCalculatedAt" />
+              </p>
 
               <Link href="/checkout" onClick={onClose} className="mt-3 block">
                 <Button size="lg" className="w-full">
@@ -189,7 +197,9 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
                 href="/cart"
                 onClick={onClose}
                 className="mt-2 block text-center text-sm text-ink-600 underline underline-offset-2 transition-colors hover:text-ink-950"
-              ><T id="ui.viewFullBag" /></Link>
+              >
+                <T id="ui.viewFullBag" />
+              </Link>
             </div>
           </>
         )}
@@ -201,7 +211,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
 
 function DrawerLine({
   item,
-  
+
   onClose,
   onRemove,
   onQuantity,
@@ -212,7 +222,7 @@ function DrawerLine({
   onRemove: () => void;
   onQuantity: (quantity: number) => void;
 }) {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   return (
     <li className="flex gap-3 py-4">
       <Link

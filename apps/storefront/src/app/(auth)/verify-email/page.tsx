@@ -44,7 +44,9 @@ function VerifyInner() {
         <Link
           href="/login"
           className="mt-6 inline-block rounded bg-ink-950 px-5 py-2.5 text-sm font-semibold text-ink-25"
-        ><T id="ui.goSign" /></Link>
+        >
+          <T id="ui.goSign" />
+        </Link>
       ) : null}
     </div>
   );

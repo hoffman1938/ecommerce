@@ -15,7 +15,7 @@ import { useI18n } from '@/lib/i18n';
 import { T } from '@/components/t';
 
 export default function CartPage() {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   const { data: cart, isLoading, refetch } = useCart();
   const queryClient = useQueryClient();
   const [couponCode, setCouponCode] = useState('');
@@ -70,7 +70,9 @@ export default function CartPage() {
             <Link
               href="/products"
               className="inline-flex h-10 items-center rounded bg-accent px-5 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover"
-            ><T id="ui.browseOutlet" /></Link>
+            >
+              <T id="ui.browseOutlet" />
+            </Link>
           }
         />
 
@@ -161,7 +163,9 @@ export default function CartPage() {
             column of figures beside an unbounded column of items reads as one
             undifferentiated list, and the total stops being the answer. */}
         <aside className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:h-fit dark:rounded-lg dark:border dark:border-line dark:bg-surface-card dark:p-4 dark:sm:p-5">
-          <h2 className="text-sm font-semibold text-ink-950"><T id="ui.orderSummary" /></h2>
+          <h2 className="text-sm font-semibold text-ink-950">
+            <T id="ui.orderSummary" />
+          </h2>
 
           <dl className="mt-4 space-y-2.5 border-t border-line pt-4 text-sm">
             <div className="flex justify-between">
@@ -177,15 +181,17 @@ export default function CartPage() {
               </div>
             ) : null}
             <div className="flex justify-between">
-              <dt className="text-ink-600"><T id="ui.estimatedShipping" /></dt>
+              <dt className="text-ink-600">
+                <T id="ui.estimatedShipping" />
+              </dt>
               <dd data-numeric className="text-ink-900">
-                {cart.shippingMinor === 0
-                  ? t('ui.free')
-                  : money(cart.shippingMinor)}
+                {cart.shippingMinor === 0 ? t('ui.free') : money(cart.shippingMinor)}
               </dd>
             </div>
             <div className="flex items-baseline justify-between border-t border-line pt-3">
-              <dt className="text-base font-semibold text-ink-950"><T id="ui.total" /></dt>
+              <dt className="text-base font-semibold text-ink-950">
+                <T id="ui.total" />
+              </dt>
               <dd data-numeric data-testid="cart-total" className="text-lg font-bold text-ink-950">
                 {money(cart.totalMinor)}
               </dd>
@@ -215,7 +221,9 @@ export default function CartPage() {
                   type="button"
                   onClick={() => mutate(() => api.delete('/cart/coupon'))}
                   className="text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
-                ><T id="ui.remove" /></button>
+                >
+                  <T id="ui.remove" />
+                </button>
               </div>
             ) : (
               <form
@@ -243,7 +251,9 @@ export default function CartPage() {
                   });
                 }}
               >
-                <label htmlFor="coupon" className="sr-only"><T id="ui.couponCode" /></label>
+                <label htmlFor="coupon" className="sr-only">
+                  <T id="ui.couponCode" />
+                </label>
                 <input
                   id="coupon"
                   value={couponCode}
@@ -251,7 +261,9 @@ export default function CartPage() {
                   placeholder={t('ui.couponCode')}
                   className="h-10 w-full rounded bg-ink-25 px-3 text-sm uppercase ring-1 ring-inset ring-ink-300 transition-shadow duration-150 placeholder:normal-case placeholder:text-ink-400 hover:ring-ink-400 dark:bg-surface-sunken dark:ring-line-strong dark:placeholder:text-content-muted dark:hover:bg-surface dark:hover:ring-ink-600"
                 />
-                <Button type="submit" variant="secondary"><T id="ui.apply" /></Button>
+                <Button type="submit" variant="secondary">
+                  <T id="ui.apply" />
+                </Button>
               </form>
             )}
           </div>
@@ -266,7 +278,9 @@ export default function CartPage() {
           >
             {t('ui.checkout')}
           </Link>
-          <p className="mt-3 hidden text-xs text-ink-500 lg:block"><T id="ui.reservationsReleasedWhenCountdownEnds" /></p>
+          <p className="mt-3 hidden text-xs text-ink-500 lg:block">
+            <T id="ui.reservationsReleasedWhenCountdownEnds" />
+          </p>
         </aside>
       </div>
 
@@ -284,7 +298,9 @@ export default function CartPage() {
       <div className="sticky bottom-0 -mx-4 mt-8 border-t border-line bg-ink-25/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur dark:bg-surface-raised/95 dark:shadow-overlay lg:hidden">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs text-ink-500"><T id="ui.total" /></p>
+            <p className="text-xs text-ink-500">
+              <T id="ui.total" />
+            </p>
             <p data-numeric className="text-lg font-bold text-ink-950">
               {money(cart.totalMinor)}
             </p>
@@ -311,14 +327,14 @@ export default function CartPage() {
  */
 function FreeShippingProgress({
   progress,
-  
+
   subtotalAfterDiscount,
 }: {
   progress: FreeShippingProgressDto;
   currency: string;
   subtotalAfterDiscount: number;
 }) {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   if (progress.thresholdMinor <= 0) return null;
 
   const percent = Math.min(
@@ -331,7 +347,9 @@ function FreeShippingProgress({
       <p className="text-sm text-ink-700">
         {progress.qualified ? (
           <>
-            <span className="font-semibold text-success-700"><T id="ui.freeStandardShippingUnlocked" /></span>{' '}
+            <span className="font-semibold text-success-700">
+              <T id="ui.freeStandardShippingUnlocked" />
+            </span>{' '}
             Your order ships at no extra cost.
           </>
         ) : (
@@ -444,13 +462,17 @@ function SavedForLater({
                   size="sm"
                   onClick={() => onRestore(item.id)}
                   disabled={busyId === item.id}
-                ><T id="ui.moveBag" /></Button>
+                >
+                  <T id="ui.moveBag" />
+                </Button>
                 <button
                   type="button"
                   onClick={() => onDiscard(item.id)}
                   disabled={busyId === item.id}
                   className="text-sm text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
-                ><T id="ui.remove" /></button>
+                >
+                  <T id="ui.remove" />
+                </button>
               </div>
             </div>
           </li>
@@ -477,7 +499,7 @@ function CartRow({
   onSave: () => void;
   onExpired: () => void;
 }) {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   return (
     <li
       className={cx('flex gap-4 py-5 transition-opacity', busy && 'opacity-50')}
@@ -547,13 +569,17 @@ function CartRow({
               onClick={onSave}
               disabled={busy}
               className="text-sm text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
-            ><T id="ui.saveLater" /></button>
+            >
+              <T id="ui.saveLater" />
+            </button>
             <button
               type="button"
               onClick={onRemove}
               disabled={busy}
               className="text-sm text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
-            ><T id="ui.remove" /></button>
+            >
+              <T id="ui.remove" />
+            </button>
           </div>
 
           {item.reservation && !item.isExpired ? (
@@ -561,7 +587,9 @@ function CartRow({
               Reserved <Countdown expiresAt={item.reservation.expiresAt} onExpired={onExpired} />
             </p>
           ) : (
-            <p className="text-sm font-medium text-sale-500"><T id="ui.reservationExpired" /></p>
+            <p className="text-sm font-medium text-sale-500">
+              <T id="ui.reservationExpired" />
+            </p>
           )}
         </div>
       </div>

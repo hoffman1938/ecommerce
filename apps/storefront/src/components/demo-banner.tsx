@@ -32,9 +32,15 @@ export function DemoBanner() {
             above every page; the fuller wording returns as soon as there is
             room for it. */}
         <span>
-          <strong className="font-semibold"><T id="ui.sandbox" /></strong>{' '}
-          <span className="sm:hidden"><T id="ui.nothingHereReal" /></span>
-          <span className="hidden sm:inline"><T id="ui.everythingWorksNothingRealPayments" /></span>
+          <strong className="font-semibold">
+            <T id="ui.sandbox" />
+          </strong>{' '}
+          <span className="sm:hidden">
+            <T id="ui.nothingHereReal" />
+          </span>
+          <span className="hidden sm:inline">
+            <T id="ui.everythingWorksNothingRealPayments" />
+          </span>
         </span>
         <button
           type="button"
@@ -52,10 +58,14 @@ export function DemoBanner() {
           <p>
             <T id="ui.demoRunsInBrowser" />
           </p>
-          <p className="mt-1.5"><T id="ui.signWith" /><code className="rounded bg-warning-100 px-1">customer@example.local</code>{' '}
-            / <code className="rounded bg-warning-100 px-1">Customer123!</code>
+          <p className="mt-1.5">
+            <T id="ui.signWith" />
+            <code className="rounded bg-warning-100 px-1">customer@example.local</code> /{' '}
+            <code className="rounded bg-warning-100 px-1">Customer123!</code>
             <T id="ui.orRegisterAnyAddress" />{' '}
-            <Link href="/qa" className="font-semibold underline underline-offset-2"><T id="ui.openQaControlCenter" /></Link>
+            <Link href="/qa" className="font-semibold underline underline-offset-2">
+              <T id="ui.openQaControlCenter" />
+            </Link>
           </p>
         </div>
       ) : null}

@@ -33,8 +33,12 @@ function LoginInner() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950"><T id="ui.sign" /></h1>
-      <p className="mt-1.5 text-sm text-ink-600"><T id="ui.bagItsReservationTimersCarry" /></p>
+      <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">
+        <T id="ui.sign" />
+      </h1>
+      <p className="mt-1.5 text-sm text-ink-600">
+        <T id="ui.bagItsReservationTimersCarry" />
+      </p>
 
       {error ? (
         <div className="mt-6">
@@ -64,10 +68,14 @@ function LoginInner() {
             <Link
               href="/forgot-password"
               className="text-xs text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
-            ><T id="ui.forgotPassword" /></Link>
+            >
+              <T id="ui.forgotPassword" />
+            </Link>
           </div>
         </div>
-        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}><T id="ui.sign" /></Button>
+        <Button type="submit" size="lg" fullWidth loading={form.formState.isSubmitting}>
+          <T id="ui.sign" />
+        </Button>
       </form>
 
       <p className="mt-8 border-t border-line pt-6 text-sm text-ink-600">
@@ -75,7 +83,9 @@ function LoginInner() {
         <Link
           href="/register"
           className="font-medium text-ink-950 underline underline-offset-2 decoration-ink-300 transition-colors hover:decoration-ink-950"
-        ><T id="ui.createAccount" /></Link>
+        >
+          <T id="ui.createAccount" />
+        </Link>
       </p>
     </div>
   );

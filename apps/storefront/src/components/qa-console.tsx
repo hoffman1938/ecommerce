@@ -41,7 +41,7 @@ const RESET_TARGETS = [
 ] as const;
 
 export function QaConsole() {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
@@ -99,7 +99,9 @@ export function QaConsole() {
           <span className="rounded-xs bg-warning-100 px-2 py-1 text-2xs font-bold uppercase tracking-[0.08em] text-warning-700">
             Sandbox
           </span>
-          <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950"><T id="ui.simulationControlCenter" /></h1>
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">
+            <T id="ui.simulationControlCenter" />
+          </h1>
         </div>
         <p className="mt-2 max-w-2xl text-sm text-ink-600">
           Drive the simulated store into any state without waiting. Everything here changes
@@ -115,10 +117,7 @@ export function QaConsole() {
       ) : null}
 
       {/* --- Clock ---------------------------------------------------------- */}
-      <Panel
-        title={t('ui.time')}
-        description={t('ui.advancingClockAgesReservationsCampaign')}
-      >
+      <Panel title={t('ui.time')} description={t('ui.advancingClockAgesReservationsCampaign')}>
         <dl className="mb-4 grid gap-3 sm:grid-cols-3">
           <Stat label={t('ui.simulatedNow')} value={formatStamp(status.data?.simulatedNow)} />
           <Stat label={t('ui.realNow')} value={formatStamp(status.data?.realNow)} />
@@ -141,15 +140,14 @@ export function QaConsole() {
             variant="ghost"
             size="sm"
             onClick={() => run.mutate({ path: '/simulation/reset-time' })}
-          ><T id="ui.resetRealTime" /></Button>
+          >
+            <T id="ui.resetRealTime" />
+          </Button>
         </div>
       </Panel>
 
       {/* --- Scenarios ------------------------------------------------------ */}
-      <Panel
-        title={t('ui.scenarios')}
-        description={t('ui.stepByStepRoutesThrough')}
-      >
+      <Panel title={t('ui.scenarios')} description={t('ui.stepByStepRoutesThrough')}>
         <ul className="grid gap-4 sm:grid-cols-2">
           {SCENARIOS.map((scenario) => (
             <li key={scenario.id} className="rounded border border-line p-4">
@@ -169,7 +167,9 @@ export function QaConsole() {
                 <Link
                   href={scenario.startHref}
                   className="mt-3 inline-block text-xs font-medium text-ink-900 underline underline-offset-2 hover:text-ink-950"
-                ><T id="ui.startScenario" /></Link>
+                >
+                  <T id="ui.startScenario" />
+                </Link>
               ) : null}
             </li>
           ))}
@@ -184,7 +184,9 @@ export function QaConsole() {
         {(orders.data ?? []).length === 0 ? (
           <p className="text-sm text-ink-500">
             No orders yet.{' '}
-            <Link href="/products" className="underline underline-offset-2"><T id="ui.placeOne" /></Link>{' '}
+            <Link href="/products" className="underline underline-offset-2">
+              <T id="ui.placeOne" />
+            </Link>{' '}
             to use these controls.
           </p>
         ) : (
@@ -223,7 +225,9 @@ export function QaConsole() {
                     }}
                     className="w-40"
                   >
-                    <option value=""><T id="ui.jumpStage" /></option>
+                    <option value="">
+                      <T id="ui.jumpStage" />
+                    </option>
                     {STAGES.map((stage) => (
                       <option key={stage} value={stage}>
                         {stage}
@@ -251,7 +255,9 @@ export function QaConsole() {
                         body: { order: order.orderNumber },
                       })
                     }
-                  ><T id="ui.failDelivery" /></Button>
+                  >
+                    <T id="ui.failDelivery" />
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -277,7 +283,9 @@ export function QaConsole() {
         description="Walk a return through review, approval, receipt and refund. The refund and restock only happen at the final step."
       >
         {(returns.data ?? []).length === 0 ? (
-          <p className="text-sm text-ink-500"><T id="ui.noReturnsYetDeliverOrder" /></p>
+          <p className="text-sm text-ink-500">
+            <T id="ui.noReturnsYetDeliverOrder" />
+          </p>
         ) : (
           <ul className="divide-y divide-ink-100 dark:divide-line">
             {(returns.data ?? []).map((request) => (
@@ -291,8 +299,7 @@ export function QaConsole() {
                   </p>
                   <p data-numeric className="text-xs text-ink-500">
                     {request.orderNumber} · {request.itemCount}{' '}
-                    {request.itemCount === 1 ? 'item' : 'items'} ·{' '}
-                    {money(request.refundMinor)}
+                    {request.itemCount === 1 ? 'item' : 'items'} · {money(request.refundMinor)}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -330,10 +337,7 @@ export function QaConsole() {
       </Panel>
 
       {/* --- Inventory ------------------------------------------------------ */}
-      <Panel
-        title={t('ui.inventory')}
-        description={t('ui.setVariantAvailability')}
-      >
+      <Panel title={t('ui.inventory')} description={t('ui.setVariantAvailability')}>
         <div className="max-h-80 overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-ink-25 dark:bg-surface-card">
@@ -401,12 +405,11 @@ export function QaConsole() {
       </Panel>
 
       {/* --- Event log ------------------------------------------------------ */}
-      <Panel
-        title={t('ui.eventLog')}
-        description={t('ui.everyStateChangeSandboxHas')}
-      >
+      <Panel title={t('ui.eventLog')} description={t('ui.everyStateChangeSandboxHas')}>
         {(events.data ?? []).length === 0 ? (
-          <p className="text-sm text-ink-500"><T id="ui.nothingRecordedYet" /></p>
+          <p className="text-sm text-ink-500">
+            <T id="ui.nothingRecordedYet" />
+          </p>
         ) : (
           <ul className="max-h-96 divide-y divide-ink-100 dark:divide-line overflow-y-auto">
             {(events.data ?? []).map((event) => (
@@ -430,10 +433,7 @@ export function QaConsole() {
       </Panel>
 
       {/* --- Reset ---------------------------------------------------------- */}
-      <Panel
-        title={t('ui.resetTestData')}
-        description={t('ui.clearingOrdersAlsoReturnsStock')}
-      >
+      <Panel title={t('ui.resetTestData')} description={t('ui.clearingOrdersAlsoReturnsStock')}>
         <div className="flex flex-wrap gap-2">
           {RESET_TARGETS.map((target) => (
             <Button
