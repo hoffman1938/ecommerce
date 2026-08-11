@@ -1,6 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@outlet/database';
-import { brandArtworkDataUri, categoryArtworkDataUri } from '@outlet/catalog';
+import {
+  brandArtworkDataUri,
+  categoryArtworkDataUri,
+  flattenTree,
+  pruneToVisible,
+  resolvePath,
+  subtreeIds,
+  type CategoryTreeNode,
+} from '@outlet/catalog';
 import { discountPercent, isCampaignRunning, ratingAverageFrom } from '@outlet/domain';
 import type {
   BrandDto,
@@ -14,6 +22,7 @@ import type {
 } from '@outlet/types';
 import type { ProductQueryInput, ReviewQueryInput } from '@outlet/validation';
 import { PrismaService } from '../../common/prisma.service';
+import { CategoryTreeService } from './category-tree.service';
 
 /**
  * PostgreSQL-backed catalog search (MVP). All filtering and sorting happens
@@ -23,7 +32,10 @@ import { PrismaService } from '../../common/prisma.service';
  */
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly categories: CategoryTreeService,
+  ) {}
 
   async listBrands(): Promise<BrandDto[]> {
     const brands = await this.prisma.brand.findMany({
@@ -43,43 +55,57 @@ export class CatalogService {
     }));
   }
 
-  async listCategories(): Promise<CategoryDto[]> {
-    const categories = await this.prisma.category.findMany({
-      where: { isActive: true },
-      orderBy: { position: 'asc' },
-    });
-    const byId = new Map<string, CategoryDto>(
-      categories.map((c) => [
-        c.id,
-        {
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          parentId: c.parentId,
-          position: c.position,
-          imageUrl: categoryArtworkDataUri(c.slug, c.name),
-          children: [],
-        },
-      ]),
-    );
-    const roots: CategoryDto[] = [];
-    for (const dto of byId.values()) {
-      if (dto.parentId && byId.has(dto.parentId)) {
-        byId.get(dto.parentId)!.children!.push(dto);
-      } else {
-        roots.push(dto);
-      }
-    }
-    return roots;
+  private toCategoryDto(node: CategoryTreeNode): CategoryDto {
+    return {
+      id: node.id,
+      name: node.name,
+      slug: node.slug,
+      parentId: node.parentId,
+      position: node.position,
+      pathSegment: node.pathSegment,
+      path: node.path,
+      href: node.href,
+      targetGroup: node.targetGroup,
+      level: node.level,
+      sizeChartGroup: node.sizeChartGroup,
+      productCount: node.productCount,
+      imageUrl: categoryArtworkDataUri(node.slug, node.name),
+      children: node.children.map((child) => this.toCategoryDto(child)),
+    };
   }
 
+  /**
+   * The customer-facing category tree — the navigation, in other words.
+   *
+   * Hidden branches and branches with nothing to sell are gone by the time this
+   * returns, so no consumer has to re-implement the rule and none of them can
+   * disagree about it.
+   */
+  async listCategories(): Promise<CategoryDto[]> {
+    const tree = await this.categories.tree();
+    return pruneToVisible(tree).map((node) => this.toCategoryDto(node));
+  }
+
+  /**
+   * Resolves `/shop/women/clothing/dresses` to its breadcrumb trail.
+   *
+   * Returns null for a path that does not exist *or* is not currently visible,
+   * because to a customer those are the same thing and leaking the difference
+   * would advertise categories the shop has deliberately switched off.
+   */
+  async resolveCategoryPath(segments: string[]): Promise<CategoryDto[] | null> {
+    if (segments.length === 0) return null;
+    const visible = pruneToVisible(await this.categories.tree());
+    const trail = resolvePath(visible, segments);
+    if (trail.length !== segments.length) return null;
+    return trail.map((node) => this.toCategoryDto(node));
+  }
+
+  /** A category filter matches the category itself and everything beneath it. */
   private async categoryIdsIncludingChildren(slug: string): Promise<string[]> {
-    const category = await this.prisma.category.findUnique({
-      where: { slug },
-      include: { children: true },
-    });
-    if (!category) return [];
-    return [category.id, ...category.children.map((c) => c.id)];
+    const tree = await this.categories.tree();
+    const match = flattenTree(tree).find((node) => node.slug === slug);
+    return match ? subtreeIds(match) : [];
   }
 
   private async searchProductIds(
@@ -313,6 +339,7 @@ export class CatalogService {
       ratingAverage: ratingAverageFrom(p.ratingSum, p.reviewCount),
       reviewCount: p.reviewCount,
       createdAt: p.createdAt.toISOString(),
+      sizeChartGroup: (p.category?.sizeChartGroup as ProductDetailDto['sizeChartGroup']) ?? null,
       shortDescription: p.shortDescription,
       description: p.description,
       materials: p.materials,
@@ -434,7 +461,7 @@ export class CatalogService {
     const like = `%${needle}%`;
     const prefix = `${needle}%`;
 
-    const [productRows, brands, categories] = await Promise.all([
+    const [productRows, brands, visibleTree] = await Promise.all([
       this.prisma.$queryRaw<Array<{ id: string }>>(
         Prisma.sql`
           SELECT p."id"
@@ -464,15 +491,29 @@ export class CatalogService {
         orderBy: { name: 'asc' },
         take: 3,
       }),
-      this.prisma.category.findMany({
-        where: { isActive: true, name: { contains: needle, mode: 'insensitive' } },
-        select: { name: true, slug: true },
-        orderBy: { position: 'asc' },
-        take: 3,
-      }),
+      this.categories.tree().then(pruneToVisible),
     ]);
 
     const products = await this.hydrateListItems(productRows.map((r) => r.id));
+
+    /*
+     * Suggestions are drawn from the visible tree rather than the table, so a
+     * hidden or empty category can never be typed back into existence. A
+     * subcategory outranks the department it sits under: someone typing "boot"
+     * wants Boots, not Shoes.
+     */
+    const departmentName = (node: CategoryTreeNode) =>
+      visibleTree.find((root) => root.targetGroup === node.targetGroup)?.name ?? '';
+    const categories = flattenTree(visibleTree)
+      .filter((node) => node.name.toLowerCase().includes(needle.toLowerCase()))
+      .sort((a, b) => b.path.length - a.path.length || b.productCount - a.productCount)
+      .slice(0, 3)
+      .map((node) => ({
+        // "Boots" exists four times over, so the department is part of the label
+        // or the shopper cannot tell the suggestions apart.
+        name: node.path.length > 1 ? `${departmentName(node)} · ${node.name}` : node.name,
+        slug: node.slug,
+      }));
 
     return {
       products: products.map((p) => ({

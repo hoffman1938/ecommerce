@@ -36,6 +36,44 @@ export const TaxClass = {
 } as const;
 export type TaxClass = (typeof TaxClass)[keyof typeof TaxClass];
 
+/**
+ * Where a category sits in the three-level tree:
+ * department (Women) → category (Shoes) → subcategory (Heels).
+ */
+export const CategoryLevel = {
+  DEPARTMENT: 'department',
+  CATEGORY: 'category',
+  SUBCATEGORY: 'subcategory',
+} as const;
+export type CategoryLevel = (typeof CategoryLevel)[keyof typeof CategoryLevel];
+
+/**
+ * The family of size chart a category's products are measured by. A category
+ * with none — footwear, bags, accessories — shows no size guide at all.
+ */
+export const SizeChartGroup = {
+  TOPS: 'tops',
+  SHIRTS: 'shirts',
+  BOTTOMS: 'bottoms',
+} as const;
+export type SizeChartGroup = (typeof SizeChartGroup)[keyof typeof SizeChartGroup];
+
+/**
+ * What the admin panel reports about a category.
+ *
+ * `hidden` is an administrator's decision and persists until they reverse it.
+ * `empty` is a fact about today's catalogue and reverses itself the moment an
+ * available product lands in the category. Keeping them apart is the whole
+ * reason a category that sells out can come back on its own and a category
+ * somebody switched off cannot.
+ */
+export const CategoryStatus = {
+  ACTIVE: 'active',
+  HIDDEN: 'hidden',
+  EMPTY: 'empty',
+} as const;
+export type CategoryStatus = (typeof CategoryStatus)[keyof typeof CategoryStatus];
+
 export const ReservationStatus = {
   ACTIVE: 'ACTIVE',
   CHECKOUT_STARTED: 'CHECKOUT_STARTED',

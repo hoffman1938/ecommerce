@@ -44,6 +44,66 @@ BullMQ→Cloudflare Queues are configuration changes, not rewrites.
 | Frontends     | Client-side data fetching for personalized state; SSR for public/SEO pages    | Keeps HttpOnly cookies working cross-port and stays static-friendly for Pages     |
 | Rate limiting | @nestjs/throttler with stricter auth limits                                   | Configurable via env                                                              |
 
+## Category tree and visibility (documented decision)
+
+Three levels, because that is how clothing is shopped:
+
+```text
+department (Women) → category (Shoes) → subcategory (Heels)
+```
+
+A department is a real `Category` row rather than a filter over `targetGroup`, so "Women → Shoes →
+Heels" and "Men → Shoes → Boots" can be ordered, renamed, hidden and counted independently. Every
+row denormalises its department's `targetGroup`, which keeps the audience filter and the tree in
+agreement without walking the parent chain. `slug` is globally unique and department-prefixed
+(`women-heels`); `pathSegment` is the URL fragment, giving `/shop/women/shoes/heels`.
+
+A category is visible to a customer only when:
+
+```text
+category.isActive
+  AND every ancestor isActive
+  AND the category or something beneath it holds ≥ 1 available product
+```
+
+"Available" means `status = ACTIVE` and inside the publication window. Stock is deliberately not
+part of it: a sold-out boot is still a boot, and hiding "Boots" the moment the last pair sells
+would take the restock notice down with it.
+
+The two reasons a category can be invisible are never merged, and the admin panel reports them
+separately:
+
+| Status   | Meaning                                       | Recovers                                    |
+| -------- | --------------------------------------------- | ------------------------------------------- |
+| `active` | Visible in the shop                           | —                                           |
+| `hidden` | An administrator switched it off (`isActive`) | Only when an administrator switches it back |
+| `empty`  | No available products today                   | By itself, as soon as one is published      |
+
+Conflating them would mean a category that sold out could never come back. Nothing but an
+administrator writes `isActive`.
+
+The rule itself lives once, in `packages/catalog/src/navigation.ts`, over a row shape thin enough
+that a Prisma row and the static demo's localStorage record both fit it. The API
+(`CategoryTreeService`), the storefront and the admin panel all call the same builder, so the badge
+the panel shows always describes what a shopper would actually experience.
+
+Deleting a category never orphans a product: the caller must state where the products go (reassign
+or detach) and what happens to the subcategories (promote or cascade). There is no default,
+because "whatever happens by default" is how a catalogue quietly loses a chunk of itself.
+
+## Size guides (documented decision)
+
+`packages/catalog/src/size-guide-data.ts` is a verbatim transcription of the supplied global size
+JSON — eight charts across Men, Women, Kids and Unisex — and is the only source of sizing numbers
+in the codebase. Nothing is derived, rounded or interpolated from it.
+
+Which chart a product shows is decided by its category's `sizeChartGroup` (`tops`, `shirts`,
+`bottoms`) crossed with the product's audience. The mapping is written out rather than inferred so
+that every gap is deliberate: kids' sizing is one `all_clothing` table covering every garment;
+unisex publishes only an alpha matrix for casual wear, so unisex shirts and trousers resolve to
+nothing rather than borrowing the men's numbers. Footwear, bags and accessories have no data at
+all, and their product pages therefore render no size guide — not an empty table.
+
 ## Inventory model (documented decision)
 
 `onHandQuantity` counts physically sellable units currently in the warehouse — sold and damaged

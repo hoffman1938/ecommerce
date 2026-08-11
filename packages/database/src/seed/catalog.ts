@@ -33,25 +33,31 @@ export async function seedCatalog(prisma: PrismaClient): Promise<void> {
     });
   }
 
-  // Roots first so children can resolve their parent in the same pass.
-  for (const category of CATEGORIES.filter((c) => c.parentSlug === null)) {
+  /*
+   * The category tree, parents before children so a child can always resolve
+   * its parent in the same pass — CATEGORIES is emitted in that order.
+   *
+   * `isActive` is pointedly absent from the update branch: it is the
+   * administrator's switch, and re-running the seed must not silently unhide a
+   * category somebody turned off. Everything else is structure, and structure
+   * is this file's to own.
+   */
+  for (const category of CATEGORIES) {
+    const parent = category.parentSlug
+      ? await prisma.category.findUnique({ where: { slug: category.parentSlug } })
+      : null;
+    const shape = {
+      name: category.name,
+      pathSegment: category.pathSegment,
+      parentId: parent?.id ?? null,
+      targetGroup: category.targetGroup,
+      position: category.position,
+      sizeChartGroup: category.sizeChartGroup,
+    };
     await prisma.category.upsert({
       where: { slug: category.slug },
-      create: { name: category.name, slug: category.slug, position: category.position },
-      update: { position: category.position },
-    });
-  }
-  for (const child of CATEGORIES.filter((c) => c.parentSlug !== null)) {
-    const parent = await prisma.category.findUnique({ where: { slug: child.parentSlug! } });
-    await prisma.category.upsert({
-      where: { slug: child.slug },
-      create: {
-        name: child.name,
-        slug: child.slug,
-        position: child.position,
-        parentId: parent?.id,
-      },
-      update: { parentId: parent?.id },
+      create: { slug: category.slug, ...shape },
+      update: shape,
     });
   }
 

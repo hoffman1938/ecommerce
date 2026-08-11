@@ -12,6 +12,7 @@ import { T } from '@/components/t';
 const NAV: Array<{ href: string; labelKey: string; permission: string }> = [
   { href: '/', labelKey: 'admin.dashboard', permission: 'dashboard.view' },
   { href: '/products', labelKey: 'admin.products', permission: 'products.view' },
+  { href: '/categories', labelKey: 'admin.categories', permission: 'products.view' },
   { href: '/inventory', labelKey: 'admin.inventory', permission: 'inventory.view' },
   { href: '/reservations', labelKey: 'admin.reservations', permission: 'reservations.view' },
   { href: '/campaigns', labelKey: 'admin.campaigns', permission: 'campaigns.view' },
@@ -39,7 +40,11 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
   }, [isLoading, me?.user, router]);
 
   if (isLoading || !me?.user) {
-    return <p className="py-16 text-center text-gray-500"><T id="ui.loadingAdminPanel" /></p>;
+    return (
+      <p className="py-16 text-center text-gray-500">
+        <T id="ui.loadingAdminPanel" />
+      </p>
+    );
   }
   const user = me.user;
 
@@ -48,7 +53,9 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
       <aside className="w-56 shrink-0 border-r border-gray-200 bg-white">
         <div className="border-b border-gray-100 px-4 py-4">
           <p className="font-black">
-            OUTLET<span className="text-red-600">.</span><T id="ui.admin" /></p>
+            OUTLET<span className="text-red-600">.</span>
+            <T id="ui.admin" />
+          </p>
           <p className="mt-1 truncate text-xs text-gray-500">{user.email}</p>
           <p className="truncate text-xs text-gray-400">{user.roles.join(', ')}</p>
         </div>
@@ -72,7 +79,9 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
               router.push('/login');
             }}
             className="mt-4 block w-full rounded px-3 py-2 text-left text-gray-400 hover:bg-gray-100"
-          ><T id="ui.signOut" /></button>
+          >
+            <T id="ui.signOut" />
+          </button>
         </nav>
       </aside>
       <main className="flex-1 overflow-x-auto">
@@ -92,9 +101,12 @@ function DemoBanner() {
   if (!DEMO_MODE) return null;
   return (
     <div className="border-b border-amber-200 bg-amber-50 px-6 py-2.5 text-xs text-amber-900">
-      <strong><T id="ui.demoBuild" /></strong> Sample data only — no server, no database. Changes are saved in
-      this browser and are visible only to you. Review moderation is fully working; most other edits
-      are disabled. Sign-in is not authentication — <strong>never enter a real password.</strong>
+      <strong>
+        <T id="ui.demoBuild" />
+      </strong>{' '}
+      Sample data only — no server, no database. Changes are saved in this browser and are visible
+      only to you. Review moderation is fully working; most other edits are disabled. Sign-in is not
+      authentication — <strong>never enter a real password.</strong>
     </div>
   );
 }

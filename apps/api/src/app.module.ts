@@ -10,6 +10,7 @@ import { AuthController } from './modules/auth/auth.controller';
 import { AuthService } from './modules/auth/auth.service';
 import { CatalogController } from './modules/catalog/catalog.controller';
 import { CatalogService } from './modules/catalog/catalog.service';
+import { CategoryTreeService } from './modules/catalog/category-tree.service';
 import { CampaignsController } from './modules/campaigns/campaigns.controller';
 import { CartController } from './modules/cart/cart.controller';
 import { CartService } from './modules/cart/cart.service';
@@ -26,6 +27,7 @@ import { HealthController } from './modules/health/health.controller';
 
 import { AdminCatalogController } from './modules/admin/admin-catalog.controller';
 import { AdminCatalogService } from './modules/admin/admin-catalog.service';
+import { AdminCategoriesService } from './modules/admin/admin-categories.service';
 import { AdminInventoryController } from './modules/admin/admin-inventory.controller';
 import { AdminInventoryService } from './modules/admin/admin-inventory.service';
 import { AdminCampaignsController } from './modules/admin/admin-campaigns.controller';
@@ -81,6 +83,7 @@ const config = loadConfig();
     SessionAuthGuard,
     AuthService,
     CatalogService,
+    CategoryTreeService,
     CartService,
     ReservationsService,
     CheckoutService,
@@ -88,6 +91,7 @@ const config = loadConfig();
     PaymentsService,
     ReturnsService,
     AdminCatalogService,
+    AdminCategoriesService,
     AdminInventoryService,
     AdminDashboardService,
     AdminReviewsService,

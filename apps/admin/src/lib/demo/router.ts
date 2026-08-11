@@ -17,13 +17,23 @@
 import {
   DEMO_BRANDS,
   DEMO_CAMPAIGNS,
-  DEMO_CATEGORIES,
   DEMO_CONTENT_PAGES,
   DEMO_CURRENCY,
   DEMO_ORDERS,
   DEMO_SETTINGS,
   type DemoReviewStatus,
 } from './data';
+import {
+  CategoryError,
+  createCategory,
+  deleteCategory,
+  listCategoryTree,
+  moveCategory,
+  reorderCategories,
+  setCategoryVisibility,
+  updateCategory,
+} from './categories';
+import { ProductError, archiveProduct, createProduct, updateProduct } from './products';
 import {
   currentCustomers,
   currentProducts,
@@ -346,6 +356,77 @@ export function demoRequest(method: string, path: string, body?: Record<string, 
   const id = segments[2];
   const action = segments[3];
 
+  // --- categories ---
+  // Fully implemented rather than refused: category management is what this
+  // rebuild is about, and the storefront reads the same overlay, so a change
+  // made here really does move the shop's navigation.
+  if (resource === 'categories') {
+    try {
+      if (verb === 'GET' && !id) return listCategoryTree();
+      if (verb === 'POST' && !id) {
+        const created = createCategory(body ?? {});
+        recordAudit('category.created', 'Category', created.slug);
+        return created;
+      }
+      if (verb === 'PUT' && id === 'reorder') {
+        const parent = typeof body?.parentId === 'string' ? body.parentId : null;
+        const ordered = Array.isArray(body?.orderedIds) ? (body!.orderedIds as string[]) : [];
+        const tree = reorderCategories(parent, ordered);
+        recordAudit('category.reordered', 'Category', parent);
+        return tree;
+      }
+      if (verb === 'PUT' && id) {
+        const updated = updateCategory(id, body ?? {});
+        recordAudit('category.updated', 'Category', id);
+        return updated;
+      }
+      if (verb === 'PATCH' && id && action === 'visibility') {
+        const updated = setCategoryVisibility(id, Boolean(body?.isActive));
+        recordAudit(body?.isActive ? 'category.unhidden' : 'category.hidden', 'Category', id);
+        return updated;
+      }
+      if (verb === 'PATCH' && id && action === 'move') {
+        const parent = typeof body?.parentId === 'string' ? body.parentId : null;
+        const position = typeof body?.position === 'number' ? body.position : undefined;
+        const tree = moveCategory(id, parent, position);
+        recordAudit('category.moved', 'Category', id);
+        return tree;
+      }
+      if (verb === 'POST' && id && action === 'delete') {
+        const result = deleteCategory(id, body ?? {});
+        recordAudit('category.deleted', 'Category', id);
+        return result;
+      }
+    } catch (error) {
+      if (error instanceof CategoryError) throw new DemoApiError(error.status, error.message);
+      throw error;
+    }
+  }
+
+  // --- product writes ---
+  if (resource === 'products' && verb !== 'GET') {
+    try {
+      if (verb === 'POST' && !id) {
+        const created = createProduct(body ?? {});
+        recordAudit('product.created', 'Product', created.slug);
+        return { ...created, id: `prod_${created.slug}` };
+      }
+      if (verb === 'PUT' && id) {
+        const updated = updateProduct(id, body ?? {});
+        recordAudit('product.updated', 'Product', id);
+        return { ...updated, id: `prod_${updated.slug}` };
+      }
+      if (verb === 'POST' && id && action === 'archive') {
+        const archived = archiveProduct(id);
+        recordAudit('product.archived', 'Product', id);
+        return { ...archived, id: `prod_${archived.slug}` };
+      }
+    } catch (error) {
+      if (error instanceof ProductError) throw new DemoApiError(error.status, error.message);
+      throw error;
+    }
+  }
+
   // --- reviews ---
   if (resource === 'reviews') {
     if (verb === 'GET' && id === 'stats') return reviewStats(query);
@@ -642,7 +723,6 @@ export function demoRequest(method: string, path: string, body?: Record<string, 
 
   // --- reference / settings reads ---
   if (resource === 'brands' && verb === 'GET') return DEMO_BRANDS;
-  if (resource === 'categories' && verb === 'GET') return DEMO_CATEGORIES;
   // These four return bare arrays, not paginated envelopes — the pages map over
   // the response directly, so wrapping it crashes them.
   if (resource === 'campaigns' && verb === 'GET') {

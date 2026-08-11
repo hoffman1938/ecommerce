@@ -28,6 +28,7 @@ import {
   listProducts,
   recommendedProducts,
   relatedProducts,
+  resolveCategoryPath,
   searchSuggestions,
   type ListProductsParams,
 } from './queries';
@@ -78,7 +79,19 @@ export function demoRequest(method: string, path: string, body?: unknown): unkno
     case 'catalog': {
       if (verb !== 'GET') break;
       if (rest[0] === 'brands') return listBrands();
-      if (rest[0] === 'categories') return listCategories();
+      if (rest[0] === 'categories') {
+        if (rest[1] === 'path') {
+          const segments = (query.get('path') ?? '')
+            .split('/')
+            .map((segment) => segment.trim())
+            .filter(Boolean)
+            .slice(0, 3);
+          const trail = resolveCategoryPath(segments);
+          if (!trail) throw new DemoApiError(404, 'Category not found.');
+          return trail;
+        }
+        return listCategories();
+      }
       if (rest[0] === 'suggest') return searchSuggestions(query.get('q') ?? '');
       if (rest[0] === 'recommended') {
         return recommendedProducts(

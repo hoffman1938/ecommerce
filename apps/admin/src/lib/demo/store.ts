@@ -12,7 +12,7 @@
  * not on offer; the banner in the panel says so.
  */
 
-import { DEMO_CUSTOMERS, DEMO_PRODUCTS, DEMO_REVIEWS, type DemoReview } from './data';
+import { DEMO_CUSTOMERS, DEMO_REVIEWS, materialiseProducts, type DemoReview } from './data';
 
 const STORE_KEY = 'outlet_admin_demo_state';
 const STORE_VERSION = 1;
@@ -131,9 +131,18 @@ export function currentCustomers() {
   }));
 }
 
+/**
+ * Products with this browser's edits applied and their review aggregates
+ * recomputed.
+ *
+ * The catalogue itself — creations, edits and status changes — lives in the
+ * shared overlay in @outlet/catalog, which the storefront reads too; that is
+ * what makes a product created here appear in the shop. Only the ratings are
+ * layered on top, because they are derived from reviews the panel moderates
+ * locally.
+ */
 export function currentProducts() {
-  const state = readState();
-  return DEMO_PRODUCTS.map((product) => ({ ...product, ...(state.products[product.id] ?? {}) }));
+  return materialiseProducts().map((product) => ({ ...product, ...ratingFor(product.id) }));
 }
 
 /**

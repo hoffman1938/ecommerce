@@ -1,27 +1,30 @@
-import { ProductListing } from '@/components/product-listing';
-import { CATEGORIES } from '@/lib/demo/data';
+import { CATEGORY_NODES, categoryNode, categoryTrail } from '@outlet/catalog';
+import { CategoryListing } from '@/components/category-listing';
 
-/** Pre-render every catalog category so the app can be exported statically. */
+/**
+ * `/category/:slug` — the slug-addressed entry point.
+ *
+ * Superseded by the readable `/shop/women/clothing/dresses` paths, but kept
+ * working because product breadcrumbs, search suggestions and any link a
+ * customer has already saved point here. It resolves the slug against the same
+ * tree and renders the same page, so there is one implementation rather than
+ * two.
+ */
 export function generateStaticParams() {
-  return CATEGORIES.map((category) => ({ slug: category.slug }));
-}
-
-function titleFor(slug: string): string {
-  const known = CATEGORIES.find((category) => category.slug === slug);
-  if (known) return known.name;
-  return slug.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+  return CATEGORY_NODES.map((node) => ({ slug: node.slug }));
 }
 
 export function generateMetadata({ params }: { params: { slug: string } }) {
-  return { title: titleFor(params.slug) };
+  const node = categoryNode(params.slug);
+  if (!node) return { title: params.slug.replace(/-/g, ' ') };
+  const [department] = categoryTrail(node.slug);
+  return {
+    title: department.slug === node.slug ? node.name : `${department.name} ${node.name}`,
+  };
 }
 
-export default function CategoryPage({ params }: { params: { slug: string } }) {
-  return (
-    <ProductListing
-      title={titleFor(params.slug)}
-      fixedFilters={{ category: params.slug }}
-      basePath={`/category/${params.slug}`}
-    />
-  );
+export default function CategoryBySlugPage({ params }: { params: { slug: string } }) {
+  // Resolved by slug rather than by path, so a category created after this
+  // build still lands on the right page.
+  return <CategoryListing slug={params.slug} />;
 }

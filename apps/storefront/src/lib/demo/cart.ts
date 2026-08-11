@@ -15,7 +15,14 @@
 
 import { deliveryEstimate, freeShippingProgress } from '@outlet/domain';
 import type { CartDto, CartItemDto } from '@outlet/types';
-import { CURRENCY_CODE, SETTINGS, brandBySlug, productBySlug, type DemoProduct } from './data';
+import {
+  CURRENCY_CODE,
+  SETTINGS,
+  brandBySlug,
+  productBySlug,
+  productList,
+  type DemoProduct,
+} from './data';
 import { availableFor, getProduct } from './queries';
 import { DemoApiError, simNow } from './store';
 
@@ -90,7 +97,7 @@ function couponDiscount(code: string | null, subtotalMinor: number): number {
 }
 
 function buildItem(line: StoredLine, now: number): CartItemDto | null {
-  const product = productBySlug.get(line.productSlug);
+  const product = productBySlug(line.productSlug);
   if (!product) return null;
   const variant = product.variants.find((v) => v.id === line.variantId);
   if (!variant) return null;
@@ -236,7 +243,7 @@ export function updateItem(lineId: string, quantity: number, now = simNow()): Ca
   if (quantity <= 0) {
     cart.lines = cart.lines.filter((l) => l.id !== lineId);
   } else {
-    const product = productBySlug.get(line.productSlug)!;
+    const product = productBySlug(line.productSlug)!;
     const variant = product.variants.find((v) => v.id === line.variantId)!;
     const available = availableFor(variant);
     if (quantity > available) {
@@ -294,7 +301,7 @@ export function moveToCart(lineId: string, now = simNow()): CartDto {
   if (index === -1) throw new DemoApiError(404, 'That saved item no longer exists.');
 
   const line = cart.saved[index];
-  const product = productBySlug.get(line.productSlug);
+  const product = productBySlug(line.productSlug);
   const variant = product?.variants.find((v) => v.id === line.variantId);
   if (!product || !variant) throw new DemoApiError(404, 'That product is no longer available.');
 
@@ -335,7 +342,7 @@ export function clearCart(now = simNow()): CartDto {
 }
 
 const PRODUCTS_BY_VARIANT = new Map<string, DemoProduct>(
-  [...productBySlug.values()].flatMap((product) =>
+  productList().flatMap((product) =>
     product.variants.map((variant) => [variant.id, product] as const),
   ),
 );

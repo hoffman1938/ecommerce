@@ -963,24 +963,64 @@ export function campaignArtworkSvg(seed: string, items: CampaignArtworkItem[] = 
  * pieces, largest in front — rather than an icon or a colour block.
  */
 const CATEGORY_ART: Record<string, { shapes: ProductShape[]; colors: string[] }> = {
-  't-shirts': { shapes: ['tee', 'polo', 'tee'], colors: ['White', 'Navy', 'Black'] },
+  // Level 1 — departments. Each gets a different mix so the four tiles on the
+  // home page are told apart by silhouette rather than by reading the caption.
+  men: { shapes: ['polo', 'jacket', 'sneaker'], colors: ['Navy', 'Green', 'White'] },
+  women: { shapes: ['tee', 'shoulder-bag', 'boot'], colors: ['Pink', 'Beige', 'Black'] },
+  kids: { shapes: ['tee', 'hoodie', 'backpack'], colors: ['Blue', 'Red', 'White'] },
+  unisex: { shapes: ['hoodie', 'runner', 'cap'], colors: ['Grey', 'Black', 'White'] },
+
+  // Level 2 — the broad department groupings.
+  clothing: { shapes: ['tee', 'hoodie', 'jacket'], colors: ['White', 'Grey', 'Navy'] },
   shoes: { shapes: ['runner', 'sneaker', 'boot'], colors: ['White', 'Blue', 'Black'] },
-  'running-shoes': { shapes: ['runner', 'runner', 'runner'], colors: ['Blue', 'Black', 'Red'] },
-  sneakers: { shapes: ['sneaker', 'sneaker', 'sneaker'], colors: ['White', 'Red', 'Navy'] },
-  boots: { shapes: ['boot', 'boot', 'boot'], colors: ['Black', 'Green', 'Beige'] },
+  accessories: { shapes: ['cap', 'belt', 'scarf'], colors: ['Black', 'Beige', 'Red'] },
+
+  // Level 3 — garment types.
+  't-shirts': { shapes: ['tee', 'polo', 'tee'], colors: ['White', 'Navy', 'Black'] },
+  tops: { shapes: ['tee', 'tee', 'tee'], colors: ['White', 'Pink', 'Black'] },
+  polos: { shapes: ['polo', 'polo', 'polo'], colors: ['White', 'Navy', 'Green'] },
+  shirts: { shapes: ['polo', 'tee', 'polo'], colors: ['White', 'Blue', 'Beige'] },
+  dresses: { shapes: ['tee', 'tee', 'tee'], colors: ['Black', 'Red', 'Beige'] },
   hoodies: { shapes: ['hoodie', 'hoodie', 'hoodie'], colors: ['Grey', 'Navy', 'Black'] },
+  sweaters: { shapes: ['hoodie', 'tee', 'hoodie'], colors: ['Beige', 'Grey', 'Navy'] },
   jackets: { shapes: ['jacket', 'jacket', 'jacket'], colors: ['Navy', 'Green', 'Black'] },
-  pants: { shapes: ['pants', 'shorts', 'pants'], colors: ['Blue', 'Black', 'Beige'] },
+  coats: { shapes: ['jacket', 'jacket', 'jacket'], colors: ['Beige', 'Black', 'Grey'] },
+  jeans: { shapes: ['pants', 'pants', 'pants'], colors: ['Blue', 'Black', 'Grey'] },
+  trousers: { shapes: ['pants', 'pants', 'shorts'], colors: ['Beige', 'Navy', 'Black'] },
+  shorts: { shapes: ['shorts', 'shorts', 'shorts'], colors: ['Black', 'Green', 'Grey'] },
+  skirts: { shapes: ['shorts', 'shorts', 'shorts'], colors: ['Black', 'Beige', 'Navy'] },
+  sneakers: { shapes: ['sneaker', 'sneaker', 'sneaker'], colors: ['White', 'Red', 'Navy'] },
+  'running-shoes': { shapes: ['runner', 'runner', 'runner'], colors: ['Blue', 'Black', 'Red'] },
+  boots: { shapes: ['boot', 'boot', 'boot'], colors: ['Black', 'Green', 'Beige'] },
+  loafers: { shapes: ['sneaker', 'boot', 'sneaker'], colors: ['Beige', 'Black', 'Navy'] },
+  'formal-shoes': { shapes: ['boot', 'sneaker', 'boot'], colors: ['Black', 'Beige', 'Navy'] },
+  heels: { shapes: ['boot', 'boot', 'boot'], colors: ['Black', 'Red', 'Beige'] },
+  flats: { shapes: ['sneaker', 'sneaker', 'sneaker'], colors: ['Beige', 'Black', 'Pink'] },
+  sandals: { shapes: ['sneaker', 'sneaker', 'sneaker'], colors: ['Beige', 'Orange', 'Black'] },
   bags: { shapes: ['backpack', 'shoulder-bag', 'backpack'], colors: ['Black', 'Beige', 'Grey'] },
   backpacks: { shapes: ['backpack', 'backpack', 'backpack'], colors: ['Black', 'Grey', 'Navy'] },
-  'shoulder-bags': {
-    shapes: ['shoulder-bag', 'shoulder-bag', 'shoulder-bag'],
-    colors: ['Black', 'Beige', 'Navy'],
-  },
-  accessories: { shapes: ['cap', 'belt', 'scarf'], colors: ['Black', 'Beige', 'Red'] },
+  belts: { shapes: ['belt', 'belt', 'belt'], colors: ['Black', 'Beige', 'Orange'] },
+  wallets: { shapes: ['wallet', 'wallet', 'wallet'], colors: ['Black', 'Beige', 'Navy'] },
+  hats: { shapes: ['cap', 'cap', 'cap'], colors: ['Black', 'White', 'Navy'] },
+  sunglasses: { shapes: ['cap', 'wallet', 'cap'], colors: ['Black', 'Beige', 'Grey'] },
+  scarves: { shapes: ['scarf', 'scarf', 'scarf'], colors: ['Grey', 'Red', 'Navy'] },
+  socks: { shapes: ['socks', 'socks', 'socks'], colors: ['White', 'Black', 'Grey'] },
 };
 
 const CATEGORY_FALLBACK = CATEGORY_ART['t-shirts'];
+
+/**
+ * Category slugs are department-prefixed (`women-heels`) so they can be unique,
+ * but a heel is drawn the same whoever it is for. Resolution therefore falls
+ * back from the full slug to the segment after the department, and only then to
+ * the generic tile — which is also what gives an administrator's newly created
+ * "Women → Shoes → Mules" a sensible picture without a code change.
+ */
+function categoryArtFor(slug: string): { shapes: ProductShape[]; colors: string[] } {
+  if (CATEGORY_ART[slug]) return CATEGORY_ART[slug];
+  const segment = slug.replace(/^(men|women|kids|unisex)-/, '');
+  return CATEGORY_ART[segment] ?? CATEGORY_FALLBACK;
+}
 
 /**
  * Category tile, 4:3.
@@ -990,7 +1030,7 @@ const CATEGORY_FALLBACK = CATEGORY_ART['t-shirts'];
  * distinguishes "a category" from "a product" at a glance.
  */
 export function categoryArtworkSvg(categorySlug: string, categoryName: string): string {
-  const art = CATEGORY_ART[categorySlug] ?? CATEGORY_FALLBACK;
+  const art = categoryArtFor(categorySlug);
   const width = 1000;
   const height = 750;
 

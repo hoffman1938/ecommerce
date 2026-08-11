@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { CategoryPicker } from '@/components/category-picker';
 import { T } from '@/components/t';
 
 export interface ProductFormValues {
@@ -77,10 +78,6 @@ export function ProductForm({
     queryKey: ['admin-brands'],
     queryFn: () => api.get<Array<{ id: string; name: string }>>('/admin/brands'),
   });
-  const { data: categories } = useQuery({
-    queryKey: ['admin-categories'],
-    queryFn: () => api.get<Array<{ id: string; name: string }>>('/admin/categories'),
-  });
   const [autoSlug, setAutoSlug] = useState(!values.slug);
 
   useEffect(() => {
@@ -154,7 +151,9 @@ export function ProductForm({
             className="w-full rounded-md border border-gray-300 px-3 py-2"
             required
           >
-            <option value=""><T id="ui.select" /></option>
+            <option value="">
+              <T id="ui.select" />
+            </option>
             {(brands ?? []).map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -162,35 +161,18 @@ export function ProductForm({
             ))}
           </select>
         </label>
+        {/* Department, category and subcategory in that order, with the
+            product's audience following the department rather than being a
+            fourth thing to keep in sync by hand. */}
+        <CategoryPicker
+          value={values.categoryId}
+          onChange={(categoryId) => set('categoryId', categoryId)}
+          onTargetGroupChange={(group) => set('targetGroup', group)}
+        />
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Category</span>
-          <select
-            value={values.categoryId}
-            onChange={(e) => set('categoryId', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2"
-          >
-            <option value="">None</option>
-            {(categories ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.targetGroup" /></span>
-          <select
-            value={values.targetGroup}
-            onChange={(e) => set('targetGroup', e.target.value as ProductFormValues['targetGroup'])}
-            className="w-full rounded-md border border-gray-300 px-3 py-2"
-          >
-            {['UNISEX', 'MEN', 'WOMEN', 'KIDS'].map((g) => (
-              <option key={g}>{g}</option>
-            ))}
-          </select>
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.status" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.status" />
+          </span>
           <select
             value={values.status}
             onChange={(e) => set('status', e.target.value as ProductFormValues['status'])}
@@ -202,7 +184,9 @@ export function ProductForm({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.originalPriceMinorUnitsE" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.originalPriceMinorUnitsE" />
+          </span>
           <input
             type="number"
             min={1}
@@ -213,7 +197,9 @@ export function ProductForm({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.outletPriceMinorUnits" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.outletPriceMinorUnits" />
+          </span>
           <input
             type="number"
             min={1}
@@ -238,7 +224,9 @@ export function ProductForm({
         {text('careInstructions', 'Care instructions')}
         {text('countryOfOrigin', 'Country of origin')}
         <label className="block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.taxClass" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.taxClass" />
+          </span>
           <select
             value={values.taxClass}
             onChange={(e) => set('taxClass', e.target.value as ProductFormValues['taxClass'])}

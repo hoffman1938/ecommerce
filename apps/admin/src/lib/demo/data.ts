@@ -19,14 +19,20 @@ import {
   BRANDS,
   CAMPAIGNS,
   CATALOG_EPOCH,
-  CATEGORIES,
   CONTENT_PAGES,
   CURRENCY_CODE,
   DEFAULT_CARE_INSTRUCTIONS,
   DEFAULT_COUNTRY_OF_ORIGIN,
-  PRODUCTS,
   SETTINGS,
+  buildCategoryTree,
+  effectiveCategories,
+  effectiveProducts,
+  type CatalogProductSpec,
+  type CategoryRow,
+  type CategoryTreeNode,
+  type DirectCounts,
 } from '@outlet/catalog';
+import type { AdminCategoryDto } from '@outlet/types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const EPOCH = Date.parse(CATALOG_EPOCH);
@@ -75,25 +81,73 @@ export const DEMO_BRANDS: DemoBrand[] = BRANDS.map((brand) => ({
   isActive: true,
 }));
 
-export interface DemoCategory {
-  id: string;
-  name: string;
-  slug: string;
-  parentId: string | null;
-  description: string | null;
-  position: number;
-  isActive: boolean;
+/**
+ * The category tree as the panel sees it: nothing pruned, counts rolled up, and
+ * the two reasons a category can be invisible reported separately.
+ *
+ * Built with the same `buildCategoryTree` the API and the storefront use, so
+ * the Active / Hidden / Empty badge shown here is not a second opinion about
+ * what a customer would experience — it is the same computation.
+ */
+export function currentCategoryTree(): AdminCategoryDto[] {
+  const rows = effectiveCategories();
+  const products = materialiseProducts();
+
+  const available: DirectCounts = {};
+  const total: DirectCounts = {};
+  for (const product of products) {
+    const slug = product.category?.slug;
+    if (!slug) continue;
+    total[slug] = (total[slug] ?? 0) + 1;
+    if (product.status === 'ACTIVE') available[slug] = (available[slug] ?? 0) + 1;
+  }
+
+  // No database here, so the slug is the id — which also means a category
+  // created in the panel keeps its identity across a reload.
+  const asRows: CategoryRow[] = rows.map((row) => ({
+    id: row.slug,
+    slug: row.slug,
+    name: row.name,
+    pathSegment: row.pathSegment,
+    parentId: row.parentSlug,
+    targetGroup: row.targetGroup,
+    level: row.level,
+    position: row.position,
+    isActive: row.isActive,
+    sizeChartGroup: row.sizeChartGroup,
+  }));
+
+  const toDto = (node: CategoryTreeNode): AdminCategoryDto => ({
+    id: node.id,
+    name: node.name,
+    slug: node.slug,
+    parentId: node.parentId,
+    position: node.position,
+    pathSegment: node.pathSegment,
+    path: node.path,
+    href: node.href,
+    targetGroup: node.targetGroup,
+    level: node.level,
+    sizeChartGroup: node.sizeChartGroup,
+    description: null,
+    isActive: node.isActive,
+    status: node.status,
+    isVisible: node.isVisible,
+    directProductCount: node.directProductCount,
+    productCount: node.productCount,
+    totalProductCount: total[node.id] ?? 0,
+    children: node.children.map(toDto),
+  });
+
+  return buildCategoryTree(asRows, available).map(toDto);
 }
 
-export const DEMO_CATEGORIES: DemoCategory[] = CATEGORIES.map((category) => ({
-  id: `cat_${category.slug}`,
-  name: category.name,
-  slug: category.slug,
-  parentId: category.parentSlug ? `cat_${category.parentSlug}` : null,
-  description: null,
-  position: category.position,
-  isActive: true,
-}));
+/** Depth-first, for the select boxes on the product form. */
+export function currentCategoriesFlat(): AdminCategoryDto[] {
+  const flatten = (nodes: AdminCategoryDto[]): AdminCategoryDto[] =>
+    nodes.flatMap((node) => [node, ...flatten(node.children)]);
+  return flatten(currentCategoryTree());
+}
 
 // --- Products --------------------------------------------------------------
 
@@ -145,9 +199,9 @@ export interface DemoProduct {
   images: Array<{ id: string; url: string; altText: string | null; position: number }>;
 }
 
-export const DEMO_PRODUCTS: DemoProduct[] = PRODUCTS.map((spec, index) => {
+function materialiseProduct(spec: CatalogProductSpec): DemoProduct {
   const brand = DEMO_BRANDS.find((b) => b.slug === spec.brand) ?? DEMO_BRANDS[0];
-  const category = DEMO_CATEGORIES.find((c) => c.slug === spec.category) ?? null;
+  const category = effectiveCategories().find((c) => c.slug === spec.category) ?? null;
   const [minStock, maxStock] = STOCK_RANGE[spec.stock] ?? STOCK_RANGE.normal;
 
   const variants: DemoVariant[] = [];
@@ -171,16 +225,13 @@ export const DEMO_PRODUCTS: DemoProduct[] = PRODUCTS.map((spec, index) => {
     }
   }
 
-  const createdAt = new Date(EPOCH + index * 6 * 60 * 60 * 1000).toISOString();
-
   return {
     id: `prod_${spec.slug}`,
     name: spec.name,
     slug: spec.slug,
-    // A couple of drafts so the status filter has something to filter.
-    status: hash01(`status:${spec.slug}`) > 0.94 ? 'DRAFT' : 'ACTIVE',
+    status: spec.status,
     brand: { id: brand.id, name: brand.name, slug: brand.slug },
-    category: category ? { id: category.id, name: category.name, slug: category.slug } : null,
+    category: category ? { id: category.slug, name: category.name, slug: category.slug } : null,
     shortDescription: spec.shortDescription,
     description: spec.shortDescription,
     materials: spec.materials ?? null,
@@ -196,12 +247,48 @@ export const DEMO_PRODUCTS: DemoProduct[] = PRODUCTS.map((spec, index) => {
     publishedUntil: null,
     ratingSum: 0,
     reviewCount: 0,
-    createdAt,
-    updatedAt: createdAt,
+    createdAt: spec.createdAt,
+    updatedAt: spec.createdAt,
     variants,
     images: [],
   };
-});
+}
+
+/**
+ * Products as the panel currently sees them — the shipped catalogue plus
+ * whatever has been created or edited in this browser.
+ *
+ * Cached against the overlay's own array identity, which changes only when
+ * something is actually written, so the dashboard reading this a dozen times
+ * per render costs one expansion.
+ */
+let productCacheKey: CatalogProductSpec[] | null = null;
+let productCache: DemoProduct[] = [];
+
+export function materialiseProducts(): DemoProduct[] {
+  const specs = effectiveProducts();
+  if (productCacheKey !== specs) {
+    productCacheKey = specs;
+    productCache = specs.map(materialiseProduct);
+  }
+  return productCache;
+}
+
+/**
+ * The shipped catalogue alone.
+ *
+ * The generated orders and reviews below are anchored to it rather than to
+ * `materialiseProducts()`, because they have to look identical for every
+ * visitor — an order referencing a product this browser happens to have
+ * created would be a different demo for everyone.
+ */
+export const DEMO_PRODUCTS: DemoProduct[] = effectiveProducts()
+  .filter((spec) => !spec.isCustom)
+  .map((spec, index) => ({
+    ...materialiseProduct(spec),
+    createdAt: new Date(EPOCH + index * 6 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(EPOCH + index * 6 * 60 * 60 * 1000).toISOString(),
+  }));
 
 // --- Customers -------------------------------------------------------------
 

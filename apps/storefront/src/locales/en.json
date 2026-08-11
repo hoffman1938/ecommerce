@@ -22,18 +22,40 @@
     "theme": "Theme"
   },
   "categories": {
-    "tShirts": "T-Shirts",
-    "shoes": "Shoes",
+    "accessories": "Accessories",
+    "backpacks": "Backpacks",
+    "bags": "Bags",
+    "belts": "Belts",
+    "boots": "Boots",
+    "clothing": "Clothing",
+    "coats": "Coats",
+    "dresses": "Dresses",
+    "flats": "Flats",
+    "formalShoes": "Formal shoes",
+    "hats": "Hats",
+    "heels": "Heels",
     "hoodies": "Hoodies",
     "jackets": "Jackets",
+    "jeans": "Jeans",
+    "loafers": "Loafers",
     "pants": "Pants",
-    "accessories": "Accessories",
-    "bags": "Bags",
+    "polos": "Polos",
     "runningShoes": "Running shoes",
+    "sandals": "Sandals",
+    "scarves": "Scarves",
+    "shirts": "Shirts",
+    "shoes": "Shoes",
+    "shorts": "Shorts",
+    "shoulderBags": "Shoulder bags",
+    "skirts": "Skirts",
     "sneakers": "Sneakers",
-    "boots": "Boots",
-    "backpacks": "Backpacks",
-    "shoulderBags": "Shoulder bags"
+    "socks": "Socks",
+    "sunglasses": "Sunglasses",
+    "sweaters": "Sweaters",
+    "tShirts": "T-Shirts",
+    "tops": "Tops",
+    "trousers": "Trousers",
+    "wallets": "Wallets"
   },
   "product": {
     "soldOut": "Sold out",
@@ -167,45 +189,16 @@
     "open": "Size guide",
     "title": "Size guide",
     "close": "Close size guide",
-    "subtitle": "EU, UK and US conversions with body measurements in centimetres.",
+    "subtitle": "Conversions between every system this chart is published in.",
     "audienceLabel": "Choose an audience",
     "chartLabel": "Choose a size chart",
-    "returns": "Still unsure? Order two sizes and return the one that does not fit — returns are free within 30 days.",
-    "kind": {
-      "clothing": "Clothing",
-      "footwear": "Footwear",
-      "trousers": "Trousers & jeans",
-      "belts": "Belts"
-    },
-    "columns": {
-      "size": "Size",
-      "eu": "EU",
-      "uk": "UK",
-      "us": "US",
-      "usMen": "US (M)",
-      "usWomen": "US (W)",
-      "chest": "Chest (cm)",
-      "bust": "Bust (cm)",
-      "waist": "Waist (cm)",
-      "hip": "Hip (cm)",
-      "inseam": "Inseam (cm)",
-      "foot": "Foot length (cm)",
-      "height": "Height (cm)",
-      "age": "Age (years)",
-      "sizeInches": "Size (in)",
-      "waistInches": "Trouser waist (in)",
-      "length": "Total length (cm)"
-    },
+    "returns": "Still unsure? Order two sizes and return the one that does not fit — returns are free within 30 days of delivery.",
     "notes": {
-      "clothingMen": "Measure across the chest at its fullest point, over a light layer. Between sizes, size up for a relaxed fit.",
-      "clothingWomen": "Measure the bust at its fullest point and the waist at its narrowest. UK and US sizes differ by two — check both columns.",
-      "clothingUnisex": "Cut to a men's block. If you usually wear women's sizes, choose one size down from your usual.",
-      "clothingKids": "Choose by height first and age second — children of the same age vary widely. Between sizes, size up.",
-      "footwear": "Measure from heel to longest toe while standing, in the afternoon. Sizes run true; wide feet may prefer a half size up.",
-      "footwearUnisex": "Unisex footwear is numbered on the men's scale. Women should typically take 1.5 US sizes down from their usual.",
-      "footwearKids": "Leave about 1 cm of growing room beyond the longest toe. Check the fit every three months.",
-      "trousers": "Sizes are the waist measurement in inches. Measure around your natural waistline, not over the hips.",
-      "belts": "Belt size is the length in centimetres to the middle hole. Choose roughly 10 cm above your trouser waist."
+      "tshirts_and_casual": "Measure around the fullest part of the chest or bust, over a light layer. Between two sizes, size up for a relaxed fit and down for a close one.",
+      "shirts": "Shirt sizes are collar measurements. Measure around the base of the neck and add roughly a finger’s width of room.",
+      "shirts_and_blouses": "Sizes follow the regional dress scale. UK sizes run two numbers above US ones, so check the column for the market you usually buy in.",
+      "jeans_and_trousers": "Sizes are the waist measurement. Measure around your natural waistline, not over the hips or a belt.",
+      "all_clothing": "Choose by height first and age second — children of the same age vary widely. Between two sizes, size up."
     }
   },
   "filters": {
@@ -336,7 +329,10 @@
     "sortBy": "Sort by",
     "search": "Search",
     "browseOutlet": "Browse the outlet",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "notFoundTitle": "Page not found",
+    "notFoundDesc": "The page you were looking for does not exist, or is no longer available.",
+    "backHome": "Back to the shop"
   },
   "reviews": {
     "title": "Reviews",
@@ -365,7 +361,8 @@
     "auditLogs": "Audit logs",
     "adminUsers": "Admin users",
     "signOut": "Sign out",
-    "panel": "Admin panel"
+    "panel": "Admin panel",
+    "categories": "Categories"
   },
   "ui": {
     "aboutThisPiece": "About this piece",
@@ -743,5 +740,9 @@
     "sortLowest": "Lowest rated",
     "newHere": "New here?",
     "setVariantAvailability": "Set a variant's availability to reproduce low-stock and sold-out states."
+  },
+  "category": {
+    "notFound": "Category not found",
+    "notFoundDesc": "That category is not available right now. It may have been renamed, hidden, or have nothing in stock."
   }
 }

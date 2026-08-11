@@ -160,7 +160,7 @@ export function listWishlist() {
   return readState()
     .wishlist.filter((entry) => entry.userId === user.id)
     .map((entry) => {
-      const product = productBySlug.get(entry.productSlug);
+      const product = productBySlug(entry.productSlug);
       if (!product) return null;
       return {
         id: entry.id,
@@ -183,7 +183,7 @@ function slugFromProductId(productId: string): string {
 
 export function addToWishlist(body: { productId: string }) {
   const slug = slugFromProductId(String(body?.productId ?? ''));
-  if (!productBySlug.has(slug)) throw new DemoApiError(404, 'That product does not exist.');
+  if (!productBySlug(slug)) throw new DemoApiError(404, 'That product does not exist.');
 
   return mutate((state) => {
     const user = requireUser(state);

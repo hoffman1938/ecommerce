@@ -2,7 +2,7 @@
 
 import type { Paginated, ProductListItemDto, TargetGroup } from '@outlet/types';
 import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, Button, CloseIcon, EmptyState, cx } from '@outlet/ui';
@@ -12,6 +12,7 @@ import { ProductGrid, ProductGridSkeleton } from './product-card';
 import { Recommendations } from './recommendations';
 import { ActiveFilters, FilterPanel, SortSelect, useFilters } from './filter-panel';
 import { useI18n } from '@/lib/i18n';
+import { suggestedCategories, useCategoryTree, qualifiedName } from '@/lib/categories';
 import { T } from '@/components/t';
 
 const ALLOWED_FILTERS = [
@@ -64,6 +65,8 @@ function ProductListingInner({
   basePath,
   titleFromQueryParam,
   audience,
+  breadcrumbs,
+  subNav,
 }: {
   title?: string;
   /**
@@ -77,6 +80,10 @@ function ProductListingInner({
   titleFromQueryParam?: string;
   /** Scopes the no-results suggestions to this listing's audience. */
   audience?: TargetGroup;
+  /** Trail rendered above the heading on category pages. */
+  breadcrumbs?: ReactNode;
+  /** Sibling or child category links, rendered under the heading. */
+  subNav?: ReactNode;
 }) {
   const searchParams = useSearchParams();
   const { t } = useI18n();
@@ -127,6 +134,7 @@ function ProductListingInner({
 
   return (
     <div className="container-page py-6 lg:py-10">
+      {breadcrumbs}
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
         <h1 className="display text-4xl sm:text-5xl lg:text-6xl">
           {term ? (
@@ -137,9 +145,13 @@ function ProductListingInner({
           {resolvedTitle}
         </h1>
         <p data-numeric className="pb-1.5 text-sm text-ink-500">
-          {isPending ? t('common.loading') : t('product.productCount', { count: result?.total ?? 0 })}
+          {isPending
+            ? t('common.loading')
+            : t('product.productCount', { count: result?.total ?? 0 })}
         </p>
       </div>
+
+      {subNav}
 
       <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10">
         {/* Desktop facets. Sticky so long grids keep them reachable. */}
@@ -244,8 +256,12 @@ function Pagination({
       {page > 1 ? (
         <Link href={buildPageLink(page - 1)} rel="prev" className={stepClass}>
           <span aria-hidden="true">←</span>
-          <span className="ml-1.5 hidden sm:inline"><T id="ui.previous" /></span>
-          <span className="sr-only"><T id="ui.previousPage" /></span>
+          <span className="ml-1.5 hidden sm:inline">
+            <T id="ui.previous" />
+          </span>
+          <span className="sr-only">
+            <T id="ui.previousPage" />
+          </span>
         </Link>
       ) : (
         <span />
@@ -280,9 +296,13 @@ function Pagination({
 
       {page < totalPages ? (
         <Link href={buildPageLink(page + 1)} rel="next" className={stepClass}>
-          <span className="mr-1.5 hidden sm:inline"><T id="ui.next" /></span>
+          <span className="mr-1.5 hidden sm:inline">
+            <T id="ui.next" />
+          </span>
           <span aria-hidden="true">→</span>
-          <span className="sr-only"><T id="ui.nextPage" /></span>
+          <span className="sr-only">
+            <T id="ui.nextPage" />
+          </span>
         </Link>
       ) : (
         <span />
@@ -299,7 +319,9 @@ function Pagination({
 function NoResults({ audience }: { audience?: TargetGroup }) {
   const { t } = useI18n();
   const { params } = useFilters();
+  const { data: tree } = useCategoryTree();
   const term = params.get('q');
+  const suggestions = suggestedCategories(tree);
 
   return (
     <div>
@@ -314,13 +336,13 @@ function NoResults({ audience }: { audience?: TargetGroup }) {
           {t('common.browseOutlet')}
         </p>
         <ul className="mt-3 flex flex-wrap gap-2">
-          {SUGGESTED_CATEGORIES.map((category) => (
+          {suggestions.map((category) => (
             <li key={category.slug}>
               <Link
-                href={`/category/${category.slug}`}
+                href={category.href}
                 className="inline-flex h-9 items-center rounded px-3 text-sm font-medium text-ink-900 ring-1 ring-inset ring-ink-300 transition-colors duration-150 hover:bg-ink-25 hover:ring-ink-950 dark:bg-surface-card dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:ring-ink-600"
               >
-                {category.name}
+                {qualifiedName(tree, category)}
               </Link>
             </li>
           ))}
@@ -332,21 +354,13 @@ function NoResults({ audience }: { audience?: TargetGroup }) {
   );
 }
 
-const SUGGESTED_CATEGORIES = [
-  { name: 'T-Shirts', slug: 't-shirts' },
-  { name: 'Shoes', slug: 'shoes' },
-  { name: 'Hoodies & Sweatshirts', slug: 'hoodies' },
-  { name: 'Jackets', slug: 'jackets' },
-  { name: 'Pants', slug: 'pants' },
-  { name: 'Bags', slug: 'bags' },
-  { name: 'Accessories', slug: 'accessories' },
-];
-
 function ClearFiltersButton() {
   const { clearAll, activeCount } = useFilters();
   if (activeCount === 0) return null;
   return (
-    <Button variant="secondary" onClick={clearAll}><T id="ui.clearAllFilters" /></Button>
+    <Button variant="secondary" onClick={clearAll}>
+      <T id="ui.clearAllFilters" />
+    </Button>
   );
 }
 
@@ -363,7 +377,9 @@ function FilterDrawer({ onClose, total }: { onClose: () => void; total?: number 
       />
       <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] animate-slide-up flex-col rounded-t-xl bg-ink-25 shadow-overlay dark:border-t dark:border-line dark:bg-surface-raised">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-4">
-          <h2 className="text-base font-semibold text-ink-950"><T id="ui.filters" /></h2>
+          <h2 className="text-base font-semibold text-ink-950">
+            <T id="ui.filters" />
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -383,7 +399,9 @@ function FilterDrawer({ onClose, total }: { onClose: () => void; total?: number 
           )}
         >
           {activeCount > 0 ? (
-            <Button variant="secondary" onClick={clearAll} className="flex-1"><T id="ui.clearAll" /></Button>
+            <Button variant="secondary" onClick={clearAll} className="flex-1">
+              <T id="ui.clearAll" />
+            </Button>
           ) : null}
           <Button onClick={onClose} className="flex-1">
             {typeof total === 'number' ? `Show ${total} products` : 'Show results'}
@@ -402,6 +420,8 @@ export function ProductListing(props: {
   basePath: string;
   titleFromQueryParam?: string;
   audience?: TargetGroup;
+  breadcrumbs?: ReactNode;
+  subNav?: ReactNode;
 }) {
   return (
     <Suspense

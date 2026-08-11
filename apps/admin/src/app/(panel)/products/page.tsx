@@ -23,7 +23,7 @@ interface AdminProduct {
 }
 
 export default function AdminProductsPage() {
-  const { t, money  } = useI18n();
+  const { t, money } = useI18n();
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
@@ -41,17 +41,23 @@ export default function AdminProductsPage() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold"><T id="ui.products" /></h1>
+        <h1 className="text-2xl font-bold">
+          <T id="ui.products" />
+        </h1>
         <div className="flex flex-wrap items-center gap-2">
           <a
             href={`${API_BASE_URL}/admin/products/export/csv`}
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
-          ><T id="ui.exportCsv" /></a>
+          >
+            <T id="ui.exportCsv" />
+          </a>
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
-          ><T id="ui.importCsv" /></button>
+          >
+            <T id="ui.importCsv" />
+          </button>
           <input
             ref={fileInput}
             type="file"
@@ -78,7 +84,9 @@ export default function AdminProductsPage() {
             href="/products/new"
             data-testid="new-product"
             className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-          ><T id="ui.newProduct" /></Link>
+          >
+            <T id="ui.newProduct" />
+          </Link>
         </div>
       </div>
       {importResult ? <p className="mb-3 text-sm text-gray-600">{importResult}</p> : null}
@@ -97,18 +105,27 @@ export default function AdminProductsPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th><T id="ui.product" /></th>
+              <th>
+                <T id="ui.product" />
+              </th>
               <th>Brand</th>
-              <th><T id="ui.status" /></th>
-              <th className="text-right"><T id="ui.price" /></th>
+              <th>
+                <T id="ui.status" />
+              </th>
+              <th className="text-right">
+                <T id="ui.price" />
+              </th>
               <th className="text-right">Variants</th>
               <th className="text-right">Available</th>
+              <th className="text-right">Lifecycle</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="text-gray-400"><T id="ui.loading" /></td>
+                <td colSpan={7} className="text-gray-400">
+                  <T id="ui.loading" />
+                </td>
               </tr>
             ) : (
               (data?.items ?? []).map((product) => {
@@ -158,6 +175,33 @@ export default function AdminProductsPage() {
                     >
                       {available}
                     </td>
+                    {/* Status is changed from the list as well as the editor:
+                        publishing and archiving is what moves a category on and
+                        off the storefront, and it is not worth a page load. */}
+                    <td className="text-right">
+                      <select
+                        value={product.status}
+                        aria-label={`Status for ${product.name}`}
+                        data-testid={`status-${product.slug}`}
+                        onChange={async (event) => {
+                          const status = event.target.value;
+                          try {
+                            await api.put(`/admin/products/${product.id}`, { status });
+                            queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+                            queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+                          } catch (err) {
+                            setImportResult(`Could not update: ${(err as Error).message}`);
+                          }
+                        }}
+                        className="rounded border border-gray-300 px-2 py-1 text-xs"
+                      >
+                        {['DRAFT', 'ACTIVE', 'DISABLED', 'ARCHIVED'].map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
                   </tr>
                 );
               })
@@ -181,7 +225,9 @@ export default function AdminProductsPage() {
             disabled={page >= data.totalPages}
             onClick={() => setPage((p) => p + 1)}
             className="rounded border px-3 py-1.5 disabled:opacity-40"
-          ><T id="ui.next2" /></button>
+          >
+            <T id="ui.next2" />
+          </button>
         </div>
       ) : null}
     </div>

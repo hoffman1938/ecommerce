@@ -31,9 +31,12 @@ interface AdminProductDetail extends ProductFormValues {
   brandId: string;
 }
 
-export default function EditProductPage() {
-  const { t, money  } = useI18n();
+export default function EditProductPage({ id }: { id?: string } = {}) {
+  const { t, money } = useI18n();
+  // `id` is passed when this editor is rendered from the static export's
+  // not-found fallback, where there is no route param to read.
   const params = useParams<{ id: string }>();
+  const productId = id ?? params.id;
   const queryClient = useQueryClient();
   const [values, setValues] = useState<ProductFormValues>(EMPTY_PRODUCT);
   const [error, setError] = useState<string | null>(null);
@@ -46,8 +49,8 @@ export default function EditProductPage() {
   });
 
   const { data: product } = useQuery({
-    queryKey: ['admin-product', params.id],
-    queryFn: () => api.get<AdminProductDetail>(`/admin/products/${params.id}`),
+    queryKey: ['admin-product', productId],
+    queryFn: () => api.get<AdminProductDetail>(`/admin/products/${productId}`),
   });
 
   useEffect(() => {
@@ -74,9 +77,14 @@ export default function EditProductPage() {
     }
   }, [product]);
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-product', params.id] });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-product', productId] });
 
-  if (!product) return <p className="text-gray-500"><T id="ui.loadingProduct" /></p>;
+  if (!product)
+    return (
+      <p className="text-gray-500">
+        <T id="ui.loadingProduct" />
+      </p>
+    );
 
   return (
     <div className="max-w-4xl space-y-8">
@@ -133,11 +141,17 @@ export default function EditProductPage() {
           <thead>
             <tr>
               <th>SKU</th>
-              <th><T id="ui.size" /></th>
+              <th>
+                <T id="ui.size" />
+              </th>
               <th>Color</th>
-              <th className="text-right"><T id="ui.hand" /></th>
+              <th className="text-right">
+                <T id="ui.hand" />
+              </th>
               <th className="text-right">Reserved</th>
-              <th><T id="ui.status" /></th>
+              <th>
+                <T id="ui.status" />
+              </th>
               <th></th>
             </tr>
           </thead>
@@ -220,12 +234,16 @@ export default function EditProductPage() {
           <button
             data-testid="add-variant"
             className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-          ><T id="ui.addVariant" /></button>
+          >
+            <T id="ui.addVariant" />
+          </button>
         </form>
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold"><T id="ui.imagesStoredMinio" /></h2>
+        <h2 className="mb-3 font-semibold">
+          <T id="ui.imagesStoredMinio" />
+        </h2>
         <div className="flex flex-wrap gap-3">
           {product.images.map((image) => (
             <div key={image.id} className="relative">
@@ -250,7 +268,9 @@ export default function EditProductPage() {
           ))}
         </div>
         <label className="mt-4 block text-sm">
-          <span className="mb-1 block font-medium"><T id="ui.uploadImagePngJpegWebp" /></span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.uploadImagePngJpegWebp" />
+          </span>
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp,image/svg+xml"

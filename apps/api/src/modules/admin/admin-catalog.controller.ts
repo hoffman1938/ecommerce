@@ -23,17 +23,26 @@ import { z } from 'zod';
 import type { ObjectStorageProvider } from '@outlet/storage';
 import {
   brandInputSchema,
+  categoryDeleteSchema,
   categoryInputSchema,
+  categoryMoveSchema,
+  categoryReorderSchema,
+  categoryVisibilitySchema,
   productInputSchema,
   variantInputSchema,
   paginationSchema,
   type BrandInput,
+  type CategoryDeleteInput,
   type CategoryInput,
+  type CategoryMoveInput,
+  type CategoryReorderInput,
+  type CategoryVisibilityInput,
   type ProductInput,
   type VariantInput,
 } from '@outlet/validation';
 import { Permissions } from '@outlet/types';
 import { AdminCatalogService } from './admin-catalog.service';
+import { AdminCategoriesService } from './admin-categories.service';
 import { SessionAuthGuard } from '../../common/auth.guard';
 import { CurrentUser, RequirePermissions } from '../../common/decorators';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe';
@@ -66,6 +75,7 @@ const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 export class AdminCatalogController {
   constructor(
     private readonly catalog: AdminCatalogService,
+    private readonly categories: AdminCategoriesService,
     private readonly prisma: PrismaService,
     @Inject(STORAGE_PROVIDER) private readonly storage: ObjectStorageProvider,
   ) {}
@@ -255,22 +265,39 @@ export class AdminCatalogController {
     return this.catalog.upsertBrand({ ...body, id }, this.actor(user));
   }
 
+  /**
+   * The whole tree, hidden and empty rows included.
+   *
+   * The panel is where categories are managed, so pruning here would make the
+   * hidden ones unmanageable — the storefront's `/catalog/categories` is the
+   * pruned view, and the two share one builder so they cannot disagree.
+   */
   @Get('categories')
   @RequirePermissions(Permissions.ProductsView)
-  @ApiOperation({ summary: 'All categories (flat)' })
+  @ApiOperation({ summary: 'Category tree with product counts and Active/Hidden/Empty status' })
   listCategories() {
-    return this.prisma.category.findMany({ orderBy: [{ position: 'asc' }, { name: 'asc' }] });
+    return this.categories.listTree();
   }
 
   @Post('categories')
   @HttpCode(201)
   @RequirePermissions(Permissions.ProductsUpdate)
-  @ApiOperation({ summary: 'Create a category' })
+  @ApiOperation({ summary: 'Create a category or subcategory' })
   createCategory(
     @Body(new ZodValidationPipe(categoryInputSchema)) body: CategoryInput,
     @CurrentUser() user: RequestUser,
   ) {
-    return this.catalog.upsertCategory(body, this.actor(user));
+    return this.categories.create(body, this.actor(user));
+  }
+
+  @Put('categories/reorder')
+  @RequirePermissions(Permissions.ProductsUpdate)
+  @ApiOperation({ summary: 'Reorder the children of one parent' })
+  reorderCategories(
+    @Body(new ZodValidationPipe(categoryReorderSchema)) body: CategoryReorderInput,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.categories.reorder(body, this.actor(user));
   }
 
   @Put('categories/:id')
@@ -281,7 +308,43 @@ export class AdminCatalogController {
     @Body(new ZodValidationPipe(categoryInputSchema)) body: CategoryInput,
     @CurrentUser() user: RequestUser,
   ) {
-    return this.catalog.upsertCategory({ ...body, id }, this.actor(user));
+    return this.categories.update(id, body, this.actor(user));
+  }
+
+  @Patch('categories/:id/visibility')
+  @RequirePermissions(Permissions.ProductsUpdate)
+  @ApiOperation({ summary: 'Hide or unhide a category (does not touch emptiness)' })
+  setCategoryVisibility(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(categoryVisibilitySchema)) body: CategoryVisibilityInput,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.categories.setVisibility(id, body.isActive, this.actor(user));
+  }
+
+  @Patch('categories/:id/move')
+  @RequirePermissions(Permissions.ProductsUpdate)
+  @ApiOperation({ summary: 'Move a category under a different parent' })
+  moveCategory(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(categoryMoveSchema)) body: CategoryMoveInput,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.categories.move(id, body, this.actor(user));
+  }
+
+  @Post('categories/:id/delete')
+  @RequirePermissions(Permissions.ProductsUpdate)
+  @ApiOperation({
+    summary:
+      'Delete a category. The body must say where its products go — there is no default that silently orphans them.',
+  })
+  deleteCategory(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(categoryDeleteSchema)) body: CategoryDeleteInput,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.categories.remove(id, body, this.actor(user));
   }
 
   // --- CSV ------------------------------------------------------------------

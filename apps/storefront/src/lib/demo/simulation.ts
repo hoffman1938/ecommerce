@@ -21,7 +21,7 @@ import {
   transitionOrder,
 } from './lifecycle';
 import { availableFor } from './queries';
-import { productBySlug } from './data';
+import { productBySlug, productList } from './data';
 import {
   DemoApiError,
   advanceClock,
@@ -408,9 +408,7 @@ export interface InventoryRowDto {
 
 export function listInventory(slug?: string): InventoryRowDto[] {
   const state = readState();
-  const products = slug
-    ? [productBySlug.get(slug)].filter(Boolean)
-    : [...productBySlug.values()].slice(0, 12);
+  const products = slug ? [productBySlug(slug)].filter(Boolean) : productList().slice(0, 12);
 
   return products.flatMap((product) =>
     product!.variants.map((variant) => ({
@@ -436,9 +434,7 @@ export function listInventory(slug?: string): InventoryRowDto[] {
  */
 export function setStock(variantId: string, available: number): InventoryRowDto {
   return mutate((state) => {
-    const product = [...productBySlug.values()].find((p) =>
-      p.variants.some((v) => v.id === variantId),
-    );
+    const product = productList().find((p) => p.variants.some((v) => v.id === variantId));
     const variant = product?.variants.find((v) => v.id === variantId);
     if (!product || !variant) throw new DemoApiError(404, 'Unknown variant.');
 

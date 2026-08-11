@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import type { CategoryDto } from '@outlet/types';
 import { SITE_URL } from '@/lib/structured-data';
 import { campaignSlugs, contentPageKeys, listCategories, productSlugs } from '@/lib/demo/queries';
 import { BRANDS } from '@outlet/catalog';
@@ -18,10 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const staticPaths = ['', '/products', '/campaigns', '/search', '/wishlist'];
 
-  const categoryPaths = listCategories().flatMap((category) => [
-    `/category/${category.slug}`,
-    ...(category.children ?? []).map((child) => `/category/${child.slug}`),
-  ]);
+  // Every level of the tree, addressed by its readable path. Hidden and empty
+  // branches are already gone — `listCategories` returns only what a customer
+  // can reach, so the sitemap cannot advertise a page that 404s.
+  const walk = (nodes: CategoryDto[]): string[] =>
+    nodes.flatMap((node) => [node.href, ...walk(node.children)]);
+  const categoryPaths = walk(listCategories());
 
   return [
     ...staticPaths.map((path) => ({

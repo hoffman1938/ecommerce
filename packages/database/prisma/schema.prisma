@@ -339,6 +339,13 @@ model Brand {
   @@map("brands")
 }
 
+/// The category tree, three levels deep:
+///   department (Women) -> category (Shoes) -> subcategory (Heels)
+///
+/// `isActive` is the administrator's own switch and nothing else writes to it —
+/// a category that currently holds no available products is *empty*, which the
+/// storefront hides on its own and un-hides again the moment stock is listed.
+/// Conflating the two would mean a sold-out category could never come back.
 model Category {
   id          String   @id @default(cuid())
   name        String
@@ -347,6 +354,16 @@ model Category {
   description String?
   position    Int      @default(0)
   isActive    Boolean  @default(true)
+  /// URL fragment within the parent: `dresses` in /shop/women/clothing/dresses.
+  /// Slugs stay globally unique and department-prefixed; this is what makes the
+  /// path readable without a second identifier.
+  pathSegment String   @default("")
+  /// The department this row belongs to, denormalised onto every level so the
+  /// audience filter and the tree agree without walking the parent chain.
+  targetGroup TargetGroup @default(UNISEX)
+  /// Which family of size chart applies here (tops / shirts / bottoms), or null
+  /// when products in this category are not sized — footwear, bags, wallets.
+  sizeChartGroup String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -355,6 +372,7 @@ model Category {
   products Product[]
 
   @@index([parentId])
+  @@index([targetGroup])
   @@map("categories")
 }
 

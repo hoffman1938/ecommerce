@@ -104,6 +104,26 @@ page, no money moves, nothing is sent to anyone.
 Customers see the simulated notifications and emails at **`/account/inbox`**; tracking numbers look
 like `SIM-GEO-100001` and order numbers like `OUT-100001`.
 
+## Catalogue structure
+
+The shop is browsed through a three-level tree — department → category → subcategory — defined once
+in `packages/catalog/src/taxonomy.ts` and consumed by the Prisma seed, the API, the storefront and
+the admin panel alike. URLs read `/shop/women/clothing/dresses`; `/category/:slug` still resolves
+for older links.
+
+Nothing about the navigation is hardcoded in the front ends. A category reaches a customer only
+when it is active, its ancestors are active, and it holds at least one available product — so a
+subcategory that sells out drops off the menu on its own and reappears when stock is published,
+while one an administrator switched off stays off until they switch it back. **Catalog →
+Categories** in the admin panel shows the whole tree with those two states reported separately
+(`Hidden` vs `Empty`), product counts, ordering and a delete flow that will not let products be
+orphaned. See [docs/architecture.md](docs/architecture.md#category-tree-and-visibility-documented-decision).
+
+Size guides come from a single transcribed dataset covering Men, Women, Kids and Unisex across
+t-shirts, shirts and jeans/trousers, in every system it publishes (US, UK, EU, IT, FR, JP,
+International). The chart shown is the one for the product's own category and audience, and
+products whose category has no sizing — footwear, bags, accessories — show no size guide at all.
+
 ## Product imagery
 
 The catalogue ships no photography. Every product, category, brand and campaign

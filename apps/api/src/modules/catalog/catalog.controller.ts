@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   productQuerySchema,
@@ -21,9 +21,27 @@ export class CatalogController {
   }
 
   @Get('categories')
-  @ApiOperation({ summary: 'Category tree' })
+  @ApiOperation({
+    summary:
+      'Customer-facing category tree (department → category → subcategory). Hidden and empty branches are already removed.',
+  })
   listCategories() {
     return this.catalog.listCategories();
+  }
+
+  @Get('categories/path')
+  @ApiOperation({
+    summary: 'Resolve a storefront path such as women/clothing/dresses to its breadcrumb trail',
+  })
+  async resolveCategoryPath(@Query('path') path?: string) {
+    const segments = (path ?? '')
+      .split('/')
+      .map((segment) => segment.trim())
+      .filter(Boolean)
+      .slice(0, 3);
+    const trail = await this.catalog.resolveCategoryPath(segments);
+    if (!trail) throw new NotFoundException('Category not found');
+    return trail;
   }
 
   @Get('suggest')

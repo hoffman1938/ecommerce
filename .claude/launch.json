@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "storefront-demo",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@outlet/storefront", "dev"],
-      "port": 3000
+      "name": "demo-export",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve@14", "-l", "4173", "apps/storefront/out"],
+      "port": 4173
     }
   ]
 }

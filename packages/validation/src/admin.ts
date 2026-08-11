@@ -101,15 +101,69 @@ export const brandInputSchema = z.object({
 });
 export type BrandInput = z.infer<typeof brandInputSchema>;
 
+export const categoryLevelSchema = z.enum(['department', 'category', 'subcategory']);
+export const sizeChartGroupSchema = z.enum(['tops', 'shirts', 'bottoms']);
+export const targetGroupSchema = z.enum(['MEN', 'WOMEN', 'KIDS', 'UNISEX']);
+
+/**
+ * `position`, `level` and `targetGroup` are optional rather than defaulted:
+ * this schema backs the update endpoint as well as create, and a default would
+ * silently reset a category's ordering or move it to another department every
+ * time someone renamed it. The service fills the gaps — level and department
+ * from the parent, position from the end of the sibling list.
+ */
 export const categoryInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
   slug: slugSchema,
+  /** URL fragment within the parent. Falls back to the slug when omitted. */
+  pathSegment: slugSchema.optional(),
   parentId: z.string().min(1).optional().nullable(),
+  targetGroup: targetGroupSchema.optional(),
+  level: categoryLevelSchema.optional(),
+  sizeChartGroup: sizeChartGroupSchema.optional().nullable(),
   description: z.string().trim().max(2000).optional().nullable(),
-  position: z.number().int().default(0),
-  isActive: z.boolean().optional().default(true),
+  position: z.number().int().optional(),
+  isActive: z.boolean().optional(),
 });
 export type CategoryInput = z.infer<typeof categoryInputSchema>;
+
+/** Sibling ordering, sent as the full list so the result cannot be ambiguous. */
+export const categoryReorderSchema = z.object({
+  parentId: z.string().min(1).nullable().optional(),
+  orderedIds: z.array(z.string().min(1)).min(1).max(500),
+});
+export type CategoryReorderInput = z.infer<typeof categoryReorderSchema>;
+
+/** Re-parenting: the same call covers "move to another category" and "promote". */
+export const categoryMoveSchema = z.object({
+  parentId: z.string().min(1).nullable(),
+  position: z.number().int().min(0).optional(),
+});
+export type CategoryMoveInput = z.infer<typeof categoryMoveSchema>;
+
+export const categoryVisibilitySchema = z.object({ isActive: z.boolean() });
+export type CategoryVisibilityInput = z.infer<typeof categoryVisibilitySchema>;
+
+/**
+ * Deleting a category that still holds products.
+ *
+ * There is no default. Orphaning a product is a data loss the shop only
+ * notices weeks later, so the caller has to say out loud where the products go
+ * and what happens to the subcategories underneath.
+ */
+export const categoryDeleteSchema = z
+  .object({
+    /** `reassign` moves products to another category; `detach` leaves them uncategorised. */
+    strategy: z.enum(['reassign', 'detach']),
+    targetCategoryId: z.string().min(1).optional().nullable(),
+    /** `promote` lifts children to this row's parent; `cascade` deletes them too. */
+    childStrategy: z.enum(['promote', 'cascade']).default('promote'),
+  })
+  .refine((input) => input.strategy !== 'reassign' || Boolean(input.targetCategoryId), {
+    message: 'Choose the category the products should move to.',
+    path: ['targetCategoryId'],
+  });
+export type CategoryDeleteInput = z.infer<typeof categoryDeleteSchema>;
 
 // --- Coupons ---------------------------------------------------------------
 

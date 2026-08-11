@@ -435,10 +435,10 @@ export function ratingAverageFrom(ratingSum: number, reviewCount: number): numbe
 
 /** Maps a category slug onto the copy family used for generated review text. */
 export function reviewKindForCategory(categorySlug: string): ReviewProductKind {
-  if (/(shoe|sneaker|trainer|boot)/.test(categorySlug)) return 'shoes';
+  if (/(shoe|sneaker|trainer|boot|heel|flat|sandal|loafer)/.test(categorySlug)) return 'shoes';
   if (/(jacket|coat|outerwear|parka)/.test(categorySlug)) return 'outerwear';
   if (/(bag|backpack|luggage)/.test(categorySlug)) return 'bag';
   if (/(pant|short|trouser|jean|skirt)/.test(categorySlug)) return 'bottom';
-  if (/(shirt|tee|hoodie|sweat|top|dress|knit)/.test(categorySlug)) return 'top';
+  if (/(shirt|tee|polo|hoodie|sweat|top|dress|knit)/.test(categorySlug)) return 'top';
   return 'accessory';
 }

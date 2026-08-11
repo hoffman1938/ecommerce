@@ -25,50 +25,14 @@ import {
   cx,
 } from '@outlet/ui';
 import { api } from '@/lib/api';
-import type { SearchSuggestionsDto } from '@outlet/types';
+import type { CategoryDto, SearchSuggestionsDto } from '@outlet/types';
 import { useCart, useCurrentUser, useLogout } from '@/lib/hooks';
-import { AUDIENCES } from '@/lib/audience';
+import { useCategoryLabel, useCategoryTree } from '@/lib/categories';
 import { useI18n } from '@/lib/i18n';
 import { LocaleSwitcher } from './locale-switcher';
 import { ThemeToggle } from './theme';
 import { CartDrawer } from './cart-drawer';
 import { T } from '@/components/t';
-
-/**
- * The shop's information architecture, declared once.
- *
- * Sub-categories are what turn the desktop rail into a browsable menu rather
- * than a list of seven links, and they drive the mobile drawer's accordion from
- * the same source — so the two can never disagree about what the shop sells.
- */
-const NAV: Array<{
-  key: string;
-  slug: string;
-  children?: Array<{ name: string; slug: string }>;
-}> = [
-  { key: 'tShirts', slug: 't-shirts' },
-  {
-    key: 'shoes',
-    slug: 'shoes',
-    children: [
-      { name: 'Running shoes', slug: 'running-shoes' },
-      { name: 'Sneakers', slug: 'sneakers' },
-      { name: 'Boots', slug: 'boots' },
-    ],
-  },
-  { key: 'hoodies', slug: 'hoodies' },
-  { key: 'jackets', slug: 'jackets' },
-  { key: 'pants', slug: 'pants' },
-  {
-    key: 'bags',
-    slug: 'bags',
-    children: [
-      { name: 'Backpacks', slug: 'backpacks' },
-      { name: 'Shoulder bags', slug: 'shoulder-bags' },
-    ],
-  },
-  { key: 'accessories', slug: 'accessories' },
-];
 
 /** Shown in every category panel — real destinations, not invented ones. */
 const QUICK_LINKS = [
@@ -77,25 +41,6 @@ const QUICK_LINKS = [
   { label: 'Best rated', href: '/products?sort=rating' },
   { label: 'In stock only', href: '/products?inStock=true' },
 ];
-
-const FEATURED_BRANDS = [
-  { name: 'Nike', slug: 'nike' },
-  { name: 'Adidas', slug: 'adidas' },
-  { name: 'Puma', slug: 'puma' },
-  { name: 'New Balance', slug: 'new-balance' },
-  { name: 'The North Face', slug: 'the-north-face' },
-  { name: 'Calvin Klein', slug: 'calvin-klein' },
-];
-
-function categoryLabel(key: string, t: (k: string) => string): string {
-  const translated = t(`categories.${key}`);
-  // Keys added after the locale files were written fall back to a readable name
-  // rather than rendering the raw dotted path.
-  if (translated === `categories.${key}`) {
-    return key === 'bags' ? 'Bags' : key;
-  }
-  return translated;
-}
 
 function Wordmark({ className }: { className?: string }) {
   const { t } = useI18n();
@@ -474,6 +419,7 @@ export function Header() {
   const { data: cart } = useCart();
   const logout = useLogout();
   const { t } = useI18n();
+  const label = useCategoryLabel();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -532,6 +478,13 @@ export function Header() {
 
   const itemCount = cart?.itemCount ?? 0;
   const scrolled = useScrolled();
+
+  // Navigation is whatever the shop currently has to sell. A department with
+  // no available products — or one an administrator has hidden — is not in this
+  // list at all, so it cannot be rendered by accident.
+  const { data: tree } = useCategoryTree();
+  const departments = tree ?? [];
+  const openDepartment = departments.find((department) => department.slug === openPanel);
 
   return (
     <header
@@ -652,16 +605,29 @@ export function Header() {
               </Link>
             </li>
             <li aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-ink-200 dark:bg-ink-300" />
-            {/* Audience before category: "who is it for" is the first question a
-                fashion shopper answers, and it narrows the catalogue far more
-                than a garment type does. */}
-            {AUDIENCES.map((audience) => (
-              <li key={audience.slug} className="shrink-0">
+            {/* Department before garment type: "who is it for" is the first
+                question a fashion shopper answers, and it narrows the catalogue
+                far more than a category does. The list is whatever the shop
+                currently has to sell — a department with nothing available in
+                it is not here at all. */}
+            {departments.map((department) => (
+              <li
+                key={department.id}
+                className="shrink-0"
+                onMouseEnter={() => {
+                  cancelClose();
+                  setOpenPanel(department.slug);
+                }}
+              >
                 <NavLink
-                  href={`/shop/${audience.slug}`}
-                  active={pathname === `/shop/${audience.slug}`}
+                  href={department.href}
+                  active={pathname === department.href}
+                  expanded={
+                    department.children.length > 0 ? openPanel === department.slug : undefined
+                  }
+                  onFocus={() => setOpenPanel(department.slug)}
                 >
-                  {t(`audience.${audience.key}`)}
+                  {label(department)}
                 </NavLink>
               </li>
             ))}
@@ -671,32 +637,13 @@ export function Header() {
                 {t('nav.allProducts')}
               </NavLink>
             </li>
-            {NAV.map((entry) => (
-              <li
-                key={entry.slug}
-                className="shrink-0"
-                onMouseEnter={() => {
-                  cancelClose();
-                  setOpenPanel(entry.slug);
-                }}
-              >
-                <NavLink
-                  href={`/category/${entry.slug}`}
-                  active={pathname === `/category/${entry.slug}`}
-                  expanded={openPanel === entry.slug}
-                  onFocus={() => setOpenPanel(entry.slug)}
-                >
-                  {categoryLabel(entry.key, t)}
-                </NavLink>
-              </li>
-            ))}
           </ul>
         </div>
 
         {/* One panel, positioned under the whole rail rather than under each
             item: a full-width sheet is far easier to aim at than a dropdown
             that moves as you slide along the row. */}
-        {openPanel ? (
+        {openDepartment && openDepartment.children.length > 0 ? (
           <div
             // Full-bleed sheet, so it takes `surface-raised` flat rather than
             // the rounded overlay treatment used by panels that float free.
@@ -704,11 +651,7 @@ export function Header() {
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
           >
-            <CategoryPanel
-              entry={NAV.find((n) => n.slug === openPanel)!}
-              label={categoryLabel(NAV.find((n) => n.slug === openPanel)!.key, t)}
-              onNavigate={() => setOpenPanel(null)}
-            />
+            <DepartmentPanel department={openDepartment} onNavigate={() => setOpenPanel(null)} />
           </div>
         ) : null}
       </nav>
@@ -719,89 +662,109 @@ export function Header() {
   );
 }
 
-function CategoryPanel({
-  entry,
-  label,
+/**
+ * The mega menu for one department.
+ *
+ * Two levels at once — categories as headings, subcategories beneath them —
+ * because on a fashion site the shopper's next click is almost always a garment
+ * type, and making them stop at "Clothing" first adds a page load to every
+ * journey. Nothing here is declared in this file: the columns are whatever the
+ * department currently contains, so a subcategory that sells out drops off the
+ * menu and a new one appears on it without a deploy.
+ */
+function DepartmentPanel({
+  department,
   onNavigate,
 }: {
-  entry: (typeof NAV)[number];
-  label: string;
+  department: CategoryDto;
   onNavigate: () => void;
 }) {
+  const { t } = useI18n();
+  const label = useCategoryLabel();
+
   return (
-    <div className="container-page grid grid-cols-4 gap-8 py-7">
-      <div>
-        <p className="eyebrow mb-3">Shop {label}</p>
-        <ul className="space-y-2 text-sm">
-          <li>
-            <Link
-              href={`/category/${entry.slug}`}
-              onClick={onNavigate}
-              className="text-ink-800 transition-colors hover:text-ink-950"
-            >
-              All {label.toLowerCase()}
-            </Link>
-          </li>
-          {entry.children?.map((child) => (
-            <li key={child.slug}>
-              <Link
-                href={`/category/${child.slug}`}
-                onClick={onNavigate}
-                className="text-ink-800 transition-colors hover:text-ink-950 dark:text-content-secondary dark:hover:text-ink-950"
-              >
-                {child.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div>
-        <p className="eyebrow mb-3"><T id="ui.findFast" /></p>
-        <ul className="space-y-2 text-sm">
-          {QUICK_LINKS.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={`${link.href}&category=${entry.slug}`}
-                onClick={onNavigate}
-                className="text-ink-800 transition-colors hover:text-ink-950 dark:text-content-secondary dark:hover:text-ink-950"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div>
-        <p className="eyebrow mb-3"><T id="ui.brands" /></p>
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          {FEATURED_BRANDS.map((brand) => (
-            <li key={brand.slug}>
-              <Link
-                href={`/brand/${brand.slug}`}
-                onClick={onNavigate}
-                className="text-ink-800 transition-colors hover:text-ink-950 dark:text-content-secondary dark:hover:text-ink-950"
-              >
-                {brand.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <Link
-        href="/campaigns"
-        onClick={onNavigate}
-        className="group flex flex-col justify-between rounded bg-accent p-5 text-accent-contrast dark:rounded-lg"
-      >
-        <div>
-          <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-accent-contrast/60"><T id="ui.liveCampaigns" /></p>
-          <p className="mt-2 text-lg font-bold leading-tight"><T id="ui.shortWindowsLimitedStock" /></p>
+    <div className="container-page flex gap-10 py-7">
+      <div className="min-w-0 flex-1">
+        <div className="mb-4 flex items-baseline gap-3">
+          <p className="eyebrow">{label(department)}</p>
+          <Link
+            href={department.href}
+            onClick={onNavigate}
+            className="text-xs text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-950"
+          >
+            {t('nav.allProducts')}
+          </Link>
         </div>
-        <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium"><T id="ui.seeWhatS" /><ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        </span>
-      </Link>
+
+        <div className="grid grid-cols-3 gap-x-8 gap-y-6">
+          {department.children.map((category) => (
+            <div key={category.id}>
+              <Link
+                href={category.href}
+                onClick={onNavigate}
+                className="text-sm font-semibold text-ink-950 transition-colors hover:text-accent"
+              >
+                {label(category)}
+              </Link>
+              {category.children.length > 0 ? (
+                <ul className="mt-2 space-y-1.5 text-sm">
+                  {category.children.map((child) => (
+                    <li key={child.id}>
+                      <Link
+                        href={child.href}
+                        onClick={onNavigate}
+                        className="text-ink-700 transition-colors hover:text-ink-950 dark:text-content-secondary dark:hover:text-ink-950"
+                      >
+                        {label(child)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="w-60 shrink-0 space-y-6">
+        <div>
+          <p className="eyebrow mb-3">
+            <T id="ui.findFast" />
+          </p>
+          <ul className="space-y-2 text-sm">
+            {QUICK_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={`${link.href}&targetGroup=${department.targetGroup}`}
+                  onClick={onNavigate}
+                  className="text-ink-800 transition-colors hover:text-ink-950 dark:text-content-secondary dark:hover:text-ink-950"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <Link
+          href="/campaigns"
+          onClick={onNavigate}
+          className="group flex flex-col justify-between rounded bg-accent p-5 text-accent-contrast dark:rounded-lg"
+        >
+          <div>
+            <p className="text-2xs font-semibold uppercase tracking-[0.12em] text-accent-contrast/60">
+              <T id="ui.liveCampaigns" />
+            </p>
+            <p className="mt-2 text-base font-bold leading-tight">
+              <T id="ui.shortWindowsLimitedStock" />
+            </p>
+          </div>
+          <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium">
+            <T id="ui.seeWhatS" />
+            <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </Link>
+      </div>
     </div>
   );
 }
@@ -851,6 +814,9 @@ function MobileMenu({
   const { data: me } = useCurrentUser();
   const logout = useLogout();
   const { t } = useI18n();
+  const label = useCategoryLabel();
+  const { data: tree } = useCategoryTree();
+  const departments = tree ?? [];
   const [expanded, setExpanded] = useState<string | null>(null);
 
   /*
@@ -894,55 +860,51 @@ function MobileMenu({
           <MenuLink href="/products">{t('nav.allProducts')}</MenuLink>
 
           <p className="eyebrow px-4 pb-1 pt-5">{t('nav.shopFor')}</p>
-          {AUDIENCES.map((audience) => (
-            <MenuLink key={audience.slug} href={`/shop/${audience.slug}`}>
-              {t(`audience.${audience.key}`)}
-            </MenuLink>
-          ))}
-
-          <p className="eyebrow px-4 pb-1 pt-5">{t('nav.shopByCategory')}</p>
-          {NAV.map((entry) =>
-            entry.children ? (
-              <div key={entry.slug}>
-                <button
-                  type="button"
-                  onClick={() => setExpanded((c) => (c === entry.slug ? null : entry.slug))}
-                  aria-expanded={expanded === entry.slug}
-                  className="flex w-full items-center justify-between px-4 py-2.5 text-left text-[15px] text-ink-800 transition-colors hover:bg-ink-50 hover:text-ink-950 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950"
-                >
-                  {categoryLabel(entry.key, t)}
-                  <ChevronDown
-                    className={cx(
-                      'h-4 w-4 text-ink-400 transition-transform duration-200',
-                      expanded === entry.slug && 'rotate-180',
-                    )}
-                  />
-                </button>
-                {expanded === entry.slug ? (
-                  // A recess, not a raise: the sub-list belongs *inside* the
-                  // row above it.
-                  <div className="animate-slide-up bg-ink-50/60 py-1 dark:bg-surface-sunken/70">
-                    <MenuLink href={`/category/${entry.slug}`} className="pl-8 text-sm">
-                      All {categoryLabel(entry.key, t).toLowerCase()}
-                    </MenuLink>
-                    {entry.children.map((child) => (
-                      <MenuLink
-                        key={child.slug}
-                        href={`/category/${child.slug}`}
-                        className="pl-8 text-sm"
-                      >
-                        {child.name}
+          {/* The same tree the desktop rail reads, one accordion per department.
+              A department with nothing available is absent from `tree` and so
+              cannot appear here either — the two menus cannot disagree about
+              what the shop sells. */}
+          {departments.map((department) => (
+            <div key={department.id}>
+              <button
+                type="button"
+                onClick={() =>
+                  setExpanded((current) => (current === department.slug ? null : department.slug))
+                }
+                aria-expanded={expanded === department.slug}
+                className="flex w-full items-center justify-between px-4 py-2.5 text-left text-[15px] text-ink-800 transition-colors hover:bg-ink-50 hover:text-ink-950 dark:text-content-secondary dark:hover:bg-surface-hover dark:hover:text-ink-950"
+              >
+                {label(department)}
+                <ChevronDown
+                  className={cx(
+                    'h-4 w-4 text-ink-400 transition-transform duration-200',
+                    expanded === department.slug && 'rotate-180',
+                  )}
+                />
+              </button>
+              {expanded === department.slug ? (
+                // A recess, not a raise: the sub-list belongs *inside* the row
+                // above it.
+                <div className="animate-slide-up bg-ink-50/60 py-1 dark:bg-surface-sunken/70">
+                  <MenuLink href={department.href} className="pl-8 text-sm font-medium">
+                    {t('nav.allProducts')}
+                  </MenuLink>
+                  {department.children.map((category) => (
+                    <div key={category.id}>
+                      <MenuLink href={category.href} className="pl-8 text-sm font-medium">
+                        {label(category)}
                       </MenuLink>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <MenuLink key={entry.slug} href={`/category/${entry.slug}`}>
-                {categoryLabel(entry.key, t)}
-              </MenuLink>
-            ),
-          )}
+                      {category.children.map((child) => (
+                        <MenuLink key={child.id} href={child.href} className="pl-12 text-sm">
+                          {label(child)}
+                        </MenuLink>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ))}
 
           <p className="eyebrow px-4 pb-1 pt-5">{t('nav.account')}</p>
           {me?.user ? (

@@ -4,15 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ProductDetailDto } from '@outlet/types';
 import { COLOR_HEX } from '@outlet/catalog';
-import {
-  Alert,
-  Button,
-  HeartIcon,
-  ReturnIcon,
-  ShieldIcon,
-  TruckIcon,
-  cx,
-} from '@outlet/ui';
+import { Alert, Button, HeartIcon, ReturnIcon, ShieldIcon, TruckIcon, cx } from '@outlet/ui';
 import { useAddToCart, useCurrentUser } from '@/lib/hooks';
 import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
@@ -243,6 +235,7 @@ export function ProductPurchasePanel({
           <SizeGuide
             sizes={product.variants.map((v) => v.size)}
             targetGroup={product.targetGroup}
+            sizeChartGroup={product.sizeChartGroup}
           />
         </legend>
         <div
@@ -299,9 +292,7 @@ export function ProductPurchasePanel({
             {t('product.onlyLeft', { count: selectedVariant.availableQuantity })}
           </p>
         ) : lastSize ? (
-          <p className="mt-2.5 text-sm font-medium text-warning-600">
-            {t('product.lastSize')}
-          </p>
+          <p className="mt-2.5 text-sm font-medium text-warning-600">{t('product.lastSize')}</p>
         ) : null}
       </fieldset>
 
@@ -377,18 +368,24 @@ export function ProductPurchasePanel({
           rather than in the footer is the point. */}
       <ul className="mt-6 space-y-3 border-t border-line pt-5 text-sm">
         <TrustRow icon={<TruckIcon className="h-[18px] w-[18px]" />} title={t('product.delivery')}>
-          Standard {money(495)}, 3–5 working days. Free over{' '}
-          {money(10000)}. Express 1–2 days at checkout.
+          Standard {money(495)}, 3–5 working days. Free over {money(10000)}. Express 1–2 days at
+          checkout.
         </TrustRow>
-        <TrustRow icon={<ReturnIcon className="h-[18px] w-[18px]" />} title={t('product.freeReturns')}>
+        <TrustRow
+          icon={<ReturnIcon className="h-[18px] w-[18px]" />}
+          title={t('product.freeReturns')}
+        >
           30 days from delivery. Request a return from your order page — no reason needed.
         </TrustRow>
-        <TrustRow icon={<ShieldIcon className="h-[18px] w-[18px]" />} title={t('product.secureCheckout')}><T id="ui.cardCashDeliveryCardDetails" /></TrustRow>
+        <TrustRow
+          icon={<ShieldIcon className="h-[18px] w-[18px]" />}
+          title={t('product.secureCheckout')}
+        >
+          <T id="ui.cardCashDeliveryCardDetails" />
+        </TrustRow>
       </ul>
 
-      <p className="mt-5 text-xs leading-relaxed text-ink-500">
-        {t('product.reserveNote')}
-      </p>
+      <p className="mt-5 text-xs leading-relaxed text-ink-500">{t('product.reserveNote')}</p>
 
       {/* Mobile sticky bar — only once the real button is out of view. */}
       <div
@@ -423,7 +420,9 @@ export function ProductPurchasePanel({
             disabled={soldOut}
             tabIndex={ctaOffscreen ? 0 : -1}
             className="shrink-0 px-8"
-          ><T id="ui.addBag" /></Button>
+          >
+            <T id="ui.addBag" />
+          </Button>
         </div>
       </div>
     </div>

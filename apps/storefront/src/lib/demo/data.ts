@@ -15,21 +15,26 @@
 import {
   BRANDS,
   CAMPAIGNS,
-  CATALOG_EPOCH,
-  CATEGORIES,
   CONTENT_PAGES,
   CURRENCY_CODE,
   DEFAULT_CARE_INSTRUCTIONS,
   DEFAULT_COUNTRY_OF_ORIGIN,
-  PRODUCTS,
   SETTINGS,
   PRODUCT_VIEWS,
+  buildCategoryTree,
+  categoryArtworkDataUri,
   descriptionFor,
+  effectiveCategories,
+  effectiveProducts,
   productArtworkAlt,
+  productArtworkDataUri,
   quantityFor,
   skuFor,
   type BrandSpec,
-  type CategorySpec,
+  type CatalogProductSpec,
+  type CategoryRow,
+  type CategoryTreeNode,
+  type DirectCounts,
 } from '@outlet/catalog';
 import {
   aggregateReviews,
@@ -37,7 +42,7 @@ import {
   reviewKindForCategory,
   type GeneratedReview,
 } from '@outlet/domain';
-import type { TargetGroup } from '@outlet/types';
+import type { ProductStatus, TargetGroup } from '@outlet/types';
 
 export { CONTENT_PAGES, CURRENCY_CODE, SETTINGS };
 
@@ -56,8 +61,14 @@ export function productImageUrl(slug: string, color: string, view: string): stri
   return `${ARTWORK_BASE}/products/${slug}/${color.toLowerCase()}-${view}.svg`;
 }
 
-export function categoryImageUrl(slug: string): string {
-  return `${ARTWORK_BASE}/categories/${slug}.svg`;
+/**
+ * Category tiles come from the pre-generated files where they exist, and are
+ * drawn on the spot where they do not — a category an administrator created in
+ * this browser has no file on disk, and a broken image is worse than an
+ * inlined one.
+ */
+export function categoryImageUrl(slug: string, name: string, isCustom: boolean): string {
+  return isCustom ? categoryArtworkDataUri(slug, name) : `${ARTWORK_BASE}/categories/${slug}.svg`;
 }
 
 export function brandImageUrl(slug: string): string {
@@ -68,8 +79,7 @@ export function campaignImageUrl(slug: string): string {
   return `${ARTWORK_BASE}/campaigns/${slug}.svg`;
 }
 export type DemoBrand = BrandSpec;
-export type DemoCategory = CategorySpec;
-export { BRANDS, CATEGORIES };
+export { BRANDS };
 
 // --- Materialised records ---------------------------------------------------
 
@@ -109,6 +119,8 @@ export interface DemoProduct {
   slug: string;
   brandSlug: string;
   categorySlug: string;
+  /** Only ACTIVE products are ever shown, or counted towards a category. */
+  status: ProductStatus;
   targetGroup: TargetGroup;
   originalPriceMinor: number;
   outletPriceMinor: number;
@@ -148,11 +160,6 @@ export interface DemoCampaign {
 }
 
 export const brandBySlug = new Map<string, DemoBrand>(BRANDS.map((b) => [b.slug, b] as const));
-export const categoryBySlug = new Map<string, DemoCategory>(
-  CATEGORIES.map((c) => [c.slug, c] as const),
-);
-
-const CREATED_BASE = Date.parse(CATALOG_EPOCH);
 
 function toDemoReview(slug: string, review: GeneratedReview): DemoReview {
   return {
@@ -167,8 +174,8 @@ function toDemoReview(slug: string, review: GeneratedReview): DemoReview {
   };
 }
 
-export const PRODUCT_LIST: DemoProduct[] = PRODUCTS.map((spec, productIndex) => {
-  const brand = brandBySlug.get(spec.brand)!;
+function materialise(spec: CatalogProductSpec): DemoProduct {
+  const brand = brandBySlug.get(spec.brand) ?? BRANDS[0];
 
   const variants: DemoVariant[] = [];
   let variantIndex = 0;
@@ -190,12 +197,24 @@ export const PRODUCT_LIST: DemoProduct[] = PRODUCTS.map((spec, productIndex) => 
   // and its zoom viewer have genuine content rather than one image per colour.
   // Colour order matters: the first colourway's views come first, which is what
   // the card thumbnail and the PDP's default selection show.
+  //
+  // A product an administrator created in this browser has no pre-generated
+  // file behind it, so its shots are drawn inline instead.
   const images: DemoImage[] = spec.colors.flatMap((color, colorIndex) =>
     PRODUCT_VIEWS.map((view, viewIndex) => {
       const position = colorIndex * PRODUCT_VIEWS.length + viewIndex;
+      const artwork = {
+        shape: spec.shape,
+        color,
+        brandName: brand.name,
+        productName: spec.name,
+        view,
+      };
       return {
         id: `img_${spec.slug}_${color.toLowerCase()}_${view}`,
-        url: productImageUrl(spec.slug, color, view),
+        url: spec.isCustom
+          ? productArtworkDataUri(artwork)
+          : productImageUrl(spec.slug, color, view),
         altText: productArtworkAlt(spec.name, color, view),
         color,
         position,
@@ -215,6 +234,7 @@ export const PRODUCT_LIST: DemoProduct[] = PRODUCTS.map((spec, productIndex) => 
     slug: spec.slug,
     brandSlug: spec.brand,
     categorySlug: spec.category,
+    status: spec.status,
     targetGroup: spec.targetGroup,
     originalPriceMinor: spec.originalPriceMinor,
     outletPriceMinor: spec.outletPriceMinor,
@@ -226,8 +246,7 @@ export const PRODUCT_LIST: DemoProduct[] = PRODUCTS.map((spec, productIndex) => 
     seoTitle: `${spec.name} | Outlet`,
     seoDescription: spec.shortDescription,
     searchKeywords: `${brand.name} ${spec.name} outlet sale`,
-    // Stagger createdAt so "newest" sorting is stable and meaningful.
-    createdAt: new Date(CREATED_BASE + productIndex * 3_600_000).toISOString(),
+    createdAt: spec.createdAt,
     variants,
     images,
     totalAvailable: variants.reduce((sum, v) => sum + v.onHandQuantity, 0),
@@ -239,16 +258,95 @@ export const PRODUCT_LIST: DemoProduct[] = PRODUCTS.map((spec, productIndex) => 
     ratingDistribution: aggregate.distribution,
     verifiedReviewCount: aggregate.verifiedCount,
   };
-});
+}
 
-export const productBySlug = new Map<string, DemoProduct>(
-  PRODUCT_LIST.map((p) => [p.slug, p] as const),
-);
+/**
+ * Expanding a product spec is not free — it generates reviews and, for
+ * administrator-created rows, inline artwork — so the result is cached against
+ * the catalogue overlay. `effectiveProducts()` hands back the same array until
+ * something is actually written, which makes that a sound cache key and keeps
+ * an edit in the admin panel visible on the very next read.
+ */
+let productCacheKey: CatalogProductSpec[] | null = null;
+let productCache: DemoProduct[] = [];
+let productIndex = new Map<string, DemoProduct>();
+
+function refresh(): void {
+  const specs = effectiveProducts();
+  if (productCacheKey === specs) return;
+  productCacheKey = specs;
+  productCache = specs.map(materialise);
+  productIndex = new Map(productCache.map((product) => [product.slug, product] as const));
+}
+
+/** Every product the shop holds, in every lifecycle state. */
+export function allProducts(): DemoProduct[] {
+  refresh();
+  return productCache;
+}
+
+/**
+ * Products a customer can see. Drafts, disabled and archived rows are excluded
+ * here rather than at each call site, which is what stops one listing showing
+ * a product another has already hidden.
+ */
+export function productList(): DemoProduct[] {
+  return allProducts().filter((product) => product.status === 'ACTIVE');
+}
+
+export function productBySlug(slug: string): DemoProduct | undefined {
+  refresh();
+  const product = productIndex.get(slug);
+  return product?.status === 'ACTIVE' ? product : undefined;
+}
+
+// --- Categories --------------------------------------------------------------
+
+export type DemoCategoryNode = CategoryTreeNode & { isCustom: boolean };
+
+/**
+ * The category tree, counted against the products a customer can actually buy.
+ *
+ * This is the demo's stand-in for the API's CategoryTreeService, and it uses
+ * the same builder — so "hidden beats empty", the roll-up of counts into
+ * parents and the pruning rule are one implementation rather than two that
+ * drift.
+ */
+export function categoryTree(): DemoCategoryNode[] {
+  const rows = effectiveCategories();
+  const counts: DirectCounts = {};
+  for (const product of productList()) {
+    counts[product.categorySlug] = (counts[product.categorySlug] ?? 0) + 1;
+  }
+
+  const custom = new Set(rows.filter((row) => row.isCustom).map((row) => row.slug));
+  // The demo has no database, so the slug *is* the id — which also means a
+  // category created in the admin panel keeps its identity across a reload.
+  const asRows: CategoryRow[] = rows.map((row) => ({
+    id: row.slug,
+    slug: row.slug,
+    name: row.name,
+    pathSegment: row.pathSegment,
+    parentId: row.parentSlug,
+    targetGroup: row.targetGroup,
+    level: row.level,
+    position: row.position,
+    isActive: row.isActive,
+    sizeChartGroup: row.sizeChartGroup,
+  }));
+
+  const mark = (node: CategoryTreeNode): DemoCategoryNode => ({
+    ...node,
+    isCustom: custom.has(node.slug),
+    children: node.children.map(mark),
+  });
+  return buildCategoryTree(asRows, counts).map(mark);
+}
 
 export const CAMPAIGN_LIST: DemoCampaign[] = CAMPAIGNS.map((spec) => {
   const prices: Record<string, number> = {};
   for (const slug of spec.productSlugs) {
-    const product = productBySlug.get(slug);
+    const product = productBySlug(slug);
     if (!product) continue;
     prices[slug] = Math.max(
       100,

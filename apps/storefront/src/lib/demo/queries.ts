@@ -20,18 +20,19 @@ import type {
   SearchSuggestionsDto,
   TargetGroup,
 } from '@outlet/types';
+import { flattenTree, pruneToVisible, resolvePath, subtreeIds } from '@outlet/catalog';
 import {
   BRANDS,
   CAMPAIGN_LIST,
-  CATEGORIES,
   CONTENT_PAGES,
   CURRENCY_CODE,
-  PRODUCT_LIST,
   brandBySlug,
   campaignBySlug,
-  categoryBySlug,
+  categoryTree,
   productBySlug,
+  productList,
   type DemoCampaign,
+  type DemoCategoryNode,
   type DemoProduct,
   brandImageUrl,
   categoryImageUrl,
@@ -95,18 +96,23 @@ function pricingFor(product: DemoProduct, now: number) {
   };
 }
 
+/** Flat lookup over the whole tree, hidden rows included. */
+function categoryIndex(): Map<string, DemoCategoryNode> {
+  return new Map(
+    (flattenTree(categoryTree()) as DemoCategoryNode[]).map((node) => [node.slug, node] as const),
+  );
+}
+
 function toListItem(product: DemoProduct, now: number): ProductListItemDto {
   const brand = brandBySlug.get(product.brandSlug)!;
-  const category = categoryBySlug.get(product.categorySlug) ?? null;
+  const category = categoryIndex().get(product.categorySlug) ?? null;
   const pricing = pricingFor(product, now);
   return {
     id: product.id,
     name: product.name,
     slug: product.slug,
     brand: { id: `brand_${brand.slug}`, name: brand.name, slug: brand.slug },
-    category: category
-      ? { id: `cat_${category.slug}`, name: category.name, slug: category.slug }
-      : null,
+    category: category ? { id: category.slug, name: category.name, slug: category.slug } : null,
     targetGroup: product.targetGroup,
     originalPriceMinor: product.originalPriceMinor,
     currentPriceMinor: pricing.currentPriceMinor,
@@ -144,47 +150,56 @@ export function getBrand(slug: string): BrandDto | null {
   return listBrands().find((brand) => brand.slug === slug) ?? null;
 }
 
-export function listCategories(): CategoryDto[] {
-  const roots = CATEGORIES.filter((c) => c.parentSlug === null);
-  return roots.map((c) => ({
-    id: `cat_${c.slug}`,
-    name: c.name,
-    slug: c.slug,
-    parentId: null,
-    position: c.position,
-    imageUrl: categoryImageUrl(c.slug),
-    children: CATEGORIES.filter((child) => child.parentSlug === c.slug).map((child) => ({
-      id: `cat_${child.slug}`,
-      name: child.name,
-      slug: child.slug,
-      parentId: `cat_${c.slug}`,
-      position: child.position,
-      imageUrl: categoryImageUrl(child.slug),
-    })),
-  }));
-}
-
-/** Flat lookup including child categories, for page headers. */
-export function getCategory(slug: string): CategoryDto | null {
-  const spec = CATEGORIES.find((c) => c.slug === slug);
-  if (!spec) return null;
+function toCategoryDto(node: DemoCategoryNode): CategoryDto {
   return {
-    id: `cat_${spec.slug}`,
-    name: spec.name,
-    slug: spec.slug,
-    parentId: spec.parentSlug ? `cat_${spec.parentSlug}` : null,
-    position: spec.position,
-    imageUrl: categoryImageUrl(spec.slug),
+    id: node.slug,
+    name: node.name,
+    slug: node.slug,
+    parentId: node.parentId,
+    position: node.position,
+    pathSegment: node.pathSegment,
+    path: node.path,
+    href: node.href,
+    targetGroup: node.targetGroup,
+    level: node.level,
+    sizeChartGroup: node.sizeChartGroup,
+    productCount: node.productCount,
+    imageUrl: categoryImageUrl(node.slug, node.name, node.isCustom),
+    children: (node.children as DemoCategoryNode[]).map(toCategoryDto),
   };
 }
 
-/** A category filter matches the category itself and any of its children. */
+/**
+ * The customer-facing tree: hidden branches and branches with nothing to sell
+ * are already gone, so the header, the tiles and the sitemap all agree about
+ * what the shop currently sells without each applying the rule themselves.
+ */
+export function listCategories(): CategoryDto[] {
+  return (pruneToVisible(categoryTree()) as DemoCategoryNode[]).map(toCategoryDto);
+}
+
+/** Flat lookup including hidden rows, for page headers and product cards. */
+export function getCategory(slug: string): CategoryDto | null {
+  const node = (flattenTree(categoryTree()) as DemoCategoryNode[]).find((n) => n.slug === slug);
+  return node ? toCategoryDto(node) : null;
+}
+
+/**
+ * Resolves `women/clothing/dresses` to its breadcrumb trail, or null when the
+ * path does not exist or is not currently visible — to a customer those are
+ * the same thing.
+ */
+export function resolveCategoryPath(segments: string[]): CategoryDto[] | null {
+  if (segments.length === 0) return null;
+  const trail = resolvePath(pruneToVisible(categoryTree()), segments) as DemoCategoryNode[];
+  if (trail.length !== segments.length) return null;
+  return trail.map(toCategoryDto);
+}
+
+/** A category filter matches the category itself and everything beneath it. */
 function categorySlugsFor(slug: string): Set<string> {
-  const slugs = new Set<string>([slug]);
-  for (const category of CATEGORIES) {
-    if (category.parentSlug === slug) slugs.add(category.slug);
-  }
-  return slugs;
+  const match = flattenTree(categoryTree()).find((node) => node.slug === slug);
+  return new Set(match ? subtreeIds(match) : [slug]);
 }
 
 export interface ListProductsParams {
@@ -209,7 +224,7 @@ export function listProducts(
   params: ListProductsParams = {},
   now = simNow(),
 ): Paginated<ProductListItemDto> {
-  let items = PRODUCT_LIST.map((product) => ({ product, dto: toListItem(product, now) }));
+  let items = productList().map((product) => ({ product, dto: toListItem(product, now) }));
 
   if (params.q) {
     const needle = params.q.toLowerCase();
@@ -324,13 +339,14 @@ export function listProducts(
 }
 
 export function getProduct(slug: string, now = simNow()): ProductDetailDto | null {
-  const product = productBySlug.get(slug);
+  const product = productBySlug(slug);
   if (!product) return null;
   const base = toListItem(product, now);
   const pricing = pricingFor(product, now);
 
   return {
     ...base,
+    sizeChartGroup: categoryIndex().get(product.categorySlug)?.sizeChartGroup ?? null,
     shortDescription: product.shortDescription,
     description: product.description,
     materials: product.materials,
@@ -365,7 +381,7 @@ export function getProduct(slug: string, now = simNow()): ProductDetailDto | nul
 }
 
 export function productSlugs(): string[] {
-  return PRODUCT_LIST.map((p) => p.slug);
+  return productList().map((p) => p.slug);
 }
 
 // --- Reviews ---------------------------------------------------------------
@@ -382,7 +398,7 @@ export function getProductReviews(
   params: { sort?: string; page?: string; pageSize?: string } = {},
   now = simNow(),
 ): ProductReviewsDto | null {
-  const product = productBySlug.get(slug);
+  const product = productBySlug(slug);
   if (!product) return null;
 
   const items: ReviewDto[] = product.reviews.map((review) => ({
@@ -443,11 +459,12 @@ export function getProductReviews(
  * randomness: the same product always recommends the same neighbours.
  */
 export function relatedProducts(slug: string, limit = 4, now = simNow()): ProductListItemDto[] {
-  const source = productBySlug.get(slug);
+  const source = productBySlug(slug);
   if (!source) return [];
 
   const sourcePrice = source.outletPriceMinor;
-  return PRODUCT_LIST.filter((candidate) => candidate.slug !== slug)
+  return productList()
+    .filter((candidate) => candidate.slug !== slug)
     .map((candidate) => {
       let score = 0;
       if (candidate.categorySlug === source.categorySlug) score += 100;
@@ -501,10 +518,10 @@ export function recommendedProducts(
     return p.targetGroup === audience || p.targetGroup === 'UNISEX';
   };
 
-  const pool = PRODUCT_LIST.filter((p) => inAudience(p) && totalAvailableFor(p) > 0);
+  const pool = productList().filter((p) => inAudience(p) && totalAvailableFor(p) > 0);
 
   const sources = [...seen]
-    .map((s) => productBySlug.get(s))
+    .map((s) => productBySlug(s))
     .filter((p): p is DemoProduct => Boolean(p))
     .filter(inAudience);
 
@@ -550,18 +567,19 @@ export function searchSuggestions(query: string, now = simNow()): SearchSuggesti
   const needle = query.trim().toLowerCase();
   if (needle.length < 2) return { products: [], brands: [], categories: [] };
 
-  const scored = PRODUCT_LIST.map((product) => {
-    const brand = brandBySlug.get(product.brandSlug)!;
-    const name = product.name.toLowerCase();
-    let score = 0;
-    if (name.startsWith(needle)) score = 100;
-    else if (name.includes(needle)) score = 70;
-    else if (brand.name.toLowerCase().includes(needle)) score = 50;
-    else if (product.categorySlug.includes(needle)) score = 40;
-    else if (product.searchKeywords.toLowerCase().includes(needle)) score = 30;
-    else if (product.variants.some((v) => v.sku.toLowerCase().includes(needle))) score = 90;
-    return { product, score };
-  })
+  const scored = productList()
+    .map((product) => {
+      const brand = brandBySlug.get(product.brandSlug)!;
+      const name = product.name.toLowerCase();
+      let score = 0;
+      if (name.startsWith(needle)) score = 100;
+      else if (name.includes(needle)) score = 70;
+      else if (brand.name.toLowerCase().includes(needle)) score = 50;
+      else if (product.categorySlug.includes(needle)) score = 40;
+      else if (product.searchKeywords.toLowerCase().includes(needle)) score = 30;
+      else if (product.variants.some((v) => v.sku.toLowerCase().includes(needle))) score = 90;
+      return { product, score };
+    })
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score || a.product.name.localeCompare(b.product.name))
     .slice(0, 6);
@@ -579,11 +597,23 @@ export function searchSuggestions(query: string, now = simNow()): SearchSuggesti
     brands: BRANDS.filter((b) => b.name.toLowerCase().includes(needle))
       .slice(0, 3)
       .map((b) => ({ name: b.name, slug: b.slug })),
-    categories: CATEGORIES.filter(
-      (c) => c.name.toLowerCase().includes(needle) || c.slug.includes(needle),
-    )
-      .slice(0, 3)
-      .map((c) => ({ name: c.name, slug: c.slug })),
+    // Suggestions come from the visible tree, so a hidden or empty category
+    // cannot be typed back into existence. "Boots" exists under four
+    // departments, so the department is part of the label or the shopper
+    // cannot tell the three suggestions apart.
+    categories: (() => {
+      const visible = pruneToVisible(categoryTree()) as DemoCategoryNode[];
+      const departmentName = (node: DemoCategoryNode) =>
+        visible.find((root) => root.targetGroup === node.targetGroup)?.name ?? '';
+      return (flattenTree(visible) as DemoCategoryNode[])
+        .filter((node) => node.name.toLowerCase().includes(needle) || node.slug.includes(needle))
+        .sort((a, b) => b.path.length - a.path.length || b.productCount - a.productCount)
+        .slice(0, 3)
+        .map((node) => ({
+          name: node.path.length > 1 ? `${departmentName(node)} · ${node.name}` : node.name,
+          slug: node.slug,
+        }));
+    })(),
   };
 }
 
@@ -625,7 +655,7 @@ export function getCampaign(
   if (!base) return null;
   const campaign = resolveCampaign(base, now);
   const products = Object.keys(campaign.prices)
-    .map((productSlug) => productBySlug.get(productSlug))
+    .map((productSlug) => productBySlug(productSlug))
     .filter((p): p is DemoProduct => Boolean(p))
     .map((product) => {
       const dto = toListItem(product, now);

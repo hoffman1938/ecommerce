@@ -4,6 +4,8 @@
  */
 import type {
   CampaignStatus,
+  CategoryLevel,
+  CategoryStatus,
   OrderStatus,
   PaymentStatus,
   ProductStatus,
@@ -13,6 +15,7 @@ import type {
   ReturnStatus,
   ShipmentStatus,
   ShippingMethod,
+  SizeChartGroup,
   TargetGroup,
   TaxClass,
 } from './enums';
@@ -45,15 +48,67 @@ export interface BrandDto {
   isFeatured: boolean;
 }
 
+/**
+ * One node of the category tree, as the storefront receives it.
+ *
+ * Only categories a customer can actually reach are ever returned here —
+ * active, with an active ancestry, and holding at least one available product.
+ * `productCount` is the rolled-up figure including descendants, which is what
+ * makes "Shoes" disappear when every kind of shoe beneath it has sold out of
+ * the catalogue.
+ */
 export interface CategoryDto {
   id: string;
   name: string;
   slug: string;
   parentId: string | null;
   position: number;
+  /** URL fragment within the parent: `dresses` in /shop/women/clothing/dresses. */
+  pathSegment: string;
+  /** Segments from the department down to this node. */
+  path: string[];
+  /** Ready-made storefront link, so no caller reassembles the path by hand. */
+  href: string;
+  targetGroup: TargetGroup;
+  level: CategoryLevel;
+  /** Null when products here are not sized — bags, wallets, footwear. */
+  sizeChartGroup: SizeChartGroup | null;
+  /** Available products on this node and everything beneath it. */
+  productCount: number;
   /** Tile artwork for visual category navigation. */
   imageUrl: string | null;
-  children?: CategoryDto[];
+  children: CategoryDto[];
+}
+
+/**
+ * The same tree as an administrator sees it: nothing pruned, and the two
+ * reasons a category can be invisible reported separately.
+ */
+export interface AdminCategoryDto {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  position: number;
+  pathSegment: string;
+  path: string[];
+  href: string;
+  targetGroup: TargetGroup;
+  level: CategoryLevel;
+  sizeChartGroup: SizeChartGroup | null;
+  description: string | null;
+  /** The administrator's own switch. False means deliberately hidden. */
+  isActive: boolean;
+  status: CategoryStatus;
+  /** True when a customer can currently reach it. */
+  isVisible: boolean;
+  /** Products attached to this node itself. */
+  directProductCount: number;
+  /** Products on this node and everything beneath it. */
+  productCount: number;
+  /** Products of any status attached to this node itself, for delete warnings. */
+  totalProductCount: number;
+  children: AdminCategoryDto[];
 }
 
 export interface ProductImageDto {
@@ -105,6 +160,13 @@ export interface ProductListItemDto {
 }
 
 export interface ProductDetailDto extends ProductListItemDto {
+  /**
+   * Which size chart applies, inherited from the product's category. Null for
+   * anything that is not a sized garment — footwear, bags, accessories — and
+   * the signal the product page uses to leave the size guide out entirely
+   * rather than render an empty table.
+   */
+  sizeChartGroup: SizeChartGroup | null;
   shortDescription: string | null;
   description: string | null;
   materials: string | null;

@@ -381,40 +381,8 @@ export class AdminCatalogService {
     return brand;
   }
 
-  async upsertCategory(
-    input: {
-      id?: string;
-      name: string;
-      slug: string;
-      parentId?: string | null;
-      description?: string | null;
-      position?: number;
-      isActive?: boolean;
-    },
-    actor: Actor,
-  ) {
-    const data = {
-      name: input.name,
-      slug: input.slug,
-      parentId: input.parentId ?? null,
-      description: input.description ?? null,
-      position: input.position ?? 0,
-      isActive: input.isActive ?? true,
-    };
-    const category = input.id
-      ? await this.prisma.category.update({ where: { id: input.id }, data })
-      : await this.prisma.category.create({ data });
-    await this.audit.log({
-      actorUserId: actor.userId,
-      actorEmail: actor.email,
-      actorType: 'ADMIN',
-      action: input.id ? 'category.updated' : 'category.created',
-      entityType: 'Category',
-      entityId: category.id,
-      after: { name: category.name },
-    });
-    return category;
-  }
+  // Categories live in AdminCategoriesService: the tree has placement, depth,
+  // ordering and delete-strategy rules that do not belong in a product service.
 
   // --- CSV import/export ----------------------------------------------------
 
