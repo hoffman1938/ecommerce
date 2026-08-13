@@ -9,14 +9,14 @@ const SLUGS = Array.from({ length: 200 }, (_, i) => `product-${i}`);
 
 describe('generateReviews', () => {
   it('is deterministic for a given slug', () => {
-    const a = generateReviews({ slug: 'nike-air-zoom', kind: 'shoes' });
-    const b = generateReviews({ slug: 'nike-air-zoom', kind: 'shoes' });
+    const a = generateReviews({ slug: 'northline-aeroglide-40', kind: 'shoes' });
+    const b = generateReviews({ slug: 'northline-aeroglide-40', kind: 'shoes' });
     expect(a).toEqual(b);
   });
 
   it('produces different reviews for different slugs', () => {
-    const a = generateReviews({ slug: 'nike-air-zoom', kind: 'shoes' });
-    const b = generateReviews({ slug: 'puma-suede-classic', kind: 'shoes' });
+    const a = generateReviews({ slug: 'northline-aeroglide-40', kind: 'shoes' });
+    const b = generateReviews({ slug: 'velora-suede-classic-21', kind: 'shoes' });
     expect(a).not.toEqual(b);
   });
 
@@ -100,7 +100,7 @@ describe('aggregateReviews', () => {
 
 describe('ratingAverageFrom', () => {
   it('matches aggregateReviews for the same data', () => {
-    const reviews = generateReviews({ slug: 'adidas-samba-classic', kind: 'shoes' });
+    const reviews = generateReviews({ slug: 'aster-sambra-court-sneaker', kind: 'shoes' });
     const aggregate = aggregateReviews(reviews);
     expect(ratingAverageFrom(aggregate.ratingSum, aggregate.reviewCount)).toBe(
       aggregate.ratingAverage,

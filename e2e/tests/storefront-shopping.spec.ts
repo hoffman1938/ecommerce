@@ -21,11 +21,11 @@ test.describe('customer shopping journey', () => {
     await page.goto('/products');
     await expect(page.getByTestId('product-card').first()).toBeVisible();
 
-    await page.goto('/search?q=adidas');
+    await page.goto('/search?q=aster');
     await expect(page.getByTestId('product-card').first()).toBeVisible();
 
-    await page.goto('/products/adidas-essentials-t-shirt');
-    await expect(page.getByRole('heading', { name: 'Adidas Essentials T-Shirt' })).toBeVisible();
+    await page.goto('/products/aster-essential-cotton-t-shirt');
+    await expect(page.getByRole('heading', { name: 'Aster Essential Cotton T-Shirt' })).toBeVisible();
     await expect(page.getByTestId('add-to-cart')).toBeVisible();
   });
 
@@ -34,7 +34,7 @@ test.describe('customer shopping journey', () => {
     page,
   }) => {
     // The seed guarantees the Samba Classic has exactly one unit (size 42).
-    await page.goto('/products/adidas-samba-classic');
+    await page.goto('/products/aster-sambra-court-sneaker');
     const sizeButton = page.getByTestId('variant-ADI-SMB-SH-BLACK-42');
 
     // If a previous run left it reserved/sold, skip rather than fail noisily.
@@ -59,7 +59,7 @@ test.describe('customer shopping journey', () => {
     // A second, separate customer cannot reserve the same final unit.
     const otherContext = await browser.newContext();
     const otherPage = await otherContext.newPage();
-    await otherPage.goto('/products/adidas-samba-classic');
+    await otherPage.goto('/products/aster-sambra-court-sneaker');
     await expect(otherPage.getByTestId('variant-ADI-SMB-SH-BLACK-42')).toBeDisabled();
     await otherContext.close();
 
@@ -74,7 +74,7 @@ test.describe('customer shopping journey', () => {
     await registerAndVerify(page, email, PASSWORD);
     await loginStorefront(page, email, PASSWORD);
 
-    await page.goto('/products/puma-training-shorts');
+    await page.goto('/products/velora-training-shorts');
     await page.getByTestId('variant-PUM-TRN-PT-BLACK-S').click();
     await page.getByTestId('add-to-cart').click();
     await expect(page.getByTestId('purchase-feedback')).toContainText('reserved');
@@ -97,7 +97,7 @@ test.describe('customer shopping journey', () => {
     await registerAndVerify(page, email, PASSWORD);
     await loginStorefront(page, email, PASSWORD);
 
-    await page.goto('/products/nike-everyday-crew-socks');
+    await page.goto('/products/northline-everyday-crew-socks-3-pack');
     await page.getByTestId('variant-NIK-SCK-AC-WHITE-ONESIZE').click();
     await page.getByTestId('add-to-cart').click();
     await page.goto('/cart');

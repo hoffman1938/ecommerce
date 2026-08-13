@@ -144,7 +144,7 @@ export function createProduct(body: ProductBody): CatalogProductSpec {
     name,
     slug,
     skuCode: slug.slice(0, 12).toUpperCase(),
-    brand: text(body, 'brandId').replace(/^brand_/, '') || 'adidas',
+    brand: text(body, 'brandId').replace(/^brand_/, '') || 'aster',
     category: category.slug,
     targetGroup: category.targetGroup,
     originalPriceMinor: original,

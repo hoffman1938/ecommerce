@@ -1,0 +1,40 @@
+{
+  "name": "@outlet/edge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker API for the demo/staging deployment: D1 for data, R2 for media",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src scripts --ext .ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate:local": "wrangler d1 migrations apply outlet-demo --local",
+    "db:migrate:remote": "wrangler d1 migrations apply outlet-demo --remote",
+    "db:seed:local": "node scripts/seed.mjs --local",
+    "db:seed:remote": "node scripts/seed.mjs --remote",
+    "db:reset-demo:local": "node scripts/reset-demo.mjs --local",
+    "db:reset-demo:remote": "node scripts/reset-demo.mjs --remote",
+    "db:sql": "node scripts/build-seed-sql.mjs"
+  },
+  "dependencies": {
+    "@outlet/catalog": "workspace:*",
+    "@outlet/domain": "workspace:*",
+    "@outlet/types": "workspace:*",
+    "hono": "^4.6.14",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241230.0",
+    "@outlet/eslint-config": "workspace:*",
+    "@outlet/typescript-config": "workspace:*",
+    "@types/node": "^20.14.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.99.0"
+  }
+}

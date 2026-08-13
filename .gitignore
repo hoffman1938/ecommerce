@@ -18,6 +18,10 @@ coverage/
 # prisma
 packages/database/generated/
 
+# generated D1 seed — contains password hashes, rebuilt by `pnpm db:seed`
+apps/edge/.seed/
+.wrangler/
+
 # generated catalogue artwork (rebuilt by predev/prebuild from packages/catalog)
 apps/storefront/public/artwork/
 

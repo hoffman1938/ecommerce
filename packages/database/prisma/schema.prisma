@@ -720,6 +720,10 @@ model Coupon {
   maxRedemptionsPerCustomer Int?
   timesRedeemed             Int        @default(0)
   firstOrderOnly            Boolean    @default(false)
+  /// Waives standard shipping rather than reducing the subtotal. A flag rather
+  /// than a third coupon type so a code can discount *and* cover delivery.
+  freeShipping              Boolean    @default(false)
+  description               String?
   isActive                  Boolean    @default(true)
   // Restriction id arrays (MVP simplification; empty array = no restriction)
   brandIds                  String[]   @default([])

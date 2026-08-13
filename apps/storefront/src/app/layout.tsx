@@ -22,7 +22,7 @@ const inter = Inter({
 });
 
 const DESCRIPTION =
-  'Limited-stock outlet deals on clothing, footwear, bags and accessories from Nike, Adidas, The North Face, Levi\u2019s and more.';
+  'Limited-stock outlet deals on clothing, footwear, bags and accessories from Aster, Northline, Monarch, Lunaro and more.';
 
 export const metadata: Metadata = {
   // Lets Next resolve the relative `canonical` paths pages declare into

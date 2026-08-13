@@ -23,7 +23,8 @@
     "@prisma/client": "^5.19.0",
     "argon2": "^0.40.3",
     "@outlet/catalog": "workspace:*",
-    "@outlet/domain": "workspace:*"
+    "@outlet/domain": "workspace:*",
+    "@outlet/types": "workspace:*"
   },
   "devDependencies": {
     "@outlet/eslint-config": "workspace:*",
