@@ -84,9 +84,20 @@ export const checkoutSchema = z
     email: emailSchema,
     shippingAddress: addressSchema,
     billingAddress: addressSchema.nullish(),
+    billingSameAsShipping: z.boolean().optional(),
     shippingMethod: z.enum(['STANDARD', 'EXPRESS']).default('STANDARD'),
     customerNote: z.string().trim().max(500).nullish(),
     idempotencyKey: z.string().trim().max(100).nullish(),
+    /**
+     * The total the customer was looking at when they pressed the button.
+     *
+     * Not a price the server trusts — the order is costed entirely from the
+     * database either way. It can only cause a *refusal*: if the figure no
+     * longer matches, the checkout stops and shows the new one rather than
+     * charging a total the customer never agreed to. A campaign ending
+     * mid-checkout is the case this catches.
+     */
+    expectedTotalMinor: z.number().int().min(0).optional(),
   })
   .strict();
 

@@ -8,7 +8,7 @@
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createHarness, type TestHarness } from './helpers/app';
+import { createHarness, setCookieHeaders, type TestHarness } from './helpers/app';
 import { TEST_ADMIN_PASSWORD, TEST_CUSTOMER_PASSWORD } from './helpers/d1';
 
 let harness: TestHarness;
@@ -83,9 +83,7 @@ describe('authentication', () => {
       email: 'customer@demo.local',
       password: TEST_CUSTOMER_PASSWORD,
     });
-    const cookie = (response.headers.getSetCookie?.() ?? []).find((value) =>
-      value.startsWith('outlet_session='),
-    );
+    const cookie = setCookieHeaders(response).find((value) => value.startsWith('outlet_session='));
     expect(cookie).toBeTruthy();
     expect(cookie).toMatch(/HttpOnly/i);
     expect(cookie).toMatch(/SameSite=None/i);

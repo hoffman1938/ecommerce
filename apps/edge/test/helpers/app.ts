@@ -17,6 +17,18 @@ import { createSeededDatabase, type TestDatabase } from './d1';
 const ORIGIN = 'http://localhost:3000';
 const BASE = 'http://api.test';
 
+/**
+ * Every Set-Cookie on a response, separately.
+ *
+ * `Headers.getSetCookie()` exists in both Node and workerd but is absent from
+ * @cloudflare/workers-types, so it is reached through a narrow assertion here
+ * rather than by loosening the types everywhere it is used.
+ */
+export function setCookieHeaders(response: Response): string[] {
+  const headers = response.headers as Headers & { getSetCookie?: () => string[] };
+  return headers.getSetCookie?.() ?? [];
+}
+
 /** An R2 stand-in. Enough surface for the media route and uploads. */
 class StubR2 {
   private readonly objects = new Map<string, { body: Uint8Array; contentType?: string }>();
@@ -100,8 +112,9 @@ export class TestClient {
 
   private absorbCookies(response: Response): void {
     // `getSetCookie` returns each Set-Cookie separately, which matters when a
-    // response issues both a session and a cart cookie.
-    for (const header of response.headers.getSetCookie?.() ?? []) {
+    // response issues both a session and a cart cookie. It is missing from
+    // @cloudflare/workers-types' Headers but present in both runtimes.
+    for (const header of setCookieHeaders(response)) {
       const [pair] = header.split(';');
       const index = pair.indexOf('=');
       if (index === -1) continue;
@@ -146,7 +159,7 @@ export class TestClient {
    */
   async upload(
     path: string,
-    file: { bytes: BlobPart; type: string; name: string },
+    file: { bytes: string | Uint8Array; type: string; name: string },
   ): Promise<{ status: number; body: any; response: Response }> {
     const form = new FormData();
     form.append('file', new Blob([file.bytes], { type: file.type }), file.name);

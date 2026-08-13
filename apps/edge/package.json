@@ -18,7 +18,9 @@
     "db:seed:remote": "node scripts/seed.mjs --remote",
     "db:reset-demo:local": "node scripts/reset-demo.mjs --local",
     "db:reset-demo:remote": "node scripts/reset-demo.mjs --remote",
-    "db:sql": "node scripts/build-seed-sql.mjs"
+    "db:sql": "node scripts/build-seed-sql.mjs",
+    "media:upload": "node scripts/upload-media.mjs --local",
+    "media:upload:remote": "node scripts/upload-media.mjs --remote"
   },
   "dependencies": {
     "@outlet/catalog": "workspace:*",

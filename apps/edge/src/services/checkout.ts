@@ -36,6 +36,11 @@ export interface CheckoutInput {
   customerNote?: string | null;
   /** Supplied by the client so a retry is recognised as the same attempt. */
   idempotencyKey?: string | null;
+  /**
+   * The total the customer was shown. Never used to price anything — only to
+   * refuse an order whose price moved while the checkout page was open.
+   */
+  expectedTotalMinor?: number;
 }
 
 export interface CheckoutResult {
@@ -306,6 +311,18 @@ export async function placeDemoOrder(
     shippingMethod,
     taxRateBps: settings.taxRateBps,
   });
+
+  /*
+   * The one place the client's number is looked at, and it can only stop the
+   * order. A campaign that ended, a coupon that hit its limit, or stock priced
+   * differently since the page loaded all land here — and the customer sees
+   * the new total rather than being charged it silently.
+   */
+  if (input.expectedTotalMinor !== undefined && input.expectedTotalMinor !== totals.totalMinor) {
+    throw new ApiError('TOTALS_CHANGED', 'Prices changed while you were checking out.', {
+      totalMinor: totals.totalMinor,
+    });
+  }
 
   const orderId = newId();
   const paymentId = newId();
