@@ -1,28 +1,118 @@
 ## Demo: https://ecommerce-135.pages.dev/
 
-# Outlet Marketplace — local-first MVP
+# Outlet Marketplace
 
-A production-ready, local-first outlet e-commerce platform (inspired by the business model of
-Lounge by Zalando): limited-stock brand deals, time-limited campaigns, a concurrency-safe
-20-minute inventory reservation system, mock payments, a full customer storefront, and a complete
-role-based administration panel. Everything runs locally with zero paid services.
+An outlet e-commerce platform (inspired by the business model of Lounge by Zalando):
+limited-stock brand deals, time-limited campaigns, a concurrency-safe 20-minute inventory
+reservation system, a full customer storefront, and a complete role-based administration panel.
+Everything runs on free infrastructure — locally with Docker, or deployed on Cloudflare's free
+tier. No payment provider, no email provider, no paid service anywhere.
 
-## Stack
+## Two stacks
+
+The repository carries two complete backends. They read the same catalogue and implement the
+same business rules; they differ in where they run.
+
+|                 | **Cloudflare demo** (`apps/edge`) | **Local stack** (`apps/api`)  |
+| --------------- | --------------------------------- | ----------------------------- |
+| Runtime         | Cloudflare Workers                | Node / NestJS                 |
+| Database        | Cloudflare D1 (SQLite)            | PostgreSQL via Prisma         |
+| Storage         | Cloudflare R2                     | MinIO (S3)                    |
+| Background work | Worker cron trigger               | BullMQ on Redis               |
+| Payments        | Demo only — no provider exists    | Mock provider with test cards |
+| This is what    | the deployed demo runs on         | you develop against locally   |
+
+Both serve the same Next.js storefront and admin panel, which talk to whichever API their
+`NEXT_PUBLIC_API_BASE_URL` points at.
 
 | Layer              | Technology                                                                  |
 | ------------------ | --------------------------------------------------------------------------- |
 | Monorepo           | pnpm workspaces (modular monolith)                                          |
-| API                | NestJS + Prisma + PostgreSQL, Swagger at `/docs`                            |
+| Demo API           | Cloudflare Workers + Hono on D1 and R2                                      |
+| Local API          | NestJS + Prisma + PostgreSQL, Swagger at `/docs`                            |
 | Worker             | Node + BullMQ (Redis) behind a swappable queue interface                    |
 | Storefront / Admin | Next.js 14 (App Router) + Tailwind + TanStack Query, Cloudflare-Pages-ready |
 | Local services     | PostgreSQL, Redis, MinIO (S3), Mailpit (SMTP), mock payment provider        |
 
-## Prerequisites
+---
+
+## The Cloudflare demo
+
+### Demo accounts
+
+Passwords are **not** in this repository. They are set when the database is seeded:
+
+```bash
+SEED_ADMIN_PASSWORD='…' SEED_CUSTOMER_PASSWORD='…' pnpm db:seed:demo
+```
+
+Leave those variables unset and the seed generates strong ones and prints them once — they are
+never written to disk. Whoever runs the seed holds the passwords and shares them out of band.
+
+| Account       | Email                 | Password                 |
+| ------------- | --------------------- | ------------------------ |
+| Administrator | `admin@demo.local`    | `SEED_ADMIN_PASSWORD`    |
+| Customer      | `customer@demo.local` | `SEED_CUSTOMER_PASSWORD` |
+
+Eight more staff accounts exist, one per role, all on `SEED_CUSTOMER_PASSWORD`:
+`catalog@`, `inventory@`, `orders@`, `support@`, `moderator@`, `marketing@`, `finance@` and
+`analyst@demo.local`. Signing in as one is the quickest way to see role-based access working —
+the Inventory Manager can move stock and gets a `403` from the coupons screen.
+
+Eleven further customer accounts carry the seeded order history.
+
+### Demo coupons
+
+| Code        | Effect                                                                          |
+| ----------- | ------------------------------------------------------------------------------- |
+| `WELCOME10` | 10% off, first order only, once per customer                                    |
+| `SALE15`    | 15% off orders over €50, capped at €40                                          |
+| `DEMO20`    | 20% off, capped at €30                                                          |
+| `SAVE20`    | €20 off orders over €100                                                        |
+| `FREESHIP`  | Free standard delivery on orders over €25                                       |
+| `ASTER15`   | 15% off Aster products only, capped at €50                                      |
+| `EXPIRED10` | Deliberately expired — so there is something for "what happens with a bad code" |
+
+### Commands
+
+```bash
+pnpm dev:edge                 # the Worker locally (wrangler dev)
+pnpm db:migrate:demo          # apply D1 migrations, local
+pnpm db:seed:demo             # seed the local D1 database (idempotent)
+pnpm db:reset-demo            # wipe and re-seed the local D1 database
+pnpm --filter @outlet/edge test    # 98 tests: journeys, security, catalogue
+pnpm build:cloudflare         # the static export Pages serves
+pnpm deploy:edge              # deploy the Worker
+```
+
+The remote equivalents are `db:migrate:demo:remote` and `db:seed:demo:remote`. Resetting a
+remote database additionally requires `ENVIRONMENT` to identify itself as a demo one _and_
+`--yes-really`, so a production database is unreachable from that command.
+
+### Deploying
+
+See [infrastructure/cloudflare/d1-and-r2.md](infrastructure/cloudflare/d1-and-r2.md) for the
+full walkthrough: create D1/R2/KV, set `SESSION_SECRET`, migrate, seed, deploy the Worker, point
+Pages at it, and add the Pages origin to `ALLOWED_ORIGINS`.
+
+### Demo payment
+
+There is no payment provider, no API key, and no card field. Pressing **Place demo order**
+creates a real order, reduces real stock, writes a `payments` row with `provider = 'demo'` and
+marks it paid. No code path in this deployment could move money even if a credential were
+supplied. See [SECURITY.md](SECURITY.md).
+
+---
+
+## The local Docker stack
+
+### Prerequisites
 
 - Docker Desktop (or any Docker Engine with Compose v2)
-- Node.js ≥ 20 and pnpm ≥ 9 (`corepack enable`) — only needed for host-side development and tests
+- Node.js ≥ 22.5 and pnpm ≥ 9 (`corepack enable`) — only needed for host-side development and
+  tests. 22.5 is the floor because the demo test suite runs against `node:sqlite`.
 
-## Quick start
+### Quick start
 
 ```bash
 git clone <this repo>
@@ -45,7 +135,7 @@ automatically. Then open:
 | PostgreSQL                     | localhost:5432 (outlet / outlet)         |
 | Redis                          | localhost:6379                           |
 
-## Local test credentials (seed data only — never use in production)
+### Local test credentials (Docker stack only — never use in production)
 
 ```text
 Super Admin:  admin@example.local    / Admin123!
@@ -55,13 +145,18 @@ Customer:     customer@example.local / Customer123!
 Additional role accounts (all `Admin123!`): catalog@, inventory@, orders@, support@,
 marketing@, finance@, analyst@example.local.
 
-Coupons: `WELCOME10` (10 %, first order), `SAVE20` (20 € off from 100 €), `NIKE15` (15 % on Nike).
+These reach a PostgreSQL database listening on localhost and nothing else. The deployed demo
+takes its passwords from the environment instead — see the demo accounts section above.
 
-## Test payments
+Coupons are the same set the demo uses, listed above.
 
-Checkout redirects to a simulated payment page with a card form. **No real payment is ever taken,
-no card number is transmitted or stored** — the number is resolved to an outcome in the browser and
-only the outcome code is sent. Use these test cards:
+### Test payments (local stack only)
+
+Against the local NestJS API, checkout redirects to a simulated payment page with a card form.
+The Cloudflare demo has no such page — it places the order directly, with no card field at all.
+
+**No real payment is ever taken, no card number is transmitted or stored** — the number is
+resolved to an outcome in the browser and only the outcome code is sent. Use these test cards:
 
 | Card                  | Outcome                      |
 | --------------------- | ---------------------------- |
@@ -80,7 +175,7 @@ webhooks through the same verification and duplicate-suppression path a real pro
 Set `PAYMENT_PROVIDER=stripe` (with real keys) to switch to the Stripe adapter — never required
 locally.
 
-## QA simulation sandbox
+### QA simulation sandbox
 
 The storefront ships a control center at **`/qa`** (linked from the sandbox banner) for driving the
 simulated business without waiting. Everything it does is browser-local — no request leaves the
@@ -145,14 +240,24 @@ nothing downstream cares where an image came from.
 
 ```bash
 pnpm install              # install workspace dependencies
+pnpm build                # build all packages and apps
+pnpm lint                 # lint all workspaces
+pnpm typecheck            # typecheck all workspaces
+pnpm test                 # unit tests across every workspace
+
+# Cloudflare demo (Workers + D1 + R2)
+pnpm dev:edge             # the Worker locally
+pnpm db:migrate:demo      # apply D1 migrations
+pnpm db:seed:demo         # seed D1 (idempotent)
+pnpm db:reset-demo        # wipe and re-seed D1
+pnpm build:cloudflare     # the static export Pages serves
+pnpm deploy:edge          # deploy the Worker
+
+# Local Docker stack (NestJS + PostgreSQL)
 pnpm local:up             # docker compose up --build -d
 pnpm local:reset          # stop containers, wipe volumes, restart, re-migrate, re-seed
 pnpm db:migrate           # prisma migrate deploy
 pnpm db:seed              # idempotent seed
-pnpm build                # build all packages and apps
-pnpm lint                 # lint all workspaces
-pnpm typecheck            # typecheck all workspaces
-pnpm test                 # unit tests (domain logic and more)
 pnpm test:integration     # API integration tests incl. the 100-way concurrency test
                           #   (requires: docker compose up -d postgres redis)
 pnpm test:e2e             # Playwright end-to-end tests (requires the full stack running)
@@ -161,23 +266,31 @@ pnpm test:e2e             # Playwright end-to-end tests (requires the full stack
 ## Repository layout
 
 ```text
-apps/          api (NestJS) · worker (BullMQ) · storefront (Next.js) · admin (Next.js)
+apps/          edge (Cloudflare Worker API) · api (NestJS) · worker (BullMQ) ·
+               storefront (Next.js) · admin (Next.js)
 packages/      catalog (shared product data + generated artwork) · database (Prisma) ·
                domain (pure logic) · auth · payments · storage · email · queue · ui ·
                types · validation · config · eslint/tsconfig presets
-infrastructure/ docker · cloudflare (future-deployment notes) · scripts
+infrastructure/ docker · cloudflare (deployment guides) · scripts
 e2e/           Playwright test suite
 docs/          architecture, local setup, deployment strategies
 ```
 
+`apps/edge` holds the demo's whole backend: `migrations/` is the D1 schema,
+`scripts/` builds and applies the seed, `src/` is the API, and `test/` walks the customer
+and administrator journeys against both.
+
 ## Documentation
 
+- [SECURITY.md](SECURITY.md) — how secrets are handled, what the demo deliberately lacks,
+  and the security properties with the tests that hold them up
+- [infrastructure/cloudflare/d1-and-r2.md](infrastructure/cloudflare/d1-and-r2.md) — deploying
+  the demo on Workers, D1 and R2, start to finish
 - [docs/architecture.md](docs/architecture.md) — architecture, key decisions, reservation
   algorithm, state machines, permission model, documented assumptions
 - [docs/local-setup.md](docs/local-setup.md) — detailed setup, acceptance walkthrough,
   troubleshooting
-- [docs/deployment.md](docs/deployment.md) — future production strategies (Cloudflare Pages +
-  independent backend, or deeper Cloudflare migration)
+- [docs/deployment.md](docs/deployment.md) — production strategies for the NestJS stack
 - [infrastructure/cloudflare/](infrastructure/cloudflare/) — Pages build notes, env vars, R2
   migration, Turnstile, CORS/custom domains
 

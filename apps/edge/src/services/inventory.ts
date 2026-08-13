@@ -292,8 +292,7 @@ export async function adjustStock(
   }
 
   const delta = input.newOnHand - balance.onHandQuantity;
-  const type =
-    input.type ?? (delta >= 0 ? 'ADJUSTMENT_INCREASE' : 'ADJUSTMENT_DECREASE');
+  const type = input.type ?? (delta >= 0 ? 'ADJUSTMENT_INCREASE' : 'ADJUSTMENT_DECREASE');
 
   await db.batch([
     db.statement(

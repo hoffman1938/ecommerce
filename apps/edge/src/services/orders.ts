@@ -147,10 +147,7 @@ function toDto(
  * Three queries for the whole page rather than three per order — the same
  * reason the catalogue listing batches its images.
  */
-async function relationsFor(
-  db: Db,
-  orderIds: string[],
-): Promise<Map<string, OrderRelations>> {
+async function relationsFor(db: Db, orderIds: string[]): Promise<Map<string, OrderRelations>> {
   const byOrder = new Map<string, OrderRelations>();
   for (const id of orderIds) byOrder.set(id, { payments: [], shipments: [], timeline: [] });
   if (orderIds.length === 0) return byOrder;
@@ -185,7 +182,12 @@ async function relationsFor(
          FROM "shipments" WHERE "orderId" IN (${placeholders}) ORDER BY "createdAt"`,
       ...orderIds,
     ),
-    db.all<{ orderId: string; toStatus: OrderDto['status']; note: string | null; createdAt: string }>(
+    db.all<{
+      orderId: string;
+      toStatus: OrderDto['status'];
+      note: string | null;
+      createdAt: string;
+    }>(
       `SELECT "orderId", "toStatus", "note", "createdAt"
          FROM "order_status_history" WHERE "orderId" IN (${placeholders}) ORDER BY "createdAt", "id"`,
       ...orderIds,
@@ -231,7 +233,12 @@ async function relationsFor(
       deliveredAt: shipment.deliveredAt,
       events: events
         .filter((event) => event.shipmentId === shipment.id)
-        .map(({ code, label, location, occurredAt }) => ({ code, label, location, at: occurredAt })),
+        .map(({ code, label, location, occurredAt }) => ({
+          code,
+          label,
+          location,
+          at: occurredAt,
+        })),
     });
   }
   for (const entry of history) {
@@ -270,7 +277,10 @@ export async function loadOrder(
     throw notFound('Order not found.');
   }
 
-  const [items, relations] = await Promise.all([itemsFor(db, [row.id]), relationsFor(db, [row.id])]);
+  const [items, relations] = await Promise.all([
+    itemsFor(db, [row.id]),
+    relationsFor(db, [row.id]),
+  ]);
   return toDto(row, items.get(row.id) ?? [], viewer, relations.get(row.id)!);
 }
 
@@ -357,7 +367,13 @@ export async function listOrdersForAdmin(
 }
 
 export async function orderTimeline(db: Db, orderId: string) {
-  return db.all<{ id: string; fromStatus: string | null; toStatus: string; note: string | null; createdAt: string }>(
+  return db.all<{
+    id: string;
+    fromStatus: string | null;
+    toStatus: string;
+    note: string | null;
+    createdAt: string;
+  }>(
     `SELECT "id", "fromStatus", "toStatus", "note", "createdAt"
        FROM "order_status_history" WHERE "orderId" = ? ORDER BY "createdAt", "id"`,
     orderId,

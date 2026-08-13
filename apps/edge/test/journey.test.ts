@@ -122,7 +122,9 @@ describe('cart', () => {
 
     // Parked means the units went back on the shelf.
     const released = await client.get(`/catalog/products/${product.slug}`);
-    expect(released.body.variants.find((v: any) => v.id === variant.id).availableQuantity).toBe(before);
+    expect(released.body.variants.find((v: any) => v.id === variant.id).availableQuantity).toBe(
+      before,
+    );
 
     const restored = await client.post(`/cart/saved/${lineId}/restore`);
     expect(restored.body.items).toHaveLength(1);
@@ -291,7 +293,9 @@ describe('demo checkout', () => {
     });
 
     const after = await client.get(`/catalog/products/${product.slug}`);
-    expect(after.body.variants.find((v: any) => v.id === variant.id).availableQuantity).toBe(before - 2);
+    expect(after.body.variants.find((v: any) => v.id === variant.id).availableQuantity).toBe(
+      before - 2,
+    );
   });
 
   it('returns the same order when the button is clicked twice', async () => {

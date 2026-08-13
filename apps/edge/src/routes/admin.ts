@@ -20,7 +20,13 @@ import { newId } from '../lib/ids';
 import { Db, allowListed, fromBool, nowIso, toJson, type SqlValue } from '../lib/sql';
 import { auditStatement, requirePermission, writeAudit } from '../auth/rbac';
 import { adjustStock } from '../services/inventory';
-import { canTransition, listOrdersForAdmin, loadOrder, orderTimeline, paymentsForOrder } from '../services/orders';
+import {
+  canTransition,
+  listOrdersForAdmin,
+  loadOrder,
+  orderTimeline,
+  paymentsForOrder,
+} from '../services/orders';
 import { listCategoriesForAdmin, listContentPages } from '../services/navigation';
 import { assertUploadable, extensionFor } from './media';
 import { enforceRateLimit } from '../http/rate-limit';
@@ -58,44 +64,55 @@ admin.get('/dashboard', async (c) => {
    */
   const PAID_STATUSES = `('PAID','PROCESSING','PACKED','SHIPPED','DELIVERED','RETURN_REQUESTED','PARTIALLY_RETURNED')`;
 
-  const [totals, lowStock, reservations, campaigns, returns, recentOrders, salesByDay, salesByBrand, salesByCampaign, lowStockVariants, counts] =
-    await Promise.all([
-      db.first<{ revenueMinor: number; orderCount: number }>(
-        `SELECT COALESCE(SUM("totalMinor"), 0) AS "revenueMinor", COUNT(*) AS "orderCount"
+  const [
+    totals,
+    lowStock,
+    reservations,
+    campaigns,
+    returns,
+    recentOrders,
+    salesByDay,
+    salesByBrand,
+    salesByCampaign,
+    lowStockVariants,
+    counts,
+  ] = await Promise.all([
+    db.first<{ revenueMinor: number; orderCount: number }>(
+      `SELECT COALESCE(SUM("totalMinor"), 0) AS "revenueMinor", COUNT(*) AS "orderCount"
            FROM "orders" WHERE "status" IN ${PAID_STATUSES}`,
-      ),
-      db.count(
-        `SELECT COUNT(*) AS "c" FROM "inventory_balances" b
+    ),
+    db.count(
+      `SELECT COUNT(*) AS "c" FROM "inventory_balances" b
            JOIN "product_variants" v ON v."id" = b."variantId"
           WHERE v."isEnabled" = 1 AND b."onHandQuantity" - b."reservedQuantity" BETWEEN 1 AND 5`,
-      ),
-      db.first<{ active: number; expired: number }>(
-        `SELECT SUM(CASE WHEN "status" IN ('ACTIVE','CHECKOUT_STARTED','PAYMENT_PROCESSING') AND "expiresAt" > ? THEN 1 ELSE 0 END) AS "active",
+    ),
+    db.first<{ active: number; expired: number }>(
+      `SELECT SUM(CASE WHEN "status" IN ('ACTIVE','CHECKOUT_STARTED','PAYMENT_PROCESSING') AND "expiresAt" > ? THEN 1 ELSE 0 END) AS "active",
                 SUM(CASE WHEN "status" = 'EXPIRED' THEN 1 ELSE 0 END) AS "expired"
            FROM "inventory_reservations"`,
-        now,
-      ),
-      db.first<{ active: number; upcoming: number }>(
-        `SELECT SUM(CASE WHEN "status" = 'ACTIVE' THEN 1 ELSE 0 END) AS "active",
+      now,
+    ),
+    db.first<{ active: number; upcoming: number }>(
+      `SELECT SUM(CASE WHEN "status" = 'ACTIVE' THEN 1 ELSE 0 END) AS "active",
                 SUM(CASE WHEN "status" = 'SCHEDULED' THEN 1 ELSE 0 END) AS "upcoming"
            FROM "campaigns"`,
-      ),
-      db.count(
-        `SELECT COUNT(*) AS "c" FROM "return_requests" WHERE "status" IN ('REQUESTED','APPROVED','RECEIVED')`,
-      ),
-      db.all(
-        `SELECT "id", "orderNumber", "email", "totalMinor", "status", "placedAt"
+    ),
+    db.count(
+      `SELECT COUNT(*) AS "c" FROM "return_requests" WHERE "status" IN ('REQUESTED','APPROVED','RECEIVED')`,
+    ),
+    db.all(
+      `SELECT "id", "orderNumber", "email", "totalMinor", "status", "placedAt"
            FROM "orders" ORDER BY "placedAt" DESC LIMIT 10`,
-      ),
-      db.all(
-        `SELECT SUBSTR("placedAt", 1, 10) AS "day",
+    ),
+    db.all(
+      `SELECT SUBSTR("placedAt", 1, 10) AS "day",
                 COALESCE(SUM("totalMinor"), 0) AS "revenueMinor",
                 COUNT(*) AS "orderCount"
            FROM "orders" WHERE "status" IN ${PAID_STATUSES}
           GROUP BY "day" ORDER BY "day" DESC LIMIT 30`,
-      ),
-      db.all(
-        `SELECT b."name" AS "brandName", COALESCE(SUM(oi."totalMinor"), 0) AS "revenueMinor",
+    ),
+    db.all(
+      `SELECT b."name" AS "brandName", COALESCE(SUM(oi."totalMinor"), 0) AS "revenueMinor",
                 COALESCE(SUM(oi."quantity"), 0) AS "unitsSold"
            FROM "order_items" oi
            JOIN "orders" o ON o."id" = oi."orderId"
@@ -104,18 +121,18 @@ admin.get('/dashboard', async (c) => {
            JOIN "brands" b ON b."id" = p."brandId"
           WHERE o."status" IN ${PAID_STATUSES}
           GROUP BY b."id" ORDER BY "revenueMinor" DESC LIMIT 10`,
-      ),
-      db.all(
-        `SELECT ca."title" AS "campaignTitle", COALESCE(SUM(oi."totalMinor"), 0) AS "revenueMinor",
+    ),
+    db.all(
+      `SELECT ca."title" AS "campaignTitle", COALESCE(SUM(oi."totalMinor"), 0) AS "revenueMinor",
                 COALESCE(SUM(oi."quantity"), 0) AS "unitsSold"
            FROM "order_items" oi
            JOIN "orders" o ON o."id" = oi."orderId"
            JOIN "campaigns" ca ON ca."id" = oi."campaignId"
           WHERE o."status" IN ${PAID_STATUSES}
           GROUP BY ca."id" ORDER BY "revenueMinor" DESC LIMIT 10`,
-      ),
-      db.all(
-        `SELECT v."id" AS "variantId", v."sku", p."name" AS "productName",
+    ),
+    db.all(
+      `SELECT v."id" AS "variantId", v."sku", p."name" AS "productName",
                 MAX(0, b."onHandQuantity" - b."reservedQuantity") AS "availableQuantity"
            FROM "inventory_balances" b
            JOIN "product_variants" v ON v."id" = b."variantId"
@@ -123,16 +140,23 @@ admin.get('/dashboard', async (c) => {
           WHERE v."isEnabled" = 1 AND p."status" = 'ACTIVE'
             AND b."onHandQuantity" - b."reservedQuantity" BETWEEN 0 AND 5
           ORDER BY "availableQuantity", p."name" LIMIT 20`,
-      ),
-      db.first<{ products: number; activeProducts: number; customers: number; reviews: number; pendingReviews: number; stockUnits: number }>(
-        `SELECT (SELECT COUNT(*) FROM "products") AS "products",
+    ),
+    db.first<{
+      products: number;
+      activeProducts: number;
+      customers: number;
+      reviews: number;
+      pendingReviews: number;
+      stockUnits: number;
+    }>(
+      `SELECT (SELECT COUNT(*) FROM "products") AS "products",
                 (SELECT COUNT(*) FROM "products" WHERE "status" = 'ACTIVE') AS "activeProducts",
                 (SELECT COUNT(*) FROM "users") AS "customers",
                 (SELECT COUNT(*) FROM "product_reviews") AS "reviews",
                 (SELECT COUNT(*) FROM "product_reviews" WHERE "status" = 'PENDING') AS "pendingReviews",
                 (SELECT COALESCE(SUM("onHandQuantity"), 0) FROM "inventory_balances") AS "stockUnits"`,
-      ),
-    ]);
+    ),
+  ]);
 
   const orderCount = totals?.orderCount ?? 0;
   const revenueMinor = totals?.revenueMinor ?? 0;
@@ -545,9 +569,13 @@ admin.get('/orders', async (c) => {
 admin.get('/orders/:id', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.OrdersView);
-  const order = await loadOrder(ctx.db, { userId: null, isStaff: true }, {
-    id: pathId(c.req.param('id')),
-  });
+  const order = await loadOrder(
+    ctx.db,
+    { userId: null, isStaff: true },
+    {
+      id: pathId(c.req.param('id')),
+    },
+  );
   const [timeline, payments, movements] = await Promise.all([
     orderTimeline(ctx.db, order.id),
     paymentsForOrder(ctx.db, order.id),
@@ -695,7 +723,8 @@ admin.get('/customers', async (c) => {
     items: items.map((row) => ({
       ...(row as Record<string, unknown>),
       isEmailVerified: fromBool((row as Record<string, unknown>).isEmailVerified),
-      roles: ((row as Record<string, string | null>).roleNames ?? '')?.split(',').filter(Boolean) ?? [],
+      roles:
+        ((row as Record<string, string | null>).roleNames ?? '')?.split(',').filter(Boolean) ?? [],
     })),
     total,
     page,
@@ -740,7 +769,13 @@ admin.get('/customers/:id', async (c) => {
     ),
   ]);
 
-  return c.json({ ...customer, orders, addresses, notes, roles: roles.map((r) => (r as { name: string }).name) });
+  return c.json({
+    ...customer,
+    orders,
+    addresses,
+    notes,
+    roles: roles.map((r) => (r as { name: string }).name),
+  });
 });
 
 admin.post('/customers/:id/notes', async (c) => {
@@ -783,7 +818,10 @@ admin.get('/reviews', async (c) => {
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
   const pageSize = Math.max(1, Math.min(100, Number(query.pageSize) || 25));
-  const total = await ctx.db.count(`SELECT COUNT(*) AS "c" FROM "product_reviews" r ${where}`, ...bindings);
+  const total = await ctx.db.count(
+    `SELECT COUNT(*) AS "c" FROM "product_reviews" r ${where}`,
+    ...bindings,
+  );
   const totalPages = Math.ceil(total / pageSize);
   const page = totalPages === 0 ? 1 : Math.min(Math.max(1, Number(query.page) || 1), totalPages);
 
@@ -1061,7 +1099,10 @@ admin.put('/content/:key', async (c) => {
   const key = pathSlug(c.req.param('key'), 'page key');
   const body = parse(adminContentSchema, await readJson(c.req.raw));
 
-  const before = await ctx.db.first(`SELECT "title", "body" FROM "content_pages" WHERE "key" = ?`, key);
+  const before = await ctx.db.first(
+    `SELECT "title", "body" FROM "content_pages" WHERE "key" = ?`,
+    key,
+  );
 
   await ctx.db.batch([
     ctx.db.statement(
@@ -1088,7 +1129,9 @@ admin.put('/content/:key', async (c) => {
 admin.get('/settings', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.SettingsUpdate);
-  return c.json(await ctx.db.all(`SELECT "key", "value", "updatedAt" FROM "site_settings" ORDER BY "key"`));
+  return c.json(
+    await ctx.db.all(`SELECT "key", "value", "updatedAt" FROM "site_settings" ORDER BY "key"`),
+  );
 });
 
 admin.put('/settings/:key', async (c) => {
@@ -1124,7 +1167,15 @@ admin.put('/settings/:key', async (c) => {
 admin.get('/users', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.AdminUsersManage);
-  const rows = await ctx.db.all<{ id: string; email: string; firstName: string; lastName: string; status: string; createdAt: string; roleNames: string | null }>(
+  const rows = await ctx.db.all<{
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    status: string;
+    createdAt: string;
+    roleNames: string | null;
+  }>(
     `SELECT u."id", u."email", u."firstName", u."lastName", u."status", u."createdAt",
             GROUP_CONCAT(r."name") AS "roleNames"
        FROM "users" u
@@ -1132,13 +1183,21 @@ admin.get('/users', async (c) => {
        JOIN "roles" r ON r."id" = ur."roleId"
       GROUP BY u."id" ORDER BY u."email"`,
   );
-  return c.json(rows.map((row) => ({ ...row, roles: (row.roleNames ?? '').split(',').filter(Boolean) })));
+  return c.json(
+    rows.map((row) => ({ ...row, roles: (row.roleNames ?? '').split(',').filter(Boolean) })),
+  );
 });
 
 admin.get('/roles', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.AdminUsersManage);
-  const roles = await ctx.db.all<{ id: string; name: string; description: string | null; permissions: string | null; userCount: number }>(
+  const roles = await ctx.db.all<{
+    id: string;
+    name: string;
+    description: string | null;
+    permissions: string | null;
+    userCount: number;
+  }>(
     `SELECT r."id", r."name", r."description",
             GROUP_CONCAT(p."key") AS "permissions",
             (SELECT COUNT(*) FROM "user_roles" ur WHERE ur."roleId" = r."id") AS "userCount"
@@ -1148,7 +1207,10 @@ admin.get('/roles', async (c) => {
       GROUP BY r."id" ORDER BY r."name"`,
   );
   return c.json(
-    roles.map((role) => ({ ...role, permissions: (role.permissions ?? '').split(',').filter(Boolean) })),
+    roles.map((role) => ({
+      ...role,
+      permissions: (role.permissions ?? '').split(',').filter(Boolean),
+    })),
   );
 });
 
@@ -1170,7 +1232,10 @@ admin.get('/audit-logs', async (c) => {
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
   const pageSize = Math.max(1, Math.min(200, Number(query.pageSize) || 50));
-  const total = await ctx.db.count(`SELECT COUNT(*) AS "c" FROM "audit_logs" ${where}`, ...bindings);
+  const total = await ctx.db.count(
+    `SELECT COUNT(*) AS "c" FROM "audit_logs" ${where}`,
+    ...bindings,
+  );
   const totalPages = Math.ceil(total / pageSize);
   const page = totalPages === 0 ? 1 : Math.min(Math.max(1, Number(query.page) || 1), totalPages);
 

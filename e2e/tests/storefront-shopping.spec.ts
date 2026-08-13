@@ -25,7 +25,9 @@ test.describe('customer shopping journey', () => {
     await expect(page.getByTestId('product-card').first()).toBeVisible();
 
     await page.goto('/products/aster-essential-cotton-t-shirt');
-    await expect(page.getByRole('heading', { name: 'Aster Essential Cotton T-Shirt' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Aster Essential Cotton T-Shirt' }),
+    ).toBeVisible();
     await expect(page.getByTestId('add-to-cart')).toBeVisible();
   });
 

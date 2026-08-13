@@ -118,7 +118,10 @@ describe('listProducts', () => {
   });
 
   it('ignores an unknown sort key rather than trusting it', async () => {
-    const injected = await listProducts(db, { sort: '"name"; DROP TABLE products; --', pageSize: '5' });
+    const injected = await listProducts(db, {
+      sort: '"name"; DROP TABLE products; --',
+      pageSize: '5',
+    });
     const fallback = await listProducts(db, { pageSize: '5' });
     expect(injected.items.map((i) => i.slug)).toEqual(fallback.items.map((i) => i.slug));
     // The table is still there.
@@ -137,7 +140,8 @@ describe('listProducts', () => {
     expect(
       page.items.every(
         (item) =>
-          item.name.toLowerCase().includes('hoodie') || item.brand.name.toLowerCase().includes('hoodie'),
+          item.name.toLowerCase().includes('hoodie') ||
+          item.brand.name.toLowerCase().includes('hoodie'),
       ),
     ).toBe(true);
   });

@@ -132,7 +132,11 @@ async function readPayableLines(db: Db, cartId: string): Promise<PayableLine[]> 
 
 const unitPriceFor = (line: PayableLine): number => {
   const base = line.priceOverrideMinor ?? line.outletPriceMinor;
-  if (line.campaignStatus === 'ACTIVE' && line.campaignPriceMinor != null && line.campaignPriceMinor < base) {
+  if (
+    line.campaignStatus === 'ACTIVE' &&
+    line.campaignPriceMinor != null &&
+    line.campaignPriceMinor < base
+  ) {
     return line.campaignPriceMinor;
   }
   return base;
@@ -227,11 +231,14 @@ export async function placeDemoOrder(
   const billingAddress = input.billingAddress
     ? assertAddress(input.billingAddress, 'billing')
     : shippingAddress;
-  const shippingMethod: ShippingMethod = input.shippingMethod === 'EXPRESS' ? 'EXPRESS' : 'STANDARD';
+  const shippingMethod: ShippingMethod =
+    input.shippingMethod === 'EXPRESS' ? 'EXPRESS' : 'STANDARD';
 
   const email = input.email?.trim().toLowerCase();
   if (!email || !/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(email)) {
-    throw new ApiError('VALIDATION_FAILED', 'A valid email address is required.', { field: 'email' });
+    throw new ApiError('VALIDATION_FAILED', 'A valid email address is required.', {
+      field: 'email',
+    });
   }
 
   const lines = await readPayableLines(db, context.cartId);
@@ -482,7 +489,10 @@ export async function placeDemoOrder(
   // The cart converts in the same transaction, so a placed order cannot leave
   // a basket behind that still looks buyable.
   statements.push(
-    db.statement(`DELETE FROM "cart_items" WHERE "cartId" = ? AND "savedForLater" = 0`, context.cartId),
+    db.statement(
+      `DELETE FROM "cart_items" WHERE "cartId" = ? AND "savedForLater" = 0`,
+      context.cartId,
+    ),
     db.statement(
       `UPDATE "carts" SET "status" = 'CONVERTED', "couponId" = NULL, "updatedAt" = ? WHERE "id" = ?`,
       now,

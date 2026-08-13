@@ -10,15 +10,15 @@ At this stage the project MUST remain completely free to operate.
 
 DO NOT integrate or require:
 
-* Real payment providers
-* Real payment processing
-* Real email providers
-* SMS providers
-* Paid APIs
-* Paid SaaS services
-* Paid analytics
-* Real shipping provider APIs
-* Real refund/payment processing
+- Real payment providers
+- Real payment processing
+- Real email providers
+- SMS providers
+- Paid APIs
+- Paid SaaS services
+- Paid analytics
+- Real shipping provider APIs
+- Real refund/payment processing
 
 The goal is NOT to launch a real commercial store yet.
 
@@ -27,7 +27,7 @@ The goal is to create a highly polished, realistic, fully functional production 
 ==================================================
 
 1. MAIN OBJECTIVE
-==================================================
+   \==================================================
 
 The final website must feel like a real production e-commerce platform.
 
@@ -65,65 +65,63 @@ Everything should work with real database data.
 
 DO NOT build fake frontend-only interactions.
 
-==================================================
-2. DATABASE
+================================================== 2. DATABASE
 ===
 
 Use the existing repository database structure as the source of truth.
 
 The current project contains approximately 43 tables covering:
 
-* users
-* user\_sessions
-* addresses
-* roles
-* permissions
-* role\_permissions
-* user\_roles
-* customer\_support\_notes
-* brands
-* categories
-* products
-* product\_variants
-* product\_images
-* product\_attributes
-* product\_attribute\_values
-* campaigns
-* campaign\_products
-* inventory\_balances
-* inventory\_movements
-* inventory\_reservations
-* carts
-* cart\_items
-* wishlists
-* wishlist\_items
-* coupons
-* promotions
-* orders
-* order\_items
-* order\_status\_history
-* payments
-* payment\_events
-* shipments
-* shipment\_events
-* return\_requests
-* return\_items
-* refunds
-* notifications
-* newsletter\_subscriptions
-* audit\_logs
-* site\_settings
-* content\_pages
-* uploaded\_files
-* background\_job\_records
-* product\_reviews
+- users
+- user\_sessions
+- addresses
+- roles
+- permissions
+- role\_permissions
+- user\_roles
+- customer\_support\_notes
+- brands
+- categories
+- products
+- product\_variants
+- product\_images
+- product\_attributes
+- product\_attribute\_values
+- campaigns
+- campaign\_products
+- inventory\_balances
+- inventory\_movements
+- inventory\_reservations
+- carts
+- cart\_items
+- wishlists
+- wishlist\_items
+- coupons
+- promotions
+- orders
+- order\_items
+- order\_status\_history
+- payments
+- payment\_events
+- shipments
+- shipment\_events
+- return\_requests
+- return\_items
+- refunds
+- notifications
+- newsletter\_subscriptions
+- audit\_logs
+- site\_settings
+- content\_pages
+- uploaded\_files
+- background\_job\_records
+- product\_reviews
 
 Preserve the business model.
 
 Do not remove functionality simply because this is a demo.
 
-==================================================
-3. CLOUDFLARE ARCHITECTURE
+================================================== 3. CLOUDFLARE ARCHITECTURE
 ===
 
 The target architecture is:
@@ -152,8 +150,7 @@ Everything must be compatible with Cloudflare's free/available development setup
 
 Do not introduce unnecessary paid infrastructure.
 
-==================================================
-4. DATABASE MIGRATION TO D1
+================================================== 4. DATABASE MIGRATION TO D1
 ===
 
 The existing project is PostgreSQL-oriented.
@@ -186,20 +183,19 @@ Continue using integer minor units:
 
 Preserve:
 
-* primary keys
-* foreign keys
-* indexes
-* unique constraints
-* CHECK constraints
-* cascading behavior where appropriate
-* transactional behavior
+- primary keys
+- foreign keys
+- indexes
+- unique constraints
+- CHECK constraints
+- cascading behavior where appropriate
+- transactional behavior
 
 Create proper D1 migrations.
 
 Make the database reproducible from an empty D1 database.
 
-==================================================
-5. SEED A REALISTIC DEMO DATABASE
+================================================== 5. SEED A REALISTIC DEMO DATABASE
 ===
 
 THIS IS CRITICAL.
@@ -239,8 +235,7 @@ CMS CONTENT
 SITE SETTINGS
 AUDIT LOGS
 
-==================================================
-6. DEMO PRODUCT CATALOG
+================================================== 6. DEMO PRODUCT CATALOG
 ===
 
 Create a realistic fashion catalog.
@@ -327,8 +322,7 @@ Bags
 
 Use realistic descriptions, materials, care instructions, country of origin, SEO metadata, etc.
 
-==================================================
-7. PRODUCT VARIANTS
+================================================== 7. PRODUCT VARIANTS
 ===
 
 Every relevant product should have realistic variants.
@@ -367,14 +361,13 @@ Inventory must exist for each variant.
 
 Some variants should intentionally have:
 
-* high stock
-* low stock
-* zero stock
+- high stock
+- low stock
+- zero stock
 
 This is necessary to demonstrate real inventory behavior.
 
-==================================================
-8. PRODUCT IMAGES
+================================================== 8. PRODUCT IMAGES
 ===
 
 Use Cloudflare R2 for product images.
@@ -385,10 +378,10 @@ If external images cannot legally or reliably be used, create/use appropriate de
 
 Each important product should have:
 
-* primary image
-* secondary image
-* optional detail image
-* correct alt text
+- primary image
+- secondary image
+- optional detail image
+- correct alt text
 
 Create realistic image object keys.
 
@@ -400,24 +393,23 @@ Example:
 
 Store metadata in D1.
 
-==================================================
-9. HOMEPAGE
+================================================== 9. HOMEPAGE
 ===
 
 The homepage must look populated and professional.
 
 Include:
 
-* Hero section
-* Featured products
-* New arrivals
-* Best sellers
-* Sale section
-* Categories
-* Featured brands
-* Campaign banner
-* Newsletter section
-* Footer
+- Hero section
+- Featured products
+- New arrivals
+- Best sellers
+- Sale section
+- Categories
+- Featured brands
+- Campaign banner
+- Newsletter section
+- Footer
 
 All important content must come from the database.
 
@@ -425,44 +417,42 @@ Do not hardcode the entire homepage.
 
 Admin should be able to change important content.
 
-==================================================
-10. PRODUCT PAGE
+================================================== 10. PRODUCT PAGE
 ===
 
 Product pages must support:
 
-* image gallery
-* product title
-* brand
-* price
-* original price
-* discount
-* description
-* materials
-* care instructions
-* country of origin
-* colors
-* sizes
-* stock status
-* quantity selector
-* add to cart
-* wishlist
-* reviews
-* rating
-* related products
-* campaign information
+- image gallery
+- product title
+- brand
+- price
+- original price
+- discount
+- description
+- materials
+- care instructions
+- country of origin
+- colors
+- sizes
+- stock status
+- quantity selector
+- add to cart
+- wishlist
+- reviews
+- rating
+- related products
+- campaign information
 
 Variant selection must affect:
 
-* selected SKU
-* stock
-* price
-* availability
+- selected SKU
+- stock
+- price
+- availability
 
 Do not allow users to purchase unavailable variants.
 
-==================================================
-11. SEARCH / FILTERS / SORTING
+================================================== 11. SEARCH / FILTERS / SORTING
 ===
 
 Implement functional:
@@ -471,47 +461,46 @@ Search
 
 Filter by:
 
-* category
-* subcategory
-* brand
-* gender
-* size
-* color
-* price
-* availability
-* sale
+- category
+- subcategory
+- brand
+- gender
+- size
+- color
+- price
+- availability
+- sale
 
 Sort by:
 
-* newest
-* price low to high
-* price high to low
-* popularity
-* rating
+- newest
+- price low to high
+- price high to low
+- popularity
+- rating
 
 Do not implement these only visually.
 
 They must query the real database.
 
-==================================================
-12. CART
+================================================== 12. CART
 ===
 
 Cart must be fully functional.
 
 Support:
 
-* add product
-* remove product
-* change quantity
-* save for later
-* restore saved item
-* clear cart
-* coupon
-* subtotal
-* discount
-* total
-* stock validation
+- add product
+- remove product
+- change quantity
+- save for later
+- restore saved item
+- clear cart
+- coupon
+- subtotal
+- discount
+- total
+- stock validation
 
 The cart must survive page refresh.
 
@@ -519,8 +508,7 @@ Anonymous users should have a working cart.
 
 Authenticated users should have a persistent cart.
 
-==================================================
-13. DEMO CHECKOUT
+================================================== 13. DEMO CHECKOUT
 ===
 
 Because this is a free presentation/demo environment:
@@ -578,8 +566,7 @@ The order must be a REAL D1 record.
 
 Make it obvious that this is a demonstration payment and no real money is charged.
 
-==================================================
-14. INVENTORY
+================================================== 14. INVENTORY
 ===
 
 Implement proper inventory behavior.
@@ -604,55 +591,53 @@ Damaged
 
 Also maintain inventory movement history.
 
-==================================================
-15. ORDERS
+================================================== 15. ORDERS
 ===
 
 Create realistic order management.
 
 Customer can view:
 
-* order number
-* date
-* status
-* items
-* quantities
-* prices
-* total
-* shipping address
-* shipping method
+- order number
+- date
+- status
+- items
+- quantities
+- prices
+- total
+- shipping address
+- shipping method
 
 Admin can:
 
-* view orders
-* filter orders
-* search orders
-* change order status
-* add internal notes
-* view customer
-* view payment
-* view inventory effects
+- view orders
+- filter orders
+- search orders
+- change order status
+- add internal notes
+- view customer
+- view payment
+- view inventory effects
 
 Use realistic demo order statuses.
 
-==================================================
-16. ADMIN PANEL
+================================================== 16. ADMIN PANEL
 ===
 
 The admin panel must be presentation-ready.
 
 Create a professional dashboard showing:
 
-* total products
-* active products
-* inventory
-* orders
-* demo revenue
-* customers
-* reviews
-* low stock products
-* recent orders
-* recent activity
+- total products
+- active products
+- inventory
+- orders
+- demo revenue
+- customers
+- reviews
+- low stock products
+- recent orders
+- recent activity
 
 Admin navigation should include:
 
@@ -680,8 +665,7 @@ Do not create empty admin pages.
 
 Every important section should contain realistic seeded data.
 
-==================================================
-17. ADMIN PRODUCT MANAGEMENT
+================================================== 17. ADMIN PRODUCT MANAGEMENT
 ===
 
 Admin must be able to:
@@ -695,28 +679,27 @@ products.
 
 Support:
 
-* name
-* description
-* brand
-* category
-* subcategory
-* gender
-* prices
-* discount
-* SKU
-* barcode
-* variants
-* sizes
-* colors
-* inventory
-* images
-* SEO
-* status
+- name
+- description
+- brand
+- category
+- subcategory
+- gender
+- prices
+- discount
+- SKU
+- barcode
+- variants
+- sizes
+- colors
+- inventory
+- images
+- SEO
+- status
 
 Image upload should use R2.
 
-==================================================
-18. REVIEWS
+================================================== 18. REVIEWS
 ===
 
 Seed realistic reviews.
@@ -730,24 +713,23 @@ Use different ratings:
 
 Include:
 
-* reviewer name
-* title
-* body
-* rating
-* verified purchase
-* date
-* status
+- reviewer name
+- title
+- body
+- rating
+- verified purchase
+- date
+- status
 
 Admin must be able to:
 
-* publish
-* reject
-* delete/moderate
+- publish
+- reject
+- delete/moderate
 
 Product ratings must be calculated/displayed correctly.
 
-==================================================
-19. COUPONS
+================================================== 19. COUPONS
 ===
 
 Create working demo coupons.
@@ -763,44 +745,42 @@ They must actually affect checkout calculations.
 
 Support:
 
-* percentage discount
-* fixed discount
-* minimum order
-* expiration
-* active/inactive
-* usage limits
+- percentage discount
+- fixed discount
+- minimum order
+- expiration
+- active/inactive
+- usage limits
 
 Do not allow invalid or expired coupons.
 
-==================================================
-20. WISHLIST
+================================================== 20. WISHLIST
 ===
 
 Implement:
 
-* add
-* remove
-* view
-* move to cart
+- add
+- remove
+- view
+- move to cart
 
 for authenticated users.
 
-==================================================
-21. AUTHENTICATION
+================================================== 21. AUTHENTICATION
 ===
 
 Implement production-quality demo authentication.
 
 Support:
 
-* registration
-* login
-* logout
-* password hashing
-* sessions
-* protected routes
-* admin authentication
-* role-based access
+- registration
+- login
+- logout
+- password hashing
+- sessions
+- protected routes
+- admin authentication
+- role-based access
 
 Because email is not being used yet:
 
@@ -822,8 +802,7 @@ Never expose passwords in production code or frontend source.
 
 Use environment variables or a secure seed mechanism for demo credentials.
 
-==================================================
-22. DEMO DATA
+================================================== 22. DEMO DATA
 ===
 
 Create at least:
@@ -860,8 +839,7 @@ multiple audit log records
 
 The website must look populated immediately after deployment.
 
-==================================================
-23. CMS
+================================================== 23. CMS
 ===
 
 Seed realistic content pages:
@@ -876,8 +854,7 @@ Contact
 
 The content must be editable through admin.
 
-==================================================
-24. SIZE GUIDE
+================================================== 24. SIZE GUIDE
 ===
 
 Implement realistic size guides.
@@ -912,35 +889,33 @@ Do not incorrectly use one universal size chart.
 
 Size guide must be connected to relevant product/category types.
 
-==================================================
-25. UI/UX
+================================================== 25. UI/UX
 ===
 
 The website must look like a real premium fashion e-commerce platform.
 
 Prioritize:
 
-* clean layout
-* strong typography
-* excellent spacing
-* high-quality product imagery
-* responsive design
-* mobile usability
-* desktop usability
-* accessible controls
-* loading states
-* empty states
-* error states
-* skeleton states
-* success states
-* proper form validation
+- clean layout
+- strong typography
+- excellent spacing
+- high-quality product imagery
+- responsive design
+- mobile usability
+- desktop usability
+- accessible controls
+- loading states
+- empty states
+- error states
+- skeleton states
+- success states
+- proper form validation
 
 Dark mode must also look intentionally designed, not simply inverted colors.
 
 Do not use excessive gradients, excessive rounded cards, or generic AI-generated dashboard styling.
 
-==================================================
-26. RESPONSIVENESS
+================================================== 26. RESPONSIVENESS
 ===
 
 Test:
@@ -952,34 +927,32 @@ Large desktop
 
 Important flows must work without horizontal scrolling.
 
-==================================================
-27. SECURITY
+================================================== 27. SECURITY
 ===
 
 Even though this is a demo, follow production security practices.
 
 Implement:
 
-* input validation
-* authorization checks
-* RBAC
-* secure sessions
-* password hashing
-* rate limiting where practical
-* secure cookies
-* CSRF protection where applicable
-* XSS prevention
-* SQL injection protection
-* upload validation
-* request size limits
-* audit logging
+- input validation
+- authorization checks
+- RBAC
+- secure sessions
+- password hashing
+- rate limiting where practical
+- secure cookies
+- CSRF protection where applicable
+- XSS prevention
+- SQL injection protection
+- upload validation
+- request size limits
+- audit logging
 
 Never trust frontend permissions.
 
 Every admin operation must be authorized on the backend.
 
-==================================================
-28. DEMO ENVIRONMENT
+================================================== 28. DEMO ENVIRONMENT
 ===
 
 Clearly define this environment as:
@@ -994,32 +967,30 @@ Do not send real transactional emails.
 
 Do not create real financial transactions.
 
-==================================================
-29. PERFORMANCE
+================================================== 29. PERFORMANCE
 ===
 
 Optimize for Cloudflare.
 
 Avoid:
 
-* unnecessary database queries
-* N+1 queries
-* huge API responses
-* loading every product at once
-* unnecessary client-side rendering
-* oversized images
+- unnecessary database queries
+- N+1 queries
+- huge API responses
+- loading every product at once
+- unnecessary client-side rendering
+- oversized images
 
 Implement:
 
-* pagination
-* database indexes
-* image optimization
-* caching where appropriate
-* lazy loading
-* efficient queries
+- pagination
+- database indexes
+- image optimization
+- caching where appropriate
+- lazy loading
+- efficient queries
 
-==================================================
-30. ERROR HANDLING
+================================================== 30. ERROR HANDLING
 ===
 
 Every major operation needs proper error handling.
@@ -1039,8 +1010,7 @@ Invalid order
 
 Never show raw database errors to users.
 
-==================================================
-31. OBSERVABILITY
+================================================== 31. OBSERVABILITY
 ===
 
 Create:
@@ -1051,18 +1021,17 @@ It should verify the application environment.
 
 Add structured logging for important operations:
 
-* authentication
-* orders
-* inventory
-* admin changes
-* errors
+- authentication
+- orders
+- inventory
+- admin changes
+- errors
 
 Use Cloudflare-compatible logging.
 
 Do not require paid monitoring services.
 
-==================================================
-32. ENVIRONMENT VARIABLES
+================================================== 32. ENVIRONMENT VARIABLES
 ===
 
 Create a clean environment configuration.
@@ -1081,8 +1050,7 @@ Create/update:
 
 Document all required variables.
 
-==================================================
-33. CLOUDFLARE CONFIGURATION
+================================================== 33. CLOUDFLARE CONFIGURATION
 ===
 
 Create/update the Cloudflare configuration so that the project can be deployed cleanly.
@@ -1098,8 +1066,7 @@ Use appropriate bindings.
 
 Do not hardcode Cloudflare account IDs or secrets.
 
-==================================================
-34. DATABASE SEED COMMAND
+================================================== 34. DATABASE SEED COMMAND
 ===
 
 Create an easy command such as:
@@ -1125,8 +1092,7 @@ It must be safe to run repeatedly.
 
 Avoid duplicate seed data.
 
-==================================================
-35. DEMO RESET
+================================================== 35. DEMO RESET
 ===
 
 Create a safe development/demo reset mechanism.
@@ -1139,8 +1105,7 @@ This should reset ONLY the demo environment.
 
 Never create a command that can accidentally wipe production data without an explicit environment check.
 
-==================================================
-36. TESTING
+================================================== 36. TESTING
 ===
 
 Before declaring the project complete, test:
@@ -1167,18 +1132,17 @@ Audit logs
 
 Also test edge cases:
 
-* out-of-stock variant
-* invalid coupon
-* expired coupon
-* quantity greater than stock
-* duplicate checkout click
-* unauthorized admin request
-* missing product
-* invalid variant
-* session expiration
+- out-of-stock variant
+- invalid coupon
+- expired coupon
+- quantity greater than stock
+- duplicate checkout click
+- unauthorized admin request
+- missing product
+- invalid variant
+- session expiration
 
-==================================================
-37. DO NOT BREAK EXISTING FUNCTIONALITY
+================================================== 37. DO NOT BREAK EXISTING FUNCTIONALITY
 ===
 
 Before modifying existing code:
@@ -1193,8 +1157,7 @@ Preserve existing UI/UX where it is already good.
 
 Improve it where necessary.
 
-==================================================
-38. NO PLACEHOLDERS
+================================================== 38. NO PLACEHOLDERS
 ===
 
 Do NOT leave:
@@ -1219,20 +1182,19 @@ B. be intentionally hidden from the demo.
 
 Do not show broken functionality.
 
-==================================================
-39. FINAL QUALITY CHECK
+================================================== 39. FINAL QUALITY CHECK
 ===
 
 Before finishing:
 
 Run:
 
-* type checking
-* linting
-* build
-* database migrations
-* seed
-* tests
+- type checking
+- linting
+- build
+- database migrations
+- seed
+- tests
 
 Fix all errors.
 
@@ -1267,8 +1229,7 @@ Admin login
 
 Everything must work using real D1 data.
 
-==================================================
-40. FINAL DELIVERABLE
+================================================== 40. FINAL DELIVERABLE
 ===
 
 When finished, provide:
@@ -1296,37 +1257,21 @@ SECURITY AUDIT \& HARDENING PROMPT
 
 =================================
 
-
-
 You are working on the public GitHub repository:
-
-
 
 https://github.com/hoffman1938/ecommerce
 
-
-
 The repository is intentionally PUBLIC because Cloudflare Pages needs access to the repository for deployment.
-
-
 
 IMPORTANT:
 
 DO NOT make the repository private.
 
-
-
 The goal is to make the application secure while keeping the repository public.
-
-
 
 This is a defensive security audit and hardening task.
 
-
-
 Do NOT remove Cloudflare Pages/GitHub integration.
-
-
 
 ==================================================
 
@@ -1334,47 +1279,33 @@ Do NOT remove Cloudflare Pages/GitHub integration.
 
 ==================================================
 
-
-
 Perform a complete security audit of the entire repository and then implement all necessary fixes.
-
-
 
 The application is a Cloudflare-based e-commerce DEMO/STAGING platform.
 
-
-
 Target architecture:
-
-
 
 GitHub PUBLIC repository
 
-&#x20;       ↓
+&#x20; ↓
 
 Cloudflare Pages
 
-&#x20;       ↓
+&#x20; ↓
 
 Cloudflare Workers
 
-&#x20;       ↓
+&#x20; ↓
 
 Cloudflare D1
 
-&#x20;       ↓
+&#x20; ↓
 
 Cloudflare R2
 
-
-
 The application must remain deployable from the PUBLIC GitHub repository.
 
-
-
 NO secrets, credentials, tokens, private keys, passwords, API keys, database credentials, Cloudflare credentials, or other sensitive values may exist in the repository.
-
-
 
 ==================================================
 
@@ -1382,15 +1313,9 @@ NO secrets, credentials, tokens, private keys, passwords, API keys, database cre
 
 ==================================================
 
-
-
 Before changing code, inspect the entire repository.
 
-
-
 Search for:
-
-
 
 \- API keys
 
@@ -1448,11 +1373,7 @@ Search for:
 
 \- secrets inside GitHub Actions
 
-
-
 Search the entire repository, not just the current working tree.
-
-
 
 ==================================================
 
@@ -1460,15 +1381,9 @@ Search the entire repository, not just the current working tree.
 
 ==================================================
 
-
-
 Because the repository is PUBLIC, inspect Git history for accidentally committed secrets.
 
-
-
 Search:
-
-
 
 \- current files
 
@@ -1488,19 +1403,11 @@ Search:
 
 \- old database connection strings
 
-
-
 IMPORTANT:
-
-
 
 Deleting a secret from the current file is NOT enough if it exists in Git history.
 
-
-
 If real credentials are found in Git history:
-
-
 
 1\. Identify them.
 
@@ -1514,11 +1421,7 @@ If real credentials are found in Git history:
 
 6\. Do not rewrite Git history automatically if it could disrupt collaboration without clearly documenting the consequences.
 
-
-
 Never expose discovered secrets in logs or output.
-
-
 
 ==================================================
 
@@ -1526,19 +1429,11 @@ Never expose discovered secrets in logs or output.
 
 ==================================================
 
-
-
 Assume that every file in the repository can be read by an attacker.
-
-
 
 Therefore:
 
-
-
 SAFE TO COMMIT:
-
-
 
 \- source code
 
@@ -1558,11 +1453,7 @@ SAFE TO COMMIT:
 
 \- documentation
 
-
-
 NEVER COMMIT:
-
-
 
 \- secret values
 
@@ -1584,31 +1475,19 @@ NEVER COMMIT:
 
 \- session secrets
 
-
-
 ==================================================
 
 5\. ENVIRONMENT VARIABLES
 
 ==================================================
 
-
-
 Create/update:
-
-
 
 .env.example
 
-
-
 It must contain variable NAMES only.
 
-
-
 Example:
-
-
 
 DATABASE\_ID=
 
@@ -1618,41 +1497,25 @@ SESSION\_SECRET=
 
 JWT\_SECRET=
 
-
-
 Do NOT put real values inside it.
 
-
-
 Use:
-
-
 
 Local development:
 
 .env
 
-
-
 Cloudflare:
 
 wrangler secrets / Cloudflare environment secrets
-
-
 
 Production/Demo:
 
 Cloudflare environment variables/secrets
 
-
-
 Make sure .env and all secret variants are properly ignored by Git.
 
-
-
 Check:
-
-
 
 .env
 
@@ -1660,11 +1523,7 @@ Check:
 
 !.env.example
 
-
-
 Do not accidentally ignore necessary public configuration.
-
-
 
 ==================================================
 
@@ -1672,15 +1531,9 @@ Do not accidentally ignore necessary public configuration.
 
 ==================================================
 
-
-
 Audit Cloudflare configuration.
 
-
-
 Review:
-
-
 
 wrangler configuration
 
@@ -1698,37 +1551,21 @@ secrets
 
 deployment configuration
 
-
-
 Never place:
-
-
 
 CLOUDFLARE\_API\_TOKEN
 
-
-
 or other privileged Cloudflare credentials inside the repository.
 
-
-
 Cloudflare bindings such as:
-
-
 
 D1 database binding
 
 R2 bucket binding
 
-
-
 may be referenced by binding NAME.
 
-
-
 The actual credentials and infrastructure access must remain outside the repository.
-
-
 
 ==================================================
 
@@ -1736,23 +1573,13 @@ The actual credentials and infrastructure access must remain outside the reposit
 
 ==================================================
 
-
-
 This is extremely important.
-
-
 
 Anything bundled into frontend JavaScript can be discovered by users.
 
-
-
 Therefore:
 
-
-
 NEVER expose secrets through:
-
-
 
 NEXT\_PUBLIC\_\*
 
@@ -1768,15 +1595,9 @@ HTML
 
 JavaScript bundles
 
-
-
 Audit all environment variable usage.
 
-
-
 Classify every variable as:
-
-
 
 PUBLIC
 
@@ -1784,25 +1605,15 @@ or
 
 SERVER-ONLY
 
-
-
 Only genuinely public configuration may reach the browser.
 
-
-
 Examples of public information:
-
-
 
 PUBLIC\_SITE\_URL
 
 PUBLIC\_BRAND\_NAME
 
-
-
 Examples that MUST remain server-only:
-
-
 
 SESSION\_SECRET
 
@@ -1816,23 +1627,15 @@ R2 credentials
 
 API tokens
 
-
-
 ==================================================
 
 8\. AUTHENTICATION SECURITY
 
 ==================================================
 
-
-
 Audit the complete authentication system.
 
-
-
 Implement secure:
-
-
 
 \- password hashing
 
@@ -1852,23 +1655,13 @@ Implement secure:
 
 \- protected routes
 
-
-
 Never store plaintext passwords.
-
-
 
 Never compare plaintext passwords against database values.
 
-
-
 Use a strong password hashing algorithm supported by the deployment environment.
 
-
-
 Never store passwords in:
-
-
 
 \- frontend
 
@@ -1880,23 +1673,15 @@ Never store passwords in:
 
 \- logs
 
-
-
 ==================================================
 
 9\. SESSION SECURITY
 
 ==================================================
 
-
-
 Sessions must use secure cookies.
 
-
-
 Use appropriate cookie flags:
-
-
 
 HttpOnly
 
@@ -1904,15 +1689,9 @@ Secure
 
 SameSite
 
-
-
 Do not store authentication tokens in localStorage unless there is a strong architectural reason.
 
-
-
 Prevent:
-
-
 
 \- session fixation
 
@@ -1920,15 +1699,9 @@ Prevent:
 
 \- unauthorized session access
 
-
-
 Sessions must expire.
 
-
-
 Admin sessions should have appropriate security controls.
-
-
 
 ==================================================
 
@@ -1936,23 +1709,13 @@ Admin sessions should have appropriate security controls.
 
 ==================================================
 
-
-
 This is CRITICAL.
-
-
 
 Never trust the frontend to determine whether someone is an admin.
 
-
-
 Every admin API endpoint must verify authorization server-side.
 
-
-
 For every admin operation:
-
-
 
 1\. Authenticate user.
 
@@ -1964,31 +1727,17 @@ For every admin operation:
 
 5\. Only then execute the operation.
 
-
-
 Example:
-
-
 
 Frontend:
 
-
-
 /admin/products/delete
-
-
 
 must NOT be protected only by hiding the button.
 
-
-
 Backend must enforce:
 
-
-
 products.delete
-
-
 
 ==================================================
 
@@ -1996,11 +1745,7 @@ products.delete
 
 ==================================================
 
-
-
 Audit:
-
-
 
 roles
 
@@ -2010,19 +1755,11 @@ user\_roles
 
 role\_permissions
 
-
-
 Make sure permissions are actually enforced.
-
-
 
 Test:
 
-
-
 Customer cannot:
-
-
 
 \- create product
 
@@ -2042,15 +1779,9 @@ Customer cannot:
 
 \- access admin APIs
 
-
-
 Staff with limited permissions must only access allowed operations.
 
-
-
 Admin can access all intended admin functionality.
-
-
 
 ==================================================
 
@@ -2058,15 +1789,9 @@ Admin can access all intended admin functionality.
 
 ==================================================
 
-
-
 Perform a complete IDOR/BOLA audit.
 
-
-
 Test endpoints such as:
-
-
 
 /api/orders/:id
 
@@ -2082,51 +1807,27 @@ Test endpoints such as:
 
 /api/returns/:id
 
-
-
 A user must never be able to access another user's data simply by changing an ID.
-
-
 
 For example:
 
-
-
 User A:
-
-
 
 GET /api/orders/order\_A
 
-
-
 must work.
-
-
 
 User A:
 
-
-
 GET /api/orders/order\_B
-
-
 
 must return:
 
-
-
 403 or 404
-
-
 
 if order\_B belongs to User B.
 
-
-
 Do the same for:
-
-
 
 \- addresses
 
@@ -2142,23 +1843,15 @@ Do the same for:
 
 \- customer information
 
-
-
 ==================================================
 
 13\. INPUT VALIDATION
 
 ==================================================
 
-
-
 Validate ALL external input.
 
-
-
 This includes:
-
-
 
 \- JSON body
 
@@ -2174,19 +1867,11 @@ This includes:
 
 \- cookies
 
-
-
 Do not trust frontend validation.
-
-
 
 Backend validation is mandatory.
 
-
-
 Validate:
-
-
 
 \- strings
 
@@ -2208,11 +1893,7 @@ Validate:
 
 \- filters
 
-
-
 Reject unexpected fields where appropriate.
-
-
 
 ==================================================
 
@@ -2220,31 +1901,17 @@ Reject unexpected fields where appropriate.
 
 ==================================================
 
-
-
 Audit all D1 queries.
-
-
 
 Never construct SQL using unsafe string concatenation.
 
-
-
 Do NOT do:
-
-
 
 "SELECT \* FROM products WHERE id = '" + id + "'"
 
-
-
 Use parameterized queries/prepared statements.
 
-
-
 Audit:
-
-
 
 \- SELECT
 
@@ -2262,11 +1929,7 @@ Audit:
 
 \- pagination
 
-
-
 Also verify that user-controlled sorting fields cannot become arbitrary SQL.
-
-
 
 ==================================================
 
@@ -2274,11 +1937,7 @@ Also verify that user-controlled sorting fields cannot become arbitrary SQL.
 
 ==================================================
 
-
-
 Audit all user-controlled content:
-
-
 
 \- reviews
 
@@ -2296,15 +1955,9 @@ Audit all user-controlled content:
 
 \- coupon codes
 
-
-
 Do not dangerously inject arbitrary HTML.
 
-
-
 If rich text is required:
-
-
 
 1\. Sanitize HTML.
 
@@ -2312,11 +1965,7 @@ If rich text is required:
 
 3\. Strip scripts/event handlers/javascript URLs.
 
-
-
 Pay particular attention to:
-
-
 
 innerHTML
 
@@ -2326,27 +1975,17 @@ HTML rendering
 
 markdown rendering
 
-
-
 ==================================================
 
 16\. CSRF
 
 ==================================================
 
-
-
 Review all state-changing requests.
-
-
 
 For cookie-authenticated APIs, implement appropriate CSRF protection where required.
 
-
-
 Protect operations such as:
-
-
 
 POST
 
@@ -2356,11 +1995,7 @@ PATCH
 
 DELETE
 
-
-
 especially:
-
-
 
 \- create order
 
@@ -2376,11 +2011,7 @@ especially:
 
 \- update settings
 
-
-
 Do not rely solely on CORS as CSRF protection.
-
-
 
 ==================================================
 
@@ -2388,31 +2019,17 @@ Do not rely solely on CORS as CSRF protection.
 
 ==================================================
 
-
-
 Audit CORS configuration.
-
-
 
 Do NOT use:
 
-
-
 Access-Control-Allow-Origin: \*
-
-
 
 for authenticated/private APIs unless there is a documented reason.
 
-
-
 Restrict origins to the actual application origins.
 
-
-
 Do not allow arbitrary origins to make credentialed requests.
-
-
 
 ==================================================
 
@@ -2420,15 +2037,9 @@ Do not allow arbitrary origins to make credentialed requests.
 
 ==================================================
 
-
-
 Implement appropriate HTTP security headers.
 
-
-
 Review:
-
-
 
 Content-Security-Policy
 
@@ -2442,39 +2053,21 @@ Strict-Transport-Security
 
 Frame protections
 
-
-
 Do not blindly deploy an overly restrictive CSP that breaks the application.
-
-
 
 Build a CSP compatible with the actual application.
 
-
-
 Avoid:
-
-
 
 unsafe-eval
 
-
-
 unless absolutely required.
-
-
 
 Minimize:
 
-
-
 unsafe-inline
 
-
-
 where practical.
-
-
 
 ==================================================
 
@@ -2482,15 +2075,9 @@ where practical.
 
 ==================================================
 
-
-
 Implement reasonable protection for sensitive endpoints.
 
-
-
 At minimum review:
-
-
 
 \- login
 
@@ -2510,19 +2097,11 @@ At minimum review:
 
 \- admin authentication
 
-
-
 Use Cloudflare-compatible mechanisms.
-
-
 
 Do not introduce paid infrastructure.
 
-
-
 Prevent trivial brute-force abuse.
-
-
 
 ==================================================
 
@@ -2530,49 +2109,27 @@ Prevent trivial brute-force abuse.
 
 ==================================================
 
-
-
 This project currently uses DEMO payments.
-
-
 
 The demo payment system must remain completely isolated from real financial systems.
 
-
-
 Never create fake-looking real payment credentials.
 
-
-
 Clearly mark:
-
-
 
 DEMO PAYMENT
 
 NO REAL MONEY CHARGED
 
-
-
 The backend must create the demo order.
-
-
 
 Never allow the frontend to submit:
 
-
-
 "total = 1"
-
-
 
 and have the backend trust it.
 
-
-
 The server must calculate:
-
-
 
 subtotal
 
@@ -2584,11 +2141,7 @@ tax if applicable
 
 total
 
-
-
 from trusted database values.
-
-
 
 ==================================================
 
@@ -2596,15 +2149,9 @@ from trusted database values.
 
 ==================================================
 
-
-
 Audit all price calculations.
 
-
-
 The frontend must NEVER be trusted for:
-
-
 
 \- product price
 
@@ -2618,35 +2165,19 @@ The frontend must NEVER be trusted for:
 
 \- shipping price
 
-
-
 The backend must retrieve product/variant prices from D1.
-
-
 
 For example:
 
-
-
 Frontend:
-
-
 
 price = €1
 
-
-
 Backend:
-
-
 
 D1 says €50
 
-
-
 Backend must use €50.
-
-
 
 ==================================================
 
@@ -2654,11 +2185,7 @@ Backend must use €50.
 
 ==================================================
 
-
-
 Prevent:
-
-
 
 \- negative inventory
 
@@ -2670,15 +2197,9 @@ Prevent:
 
 \- race conditions
 
-
-
 Use atomic/transactional D1 operations where appropriate.
 
-
-
 Test two simultaneous orders attempting to purchase the last available item.
-
-
 
 ==================================================
 
@@ -2686,15 +2207,9 @@ Test two simultaneous orders attempting to purchase the last available item.
 
 ==================================================
 
-
-
 Audit all file uploads.
 
-
-
 Validate:
-
-
 
 \- MIME type
 
@@ -2708,27 +2223,15 @@ Validate:
 
 \- upload authorization
 
-
-
 Do not trust:
-
-
 
 Content-Type
 
-
-
 alone.
-
-
 
 Do not allow arbitrary executable files to be uploaded as public assets.
 
-
-
 Prevent:
-
-
 
 path traversal
 
@@ -2738,11 +2241,7 @@ unauthorized deletion
 
 unauthorized replacement
 
-
-
 Only authorized admins should be able to upload/delete admin-managed media.
-
-
 
 ==================================================
 
@@ -2750,33 +2249,19 @@ Only authorized admins should be able to upload/delete admin-managed media.
 
 ==================================================
 
-
-
 Determine which files are:
-
-
 
 PUBLIC
 
 PRIVATE
 
-
-
 Product images may be public.
-
-
 
 Private administrative files must not be publicly accessible.
 
-
-
 Never expose R2 credentials to the browser.
 
-
-
 Use Workers/backend access where necessary.
-
-
 
 ==================================================
 
@@ -2784,11 +2269,7 @@ Use Workers/backend access where necessary.
 
 ==================================================
 
-
-
 If the application exposes uploaded files:
-
-
 
 \- validate requested object key
 
@@ -2798,11 +2279,7 @@ If the application exposes uploaded files:
 
 \- prevent arbitrary bucket access
 
-
-
 Never let users request arbitrary R2 keys.
-
-
 
 ==================================================
 
@@ -2810,11 +2287,7 @@ Never let users request arbitrary R2 keys.
 
 ==================================================
 
-
-
 Admin-only upload endpoints must verify:
-
-
 
 Authentication
 
@@ -2822,15 +2295,9 @@ Session
 
 Permission
 
-
-
 before accepting uploads.
 
-
-
 Do not merely hide the upload interface.
-
-
 
 ==================================================
 
@@ -2838,19 +2305,11 @@ Do not merely hide the upload interface.
 
 ==================================================
 
-
-
 There are currently no real payment/email integrations.
-
-
 
 However, audit existing webhook-style endpoints.
 
-
-
 If any external webhook endpoint exists:
-
-
 
 \- verify signatures
 
@@ -2862,11 +2321,7 @@ If any external webhook endpoint exists:
 
 \- do not trust arbitrary webhook data
 
-
-
 Do not create fake payment webhooks.
-
-
 
 ==================================================
 
@@ -2874,11 +2329,7 @@ Do not create fake payment webhooks.
 
 ==================================================
 
-
-
 Never expose:
-
-
 
 \- SQL errors
 
@@ -2892,39 +2343,21 @@ Never expose:
 
 \- database schema details
 
-
-
 to end users.
-
-
 
 Return safe errors.
 
-
-
 Log detailed errors server-side.
-
-
 
 Example:
 
-
-
 Client:
-
-
 
 "Something went wrong."
 
-
-
 Server log:
 
-
-
 detailed diagnostic information.
-
-
 
 ==================================================
 
@@ -2932,15 +2365,9 @@ detailed diagnostic information.
 
 ==================================================
 
-
-
 Audit all logs.
 
-
-
 Never log:
-
-
 
 \- passwords
 
@@ -2956,11 +2383,7 @@ Never log:
 
 \- reset tokens
 
-
-
 Be careful with:
-
-
 
 IP addresses
 
@@ -2968,11 +2391,7 @@ emails
 
 personal information
 
-
-
 Only log what is necessary.
-
-
 
 ==================================================
 
@@ -2980,49 +2399,27 @@ Only log what is necessary.
 
 ==================================================
 
-
-
 The demo needs convenient accounts for presentation.
-
-
 
 However:
 
-
-
 DO NOT hardcode demo passwords into frontend source code.
-
-
 
 Do not put them in publicly accessible JavaScript.
 
-
-
 Create a documented seed mechanism.
-
-
 
 Use clearly fake demo accounts only.
 
-
-
 Example:
-
-
 
 admin@demo.local
 
 customer@demo.local
 
-
-
 These must contain NO real personal information.
 
-
-
 If credentials are documented publicly, ensure they have absolutely no access to real infrastructure or real services.
-
-
 
 ==================================================
 
@@ -3030,15 +2427,9 @@ If credentials are documented publicly, ensure they have absolutely no access to
 
 ==================================================
 
-
-
 Audit the seed scripts.
 
-
-
 Seed data must NEVER contain:
-
-
 
 \- real passwords
 
@@ -3054,11 +2445,7 @@ Seed data must NEVER contain:
 
 \- real payment information
 
-
-
 Use synthetic demo data only.
-
-
 
 ==================================================
 
@@ -3066,57 +2453,31 @@ Use synthetic demo data only.
 
 ==================================================
 
-
-
 Review:
-
-
 
 .github/workflows/
 
-
-
 Ensure GitHub Actions do not expose secrets.
-
-
 
 Use GitHub Secrets for sensitive CI/CD values.
 
-
-
 Never echo secrets.
-
-
 
 Avoid:
 
-
-
 set -x
-
-
 
 or equivalent secret-leaking behavior.
 
-
-
 Use minimal GitHub token permissions.
 
-
-
 Prefer:
-
-
 
 permissions:
 
 &#x20; contents: read
 
-
-
 unless more permissions are actually required.
-
-
 
 ==================================================
 
@@ -3124,15 +2485,9 @@ unless more permissions are actually required.
 
 ==================================================
 
-
-
 Audit npm/package dependencies.
 
-
-
 Check:
-
-
 
 \- outdated dependencies
 
@@ -3144,19 +2499,11 @@ Check:
 
 \- suspicious packages
 
-
-
 Run the project's appropriate dependency audit.
-
-
 
 Do not blindly upgrade everything.
 
-
-
 Upgrade dependencies carefully and test the application afterward.
-
-
 
 ==================================================
 
@@ -3164,15 +2511,9 @@ Upgrade dependencies carefully and test the application afterward.
 
 ==================================================
 
-
-
 Check whether production source maps expose sensitive source code.
 
-
-
 If source maps are generated:
-
-
 
 \- determine whether they are necessary
 
@@ -3180,11 +2521,7 @@ If source maps are generated:
 
 \- avoid publishing unnecessary internal source information
 
-
-
 Never assume source maps are private if they are publicly accessible.
-
-
 
 ==================================================
 
@@ -3192,39 +2529,21 @@ Never assume source maps are private if they are publicly accessible.
 
 ==================================================
 
-
-
 Production/demo deployment must NOT run with:
-
-
 
 DEBUG=true
 
-
-
 verbose error output
-
-
 
 development-only endpoints
 
-
-
 test authentication bypasses
-
-
 
 mock admin bypasses
 
-
-
 temporary backdoors
 
-
-
 Disable or remove:
-
-
 
 /debug
 
@@ -3236,11 +2555,7 @@ Disable or remove:
 
 /mock-payment
 
-
-
 unless they are explicitly designed as safe demo features.
-
-
 
 ==================================================
 
@@ -3248,19 +2563,11 @@ unless they are explicitly designed as safe demo features.
 
 ==================================================
 
-
-
 If a DEMO\_MODE flag is used:
-
-
 
 DEMO\_MODE must NOT bypass authentication or authorization.
 
-
-
 It may only:
-
-
 
 \- disable real payments
 
@@ -3270,11 +2577,7 @@ It may only:
 
 \- label checkout as demo
 
-
-
 It must NEVER:
-
-
 
 \- bypass admin permissions
 
@@ -3284,23 +2587,15 @@ It must NEVER:
 
 \- allow arbitrary database access
 
-
-
 ==================================================
 
 37\. SECURITY TESTING
 
 ==================================================
 
-
-
 Create automated tests for critical security behavior.
 
-
-
 Test:
-
-
 
 Authentication
 
@@ -3334,43 +2629,23 @@ Order access
 
 User data access
 
-
-
 At minimum verify:
-
-
 
 Customer cannot access admin API.
 
-
-
 Customer cannot access another customer's order.
-
-
 
 Customer cannot modify product price.
 
-
-
 Customer cannot modify inventory.
-
-
 
 Customer cannot assign themselves admin.
 
-
-
 Frontend cannot manipulate checkout total.
-
-
 
 Frontend cannot manipulate product price.
 
-
-
 Unauthorized user cannot delete R2 objects.
-
-
 
 ==================================================
 
@@ -3378,15 +2653,9 @@ Unauthorized user cannot delete R2 objects.
 
 ==================================================
 
-
-
 Before completing the task, perform a final repository-wide secret scan.
 
-
-
 Check:
-
-
 
 \- working tree
 
@@ -3406,11 +2675,7 @@ Check:
 
 \- CI/CD files
 
-
-
 The final repository must be safe to remain PUBLIC.
-
-
 
 ==================================================
 
@@ -3418,19 +2683,11 @@ The final repository must be safe to remain PUBLIC.
 
 ==================================================
 
-
-
 Create:
-
-
 
 SECURITY.md
 
-
-
 It should document:
-
-
 
 \- how secrets are handled
 
@@ -3444,23 +2701,13 @@ It should document:
 
 \- demo environment limitations
 
-
-
 Do NOT put real credentials in SECURITY.md.
-
-
 
 Also update:
 
-
-
 README.md
 
-
-
 with safe deployment instructions.
-
-
 
 ==================================================
 
@@ -3468,11 +2715,7 @@ with safe deployment instructions.
 
 ==================================================
 
-
-
 Create a checklist such as:
-
-
 
 \[ ] No secrets in repository
 
@@ -3526,23 +2769,15 @@ Create a checklist such as:
 
 \[ ] Production build tested
 
-
-
 ==================================================
 
 41\. DO NOT BREAK CLOUDFLARE DEPLOYMENT
 
 ==================================================
 
-
-
 The repository MUST remain PUBLIC.
 
-
-
 Do NOT:
-
-
 
 \- make the repository private
 
@@ -3554,27 +2789,21 @@ Do NOT:
 
 \- disable automatic deployment
 
-
-
 The final solution must work with:
-
-
 
 PUBLIC GitHub repository
 
-&#x20;       ↓
+&#x20; ↓
 
 Cloudflare Pages
 
-&#x20;       ↓
+&#x20; ↓
 
 Cloudflare Workers
 
-&#x20;       ↓
+&#x20; ↓
 
 D1 + R2
-
-
 
 ==================================================
 
@@ -3582,11 +2811,7 @@ D1 + R2
 
 ==================================================
 
-
-
 When finished, provide a concise security report containing:
-
-
 
 1\. Vulnerabilities discovered.
 
@@ -3614,27 +2839,15 @@ When finished, provide a concise security report containing:
 
 13\. Any secrets that MUST be rotated.
 
-
-
 IMPORTANT:
-
-
 
 NEVER print actual secrets in the report.
 
-
-
 If a secret was discovered, report only:
-
-
 
 "Potential secret found in <location>; rotation recommended."
 
-
-
 Do not reveal its value.
-
-
 
 ==================================================
 
@@ -3642,19 +2855,11 @@ FINAL REQUIREMENT
 
 ==================================================
 
-
-
 The repository must remain PUBLIC and safe to expose publicly.
-
-
 
 Treat the entire GitHub repository as visible to an attacker.
 
-
-
 Anything that must remain secret must exist ONLY in:
-
-
 
 \- Cloudflare Secrets
 
@@ -3662,11 +2867,7 @@ Anything that must remain secret must exist ONLY in:
 
 \- local untracked .env files
 
-
-
 and NEVER in source code, database seed data, documentation, frontend bundles, or Git history.
-
-
 
 Do not declare the task complete until the application has been audited, hardened, tested, and verified to remain deployable through Cloudflare Pages from the public GitHub repository.
 Я бы ещё добавил одну важную вещь
@@ -3701,4 +2902,3 @@ admin@demo.local
 5. Infrastructure: всё работает на Cloudflare без платных внешних сервисов.
 
 Payment, email, real shipping, refunds и production analytics сейчас я бы действительно не делал. Их можно добавить после одобрения, не ломая текущую архитектуру.
-

@@ -191,7 +191,11 @@ export async function createSession(
 
 /** Revocation is a write, not a cookie deletion — logout must be server-side. */
 export async function revokeSession(db: Db, sessionId: string): Promise<void> {
-  await db.run(`UPDATE "user_sessions" SET "revokedAt" = ? WHERE "id" = ? AND "revokedAt" IS NULL`, nowIso(), sessionId);
+  await db.run(
+    `UPDATE "user_sessions" SET "revokedAt" = ? WHERE "id" = ? AND "revokedAt" IS NULL`,
+    nowIso(),
+    sessionId,
+  );
 }
 
 /** Used when a password changes: every other device is signed out. */

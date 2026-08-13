@@ -307,9 +307,8 @@ export default function CheckoutPage() {
               Demo payment
             </p>
             <p className="mt-1 text-xs leading-relaxed text-ink-600">
-              No real money is charged and no card details are collected. Placing this order
-              creates a genuine order record, reduces stock and sends a confirmation to your
-              account.
+              No real money is charged and no card details are collected. Placing this order creates
+              a genuine order record, reduces stock and sends a confirmation to your account.
             </p>
           </div>
           <button

@@ -20,12 +20,15 @@ const APP_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const target = resolveTarget(process.argv.slice(2));
 
 console.log(`Building the seed…`);
-const { path, counts, generated, bytes } = writeSeedSql();
-console.log(`  ${(bytes / 1024).toFixed(0)} KB\n`);
+const { paths, counts, generated, bytes, statements } = writeSeedSql();
+console.log(`  ${statements} statements, ${(bytes / 1024).toFixed(0)} KB in ${paths.length} files\n`);
 reportCounts(counts);
 
 console.log(`\nApplying to the ${target.label} database "${DATABASE_NAME}"…`);
-runWrangler(['d1', 'execute', DATABASE_NAME, target.flag, `--file=${path}`, '--yes'], APP_ROOT);
+for (const [index, file] of paths.entries()) {
+  process.stdout.write(`  part ${index + 1}/${paths.length}… `);
+  runWrangler(['d1', 'execute', DATABASE_NAME, target.flag, `--file=${file}`, '--yes'], APP_ROOT);
+}
 
 console.log('\nSeed applied.');
 

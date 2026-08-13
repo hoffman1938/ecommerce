@@ -85,31 +85,122 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const STAFF = [
   { email: 'admin@demo.local', firstName: 'Ada', lastName: 'Keller', role: 'Super Admin' },
   { email: 'catalog@demo.local', firstName: 'Bruno', lastName: 'Marsh', role: 'Catalog Manager' },
-  { email: 'inventory@demo.local', firstName: 'Cara', lastName: 'Nilsen', role: 'Inventory Manager' },
+  {
+    email: 'inventory@demo.local',
+    firstName: 'Cara',
+    lastName: 'Nilsen',
+    role: 'Inventory Manager',
+  },
   { email: 'orders@demo.local', firstName: 'Dario', lastName: 'Peic', role: 'Order Manager' },
   { email: 'support@demo.local', firstName: 'Elin', lastName: 'Roos', role: 'Customer Support' },
   { email: 'moderator@demo.local', firstName: 'Faris', lastName: 'Aydin', role: 'Moderator' },
-  { email: 'marketing@demo.local', firstName: 'Greta', lastName: 'Lind', role: 'Marketing Manager' },
+  {
+    email: 'marketing@demo.local',
+    firstName: 'Greta',
+    lastName: 'Lind',
+    role: 'Marketing Manager',
+  },
   { email: 'finance@demo.local', firstName: 'Hugo', lastName: 'Bassi', role: 'Finance Manager' },
   { email: 'analyst@demo.local', firstName: 'Iris', lastName: 'Vogt', role: 'Read-only Analyst' },
 ];
 
 const CUSTOMERS = [
-  { email: 'customer@demo.local', firstName: 'Nina', lastName: 'Ortiz', city: 'Lisbon', countryCode: 'PT' },
-  { email: 'jonas.weber@demo.local', firstName: 'Jonas', lastName: 'Weber', city: 'Berlin', countryCode: 'DE' },
-  { email: 'sofia.rossi@demo.local', firstName: 'Sofia', lastName: 'Rossi', city: 'Milan', countryCode: 'IT' },
-  { email: 'lucas.martin@demo.local', firstName: 'Lucas', lastName: 'Martin', city: 'Lyon', countryCode: 'FR' },
-  { email: 'emma.novak@demo.local', firstName: 'Emma', lastName: 'Novak', city: 'Prague', countryCode: 'CZ' },
-  { email: 'oliver.hayes@demo.local', firstName: 'Oliver', lastName: 'Hayes', city: 'Manchester', countryCode: 'GB' },
-  { email: 'maja.olsen@demo.local', firstName: 'Maja', lastName: 'Olsen', city: 'Oslo', countryCode: 'NO' },
-  { email: 'tomas.silva@demo.local', firstName: 'Tomas', lastName: 'Silva', city: 'Porto', countryCode: 'PT' },
-  { email: 'aylin.demir@demo.local', firstName: 'Aylin', lastName: 'Demir', city: 'Rotterdam', countryCode: 'NL' },
-  { email: 'pablo.ferrer@demo.local', firstName: 'Pablo', lastName: 'Ferrer', city: 'Valencia', countryCode: 'ES' },
-  { email: 'hanna.koch@demo.local', firstName: 'Hanna', lastName: 'Koch', city: 'Vienna', countryCode: 'AT' },
-  { email: 'ivan.petrov@demo.local', firstName: 'Ivan', lastName: 'Petrov', city: 'Sofia', countryCode: 'BG' },
+  {
+    email: 'customer@demo.local',
+    firstName: 'Nina',
+    lastName: 'Ortiz',
+    city: 'Lisbon',
+    countryCode: 'PT',
+  },
+  {
+    email: 'jonas.weber@demo.local',
+    firstName: 'Jonas',
+    lastName: 'Weber',
+    city: 'Berlin',
+    countryCode: 'DE',
+  },
+  {
+    email: 'sofia.rossi@demo.local',
+    firstName: 'Sofia',
+    lastName: 'Rossi',
+    city: 'Milan',
+    countryCode: 'IT',
+  },
+  {
+    email: 'lucas.martin@demo.local',
+    firstName: 'Lucas',
+    lastName: 'Martin',
+    city: 'Lyon',
+    countryCode: 'FR',
+  },
+  {
+    email: 'emma.novak@demo.local',
+    firstName: 'Emma',
+    lastName: 'Novak',
+    city: 'Prague',
+    countryCode: 'CZ',
+  },
+  {
+    email: 'oliver.hayes@demo.local',
+    firstName: 'Oliver',
+    lastName: 'Hayes',
+    city: 'Manchester',
+    countryCode: 'GB',
+  },
+  {
+    email: 'maja.olsen@demo.local',
+    firstName: 'Maja',
+    lastName: 'Olsen',
+    city: 'Oslo',
+    countryCode: 'NO',
+  },
+  {
+    email: 'tomas.silva@demo.local',
+    firstName: 'Tomas',
+    lastName: 'Silva',
+    city: 'Porto',
+    countryCode: 'PT',
+  },
+  {
+    email: 'aylin.demir@demo.local',
+    firstName: 'Aylin',
+    lastName: 'Demir',
+    city: 'Rotterdam',
+    countryCode: 'NL',
+  },
+  {
+    email: 'pablo.ferrer@demo.local',
+    firstName: 'Pablo',
+    lastName: 'Ferrer',
+    city: 'Valencia',
+    countryCode: 'ES',
+  },
+  {
+    email: 'hanna.koch@demo.local',
+    firstName: 'Hanna',
+    lastName: 'Koch',
+    city: 'Vienna',
+    countryCode: 'AT',
+  },
+  {
+    email: 'ivan.petrov@demo.local',
+    firstName: 'Ivan',
+    lastName: 'Petrov',
+    city: 'Sofia',
+    countryCode: 'BG',
+  },
 ];
 
-const STREETS = ['Rua das Flores', 'Lindenstrasse', 'Via Garibaldi', 'Rue Lafayette', 'Havelska', 'Deansgate', 'Storgata', 'Kalverstraat'];
+const STREETS = [
+  'Rua das Flores',
+  'Lindenstrasse',
+  'Via Garibaldi',
+  'Rue Lafayette',
+  'Havelska',
+  'Deansgate',
+  'Storgata',
+  'Kalverstraat',
+];
 
 // --- Builder -----------------------------------------------------------------
 
@@ -133,7 +224,9 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
   }
   for (const [roleName, keys] of Object.entries(ROLE_DEFINITIONS)) {
     const rid = idFor('role', roleName);
-    emit(insert('roles', { id: rid, name: roleName, description: `${roleName} role`, isSystem: 1 }));
+    emit(
+      insert('roles', { id: rid, name: roleName, description: `${roleName} role`, isSystem: 1 }),
+    );
     bump('roles');
     for (const key of keys) {
       emit(insert('role_permissions', { roleId: rid, permissionId: idFor('perm', key) }));
@@ -142,7 +235,6 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
 
   // --- Users -----------------------------------------------------------------
   section('Users, roles and addresses');
-  const random = makeRandom(0x5eed);
 
   for (const [index, person] of STAFF.entries()) {
     const uid = userId(person.email);
@@ -201,7 +293,13 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
         updatedAt: daysAgo(base, joined),
       }),
     );
-    emit(insert('wishlists', { id: idFor('wl', person.email.split('@')[0]), userId: uid, createdAt: daysAgo(base, joined) }));
+    emit(
+      insert('wishlists', {
+        id: idFor('wl', person.email.split('@')[0]),
+        userId: uid,
+        createdAt: daysAgo(base, joined),
+      }),
+    );
     bump('customers');
   }
 
@@ -340,7 +438,12 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
             ['size', 'color', 'position'],
           ),
         );
-        stock.set(vid, { onHand: quantityFor(spec.stock, variantIndex), sold: 0, returned: 0, damaged: 0 });
+        stock.set(vid, {
+          onHand: quantityFor(spec.stock, variantIndex),
+          sold: 0,
+          returned: 0,
+          damaged: 0,
+        });
         variants.push({ id: vid, sku, color, size, priceMinor: spec.outletPriceMinor });
         variantIndex += 1;
         bump('variants');
@@ -381,7 +484,10 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
     // the rating it has always had. Every rating is stored, including the
     // majority with no written text — that is what a real store holds, and it
     // lets the histogram be computed from rows rather than trusted.
-    const generated = generateReviews({ slug: spec.slug, kind: reviewKindForCategory(spec.category) });
+    const generated = generateReviews({
+      slug: spec.slug,
+      kind: reviewKindForCategory(spec.category),
+    });
     if (generated.length > 0) {
       const aggregate = aggregateReviews(generated);
       for (const review of generated) {
@@ -441,7 +547,7 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
   section('Campaigns');
   const productBySlug = new Map(PRODUCTS.map((spec) => [spec.slug, spec]));
 
-  for (const [index, campaign] of CAMPAIGNS.entries()) {
+  for (const campaign of CAMPAIGNS) {
     /*
      * A campaign's window is relative to seed time, so the demo always has a
      * running one, an upcoming one and a finished one whenever it is loaded.
@@ -475,7 +581,16 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
           updatedAt: daysAgo(base, 60),
         },
         ['slug'],
-        ['title', 'shortDescription', 'description', 'coverImageUrl', 'startsAt', 'endsAt', 'status', 'position'],
+        [
+          'title',
+          'shortDescription',
+          'description',
+          'coverImageUrl',
+          'startsAt',
+          'endsAt',
+          'status',
+          'position',
+        ],
       ),
     );
     bump('campaigns');
@@ -529,18 +644,54 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
           updatedAt: daysAgo(base, 90),
         },
         ['code'],
-        ['type', 'value', 'description', 'minOrderMinor', 'maxDiscountMinor', 'firstOrderOnly', 'freeShipping', 'brandIds', 'endsAt', 'isActive'],
+        [
+          'type',
+          'value',
+          'description',
+          'minOrderMinor',
+          'maxDiscountMinor',
+          'firstOrderOnly',
+          'freeShipping',
+          'brandIds',
+          'endsAt',
+          'isActive',
+        ],
       ),
     );
     bump('coupons');
   }
 
   const PROMOTIONS = [
-    { name: 'Members get early access', type: 'EARLY_ACCESS', value: 24, description: 'Campaign products open 24 hours early for signed-in customers.' },
-    { name: 'Free returns for 30 days', type: 'RETURN_WINDOW', value: 30, description: 'Extended return window across the outlet.' },
-    { name: 'Second item 10% off', type: 'BUNDLE', value: 10, description: 'Applied automatically when two items from one brand are bought together.' },
-    { name: 'Winter clearance', type: 'SEASONAL', value: 40, description: 'Up to 40% off outerwear while stock lasts.' },
-    { name: 'Newsletter welcome', type: 'SIGNUP', value: 10, description: 'A 10% code for new newsletter subscribers.' },
+    {
+      name: 'Members get early access',
+      type: 'EARLY_ACCESS',
+      value: 24,
+      description: 'Campaign products open 24 hours early for signed-in customers.',
+    },
+    {
+      name: 'Free returns for 30 days',
+      type: 'RETURN_WINDOW',
+      value: 30,
+      description: 'Extended return window across the outlet.',
+    },
+    {
+      name: 'Second item 10% off',
+      type: 'BUNDLE',
+      value: 10,
+      description: 'Applied automatically when two items from one brand are bought together.',
+    },
+    {
+      name: 'Winter clearance',
+      type: 'SEASONAL',
+      value: 40,
+      description: 'Up to 40% off outerwear while stock lasts.',
+    },
+    {
+      name: 'Newsletter welcome',
+      type: 'SIGNUP',
+      value: 10,
+      description: 'A 10% code for new newsletter subscribers.',
+    },
   ];
   for (const [index, promotion] of PROMOTIONS.entries()) {
     emit(
@@ -591,16 +742,30 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
 
   /** Statuses spread so every admin filter has rows behind it. */
   const ORDER_PLAN = [
-    'DELIVERED', 'DELIVERED', 'DELIVERED', 'DELIVERED', 'DELIVERED', 'DELIVERED',
-    'SHIPPED', 'SHIPPED', 'SHIPPED',
-    'PACKED', 'PACKED',
-    'PROCESSING', 'PROCESSING', 'PROCESSING',
-    'PAID', 'PAID',
+    'DELIVERED',
+    'DELIVERED',
+    'DELIVERED',
+    'DELIVERED',
+    'DELIVERED',
+    'DELIVERED',
+    'SHIPPED',
+    'SHIPPED',
+    'SHIPPED',
+    'PACKED',
+    'PACKED',
+    'PROCESSING',
+    'PROCESSING',
+    'PROCESSING',
+    'PAID',
+    'PAID',
     'AWAITING_PAYMENT',
-    'CANCELLED', 'CANCELLED',
+    'CANCELLED',
+    'CANCELLED',
     'RETURN_REQUESTED',
     'RETURNED',
-    'DELIVERED', 'DELIVERED', 'SHIPPED',
+    'DELIVERED',
+    'DELIVERED',
+    'SHIPPED',
   ];
 
   const sellableProducts = PRODUCTS.filter((spec) => spec.stock !== 'sold-out');
@@ -608,7 +773,6 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
 
   for (const [index, status] of ORDER_PLAN.entries()) {
     const customer = CUSTOMERS[index % CUSTOMERS.length];
-    const handle = customer.email.split('@')[0];
     const oid = idFor('ord', `${100001 + index}`);
     const orderNumber = `OUT-${100001 + index}`;
     const placedDaysAgo = 90 - index * 3;
@@ -622,7 +786,9 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
     for (let i = 0; i < lineCount; i += 1) {
       const spec = pick(orderRandom, sellableProducts);
       const variants = variantsByProduct.get(spec.slug) ?? [];
-      const candidates = variants.filter((v) => !usedVariants.has(v.id) && (stock.get(v.id)?.onHand ?? 0) > 1);
+      const candidates = variants.filter(
+        (v) => !usedVariants.has(v.id) && (stock.get(v.id)?.onHand ?? 0) > 1,
+      );
       if (candidates.length === 0) continue;
       const variant = pick(orderRandom, candidates);
       usedVariants.add(variant.id);
@@ -764,8 +930,25 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
       SHIPPED: ['AWAITING_PAYMENT', 'PAID', 'PROCESSING', 'PACKED', 'SHIPPED'],
       DELIVERED: ['AWAITING_PAYMENT', 'PAID', 'PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED'],
       CANCELLED: ['AWAITING_PAYMENT', 'PAID', 'CANCELLED'],
-      RETURN_REQUESTED: ['AWAITING_PAYMENT', 'PAID', 'PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED'],
-      RETURNED: ['AWAITING_PAYMENT', 'PAID', 'PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED', 'RETURNED'],
+      RETURN_REQUESTED: [
+        'AWAITING_PAYMENT',
+        'PAID',
+        'PROCESSING',
+        'PACKED',
+        'SHIPPED',
+        'DELIVERED',
+        'RETURN_REQUESTED',
+      ],
+      RETURNED: [
+        'AWAITING_PAYMENT',
+        'PAID',
+        'PROCESSING',
+        'PACKED',
+        'SHIPPED',
+        'DELIVERED',
+        'RETURN_REQUESTED',
+        'RETURNED',
+      ],
     };
     const path = PATHS[status] ?? ['AWAITING_PAYMENT'];
     for (const [step, toStatus] of path.entries()) {
@@ -782,7 +965,14 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
     }
 
     // Payment. The provider is always the demo one; no real processor exists.
-    const paymentStatus = status === 'AWAITING_PAYMENT' ? 'PENDING' : cancelled ? 'CANCELLED' : status === 'RETURNED' ? 'REFUNDED' : 'PAID';
+    const paymentStatus =
+      status === 'AWAITING_PAYMENT'
+        ? 'PENDING'
+        : cancelled
+          ? 'CANCELLED'
+          : status === 'RETURNED'
+            ? 'REFUNDED'
+            : 'PAID';
     const pid = idFor('pay', orderNumber);
     emit(
       insert('payments', {
@@ -805,7 +995,8 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
         paymentId: pid,
         provider: 'demo',
         providerEventId: `DEMO-EVT-${100001 + index}`,
-        type: paymentStatus === 'PAID' ? 'payment.succeeded' : `payment.${paymentStatus.toLowerCase()}`,
+        type:
+          paymentStatus === 'PAID' ? 'payment.succeeded' : `payment.${paymentStatus.toLowerCase()}`,
         payload: JSON.stringify({ orderNumber, amountMinor: totals.totalMinor, demo: true }),
         processedAt: placedAt,
         createdAt: placedAt,
@@ -863,12 +1054,13 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
       );
       bump('notifications');
     }
-    void handle;
   }
 
   // --- Returns and refunds ---------------------------------------------------
   section('Returns and refunds');
-  for (const order of orders.filter((o) => o.status === 'RETURN_REQUESTED' || o.status === 'RETURNED')) {
+  for (const order of orders.filter(
+    (o) => o.status === 'RETURN_REQUESTED' || o.status === 'RETURNED',
+  )) {
     const completed = order.status === 'RETURNED';
     const rid = idFor('rma', order.orderNumber);
     emit(
@@ -879,7 +1071,9 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
         userId: userId(order.customer.email),
         status: completed ? 'COMPLETED' : 'REQUESTED',
         reason: completed ? 'Wrong size' : 'Not as described',
-        customerNote: completed ? 'Too small, would like to return.' : 'The colour is darker than the photos.',
+        customerNote: completed
+          ? 'Too small, would like to return.'
+          : 'The colour is darker than the photos.',
         createdAt: daysAgo(base, Math.max(0, order.placedDaysAgo - 20)),
         updatedAt: daysAgo(base, Math.max(0, order.placedDaysAgo - 18)),
       }),
@@ -983,7 +1177,8 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
     supportEmail: 'support@demo.local',
     demoMode: true,
     heroHeadline: 'Outlet prices on the brands you already wear',
-    heroSubheadline: 'Limited quantities, released in short campaigns. When it is gone, it is gone.',
+    heroSubheadline:
+      'Limited quantities, released in short campaigns. When it is gone, it is gone.',
     heroCtaLabel: 'Shop the outlet',
     heroCtaHref: '/shop',
   };
@@ -1014,16 +1209,58 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
 
   section('Audit log');
   const AUDIT = [
-    ['product.update', 'Product', productId(PRODUCTS[0].slug), 'catalog@demo.local', 'Corrected the outlet price'],
-    ['inventory.adjust', 'InventoryBalance', null, 'inventory@demo.local', 'Cycle count adjustment'],
-    ['order.status_change', 'Order', orders[0]?.id ?? null, 'orders@demo.local', 'Marked as packed'],
+    [
+      'product.update',
+      'Product',
+      productId(PRODUCTS[0].slug),
+      'catalog@demo.local',
+      'Corrected the outlet price',
+    ],
+    [
+      'inventory.adjust',
+      'InventoryBalance',
+      null,
+      'inventory@demo.local',
+      'Cycle count adjustment',
+    ],
+    [
+      'order.status_change',
+      'Order',
+      orders[0]?.id ?? null,
+      'orders@demo.local',
+      'Marked as packed',
+    ],
     ['coupon.create', 'Coupon', couponId('SALE15'), 'marketing@demo.local', 'Spring campaign code'],
     ['review.moderate', 'ProductReview', null, 'moderator@demo.local', 'Removed a reported review'],
-    ['campaign.publish', 'Campaign', campaignId(CAMPAIGNS[0].slug), 'marketing@demo.local', 'Published campaign'],
+    [
+      'campaign.publish',
+      'Campaign',
+      campaignId(CAMPAIGNS[0].slug),
+      'marketing@demo.local',
+      'Published campaign',
+    ],
     ['content.update', 'ContentPage', 'shipping', 'marketing@demo.local', 'Updated delivery times'],
-    ['settings.update', 'SiteSetting', 'freeShippingThresholdMinor', 'admin@demo.local', 'Raised the free-shipping threshold'],
-    ['user.role_change', 'User', userId('support@demo.local'), 'admin@demo.local', 'Granted Customer Support'],
-    ['customer.support_note', 'User', userId('customer@demo.local'), 'support@demo.local', 'Logged a delivery query'],
+    [
+      'settings.update',
+      'SiteSetting',
+      'freeShippingThresholdMinor',
+      'admin@demo.local',
+      'Raised the free-shipping threshold',
+    ],
+    [
+      'user.role_change',
+      'User',
+      userId('support@demo.local'),
+      'admin@demo.local',
+      'Granted Customer Support',
+    ],
+    [
+      'customer.support_note',
+      'User',
+      userId('customer@demo.local'),
+      'support@demo.local',
+      'Logged a delivery query',
+    ],
   ];
   for (const [index, [action, entityType, entityId, actorEmail, reason]] of AUDIT.entries()) {
     emit(

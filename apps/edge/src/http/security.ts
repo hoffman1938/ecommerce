@@ -47,7 +47,10 @@ function securityHeaders(headers: Headers, isDevelopment: boolean): void {
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'no-referrer');
   headers.set('X-Frame-Options', 'DENY');
-  headers.set('Permissions-Policy', 'accelerometer=(), camera=(), geolocation=(), microphone=(), payment=(), usb=()');
+  headers.set(
+    'Permissions-Policy',
+    'accelerometer=(), camera=(), geolocation=(), microphone=(), payment=(), usb=()',
+  );
   headers.set('Cross-Origin-Resource-Policy', 'same-site');
   if (!isDevelopment) {
     headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -141,7 +144,9 @@ function assertBodyWithinLimit(c: Context<AppEnv>): void {
   if (!Number.isFinite(length)) return;
 
   const contentType = c.req.header('content-type') ?? '';
-  const limit = contentType.includes('multipart/form-data') ? MAX_UPLOAD_BYTES : MAX_JSON_BODY_BYTES;
+  const limit = contentType.includes('multipart/form-data')
+    ? MAX_UPLOAD_BYTES
+    : MAX_JSON_BODY_BYTES;
   if (length > limit) {
     throw new ApiError('PAYLOAD_TOO_LARGE', 'That request body is too large.');
   }
@@ -149,7 +154,11 @@ function assertBodyWithinLimit(c: Context<AppEnv>): void {
 
 /** Best-effort client address, used for rate limiting and audit rows. */
 export function clientIp(c: Context<AppEnv>): string | null {
-  return c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
+  return (
+    c.req.header('cf-connecting-ip') ??
+    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
+    null
+  );
 }
 
 export type { Next };

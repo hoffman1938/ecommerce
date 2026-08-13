@@ -78,7 +78,8 @@ export function hashString(input) {
   return hash >>> 0;
 }
 
-export const pick = (random, options) => options[Math.floor(random() * options.length) % options.length];
+export const pick = (random, options) =>
+  options[Math.floor(random() * options.length) % options.length];
 
 /** ISO-8601 UTC with milliseconds — the format every timestamp column holds. */
 export const iso = (date) => new Date(date).toISOString();

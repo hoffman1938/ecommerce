@@ -73,7 +73,9 @@ export const addToCartSchema = z
   })
   .strict();
 
-export const updateQuantitySchema = z.object({ quantity: z.number().int().min(0).max(10) }).strict();
+export const updateQuantitySchema = z
+  .object({ quantity: z.number().int().min(0).max(10) })
+  .strict();
 
 export const couponSchema = z
   .object({ code: z.string().trim().min(1).max(40).toUpperCase() })

@@ -36,7 +36,13 @@ import {
 import { readSettings } from '../services/settings';
 import * as cartService from '../services/cart';
 import { findOrderByIdempotencyKey, placeDemoOrder } from '../services/checkout';
-import { listOrdersForCustomer, loadOrder, orderTimeline, paymentsForOrder, shipmentsForOrder } from '../services/orders';
+import {
+  listOrdersForCustomer,
+  loadOrder,
+  orderTimeline,
+  paymentsForOrder,
+  shipmentsForOrder,
+} from '../services/orders';
 import * as authRoutes from './auth';
 import {
   addToCartSchema,
@@ -59,8 +65,7 @@ import { requireSession } from '../auth/rbac';
 export const storefront = new Hono<AppEnv>();
 
 /** Query string as a plain object, for the listing filters. */
-const queryOf = (c: Context<AppEnv>): ListProductsParams =>
-  c.req.query() as ListProductsParams;
+const queryOf = (c: Context<AppEnv>): ListProductsParams => c.req.query() as ListProductsParams;
 
 // --- Catalogue ---------------------------------------------------------------
 
@@ -623,9 +628,13 @@ storefront.get('/account/orders/:id', async (c) => {
 storefront.post('/account/orders/:id/cancel', async (c) => {
   const ctx = ctxOf(c);
   const session = requireSession(ctx.session);
-  const order = await loadOrder(ctx.db, { userId: session.user.id, isStaff: false }, {
-    id: pathId(c.req.param('id')),
-  });
+  const order = await loadOrder(
+    ctx.db,
+    { userId: session.user.id, isStaff: false },
+    {
+      id: pathId(c.req.param('id')),
+    },
+  );
 
   // A customer may only cancel before it ships; after that it is a return.
   if (!['AWAITING_PAYMENT', 'PAID', 'PROCESSING'].includes(order.status)) {

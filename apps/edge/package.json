@@ -4,11 +4,15 @@
   "private": true,
   "type": "module",
   "description": "Cloudflare Worker API for the demo/staging deployment: D1 for data, R2 for media",
+  "engines": {
+    "//": "The test suite runs the real handlers against node:sqlite, which arrived in Node 22.5. The Worker itself runs on workerd and has no Node requirement.",
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "build": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint src scripts --ext .ts",
+    "lint": "eslint src test scripts --ext .ts,.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

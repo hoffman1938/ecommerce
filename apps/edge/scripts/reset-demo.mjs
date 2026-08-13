@@ -93,11 +93,17 @@ writeFileSync(
 );
 
 console.log(`Clearing the ${target.label} database "${DATABASE_NAME}"…`);
-runWrangler(['d1', 'execute', DATABASE_NAME, target.flag, `--file=${truncatePath}`, '--yes'], APP_ROOT);
+runWrangler(
+  ['d1', 'execute', DATABASE_NAME, target.flag, `--file=${truncatePath}`, '--yes'],
+  APP_ROOT,
+);
 
 console.log('\nRe-seeding…');
-const { path, counts, generated } = writeSeedSql();
-runWrangler(['d1', 'execute', DATABASE_NAME, target.flag, `--file=${path}`, '--yes'], APP_ROOT);
+const { paths, counts, generated } = writeSeedSql();
+for (const [index, file] of paths.entries()) {
+  process.stdout.write(`  part ${index + 1}/${paths.length}… `);
+  runWrangler(['d1', 'execute', DATABASE_NAME, target.flag, `--file=${file}`, '--yes'], APP_ROOT);
+}
 
 console.log('\nReset complete.\n');
 reportCounts(counts);

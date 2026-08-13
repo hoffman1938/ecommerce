@@ -38,7 +38,13 @@ import {
 } from '../auth/session';
 import { requireSession } from '../auth/rbac';
 import { mergeAnonymousCart } from '../services/cart';
-import { changePasswordSchema, loginSchema, parse, readJson, registerSchema } from '../lib/validate';
+import {
+  changePasswordSchema,
+  loginSchema,
+  parse,
+  readJson,
+  registerSchema,
+} from '../lib/validate';
 
 export const auth = new Hono<AppEnv>();
 

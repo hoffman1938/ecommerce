@@ -103,7 +103,9 @@ export class StubD1 {
    * constraint failing part-way through leaves nothing behind, which is the
    * property the checkout path depends on.
    */
-  async batch<T = Row>(statements: StubStatement[]): Promise<Array<{ results: T[]; success: true; meta: Record<string, number> }>> {
+  async batch<T = Row>(
+    statements: StubStatement[],
+  ): Promise<Array<{ results: T[]; success: true; meta: Record<string, number> }>> {
     this.db.exec('SAVEPOINT d1_batch');
     try {
       const out = [];
@@ -162,7 +164,9 @@ export const TEST_CUSTOMER_PASSWORD = 'test-customer-password-4a71';
 
 export function applyMigrations(db: DatabaseSync): void {
   const dir = join(APP_ROOT, 'migrations');
-  for (const file of readdirSync(dir).filter((name) => name.endsWith('.sql')).sort()) {
+  for (const file of readdirSync(dir)
+    .filter((name) => name.endsWith('.sql'))
+    .sort()) {
     db.exec(readFileSync(join(dir, file), 'utf8'));
   }
 }

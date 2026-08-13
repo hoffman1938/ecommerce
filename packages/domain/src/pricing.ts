@@ -122,7 +122,7 @@ export function computeCartTotals(input: CartTotalsInput): CartTotals {
   // otherwise `FREESHIP` would waive delivery on a €5 basket.
   const waivesShipping = Boolean(
     input.coupon?.freeShipping &&
-      (input.coupon.minOrderMinor == null || eligibleSubtotal >= input.coupon.minOrderMinor),
+    (input.coupon.minOrderMinor == null || eligibleSubtotal >= input.coupon.minOrderMinor),
   );
   const shipping = shippingCostMinor(
     input.shippingRules,

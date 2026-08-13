@@ -96,7 +96,13 @@ const LEVELS: CategoryLevel[] = ['department', 'category', 'subcategory'];
 function assembleTree(rows: CategoryRow[]): TreeNode[] {
   const nodes = new Map<string, TreeNode>();
   for (const row of rows) {
-    nodes.set(row.id, { ...row, children: [], subtreeProductCount: 0, path: [], level: 'department' });
+    nodes.set(row.id, {
+      ...row,
+      children: [],
+      subtreeProductCount: 0,
+      path: [],
+      level: 'department',
+    });
   }
 
   const roots: TreeNode[] = [];
@@ -111,7 +117,8 @@ function assembleTree(rows: CategoryRow[]): TreeNode[] {
     node.path = [...ancestry, node.pathSegment];
     node.level = LEVELS[Math.min(node.path.length - 1, LEVELS.length - 1)];
     node.subtreeProductCount =
-      node.directProductCount + node.children.reduce((sum, child) => sum + walk(child, node.path), 0);
+      node.directProductCount +
+      node.children.reduce((sum, child) => sum + walk(child, node.path), 0);
     return node.subtreeProductCount;
   };
   for (const root of roots) walk(root, []);
@@ -136,7 +143,9 @@ export async function listCategories(db: Db): Promise<CategoryDto[]> {
 
   const visible = (node: TreeNode): CategoryDto | null => {
     if (!fromBool(node.isActive)) return null;
-    const children = node.children.map(visible).filter((child): child is CategoryDto => child !== null);
+    const children = node.children
+      .map(visible)
+      .filter((child): child is CategoryDto => child !== null);
     // A branch survives if it holds stock itself or if any child does.
     if (node.subtreeProductCount === 0 && children.length === 0) return null;
     return {
@@ -315,7 +324,10 @@ export async function getProductReviews(
   slug: string,
   params: { sort?: string; page?: string; pageSize?: string },
 ): Promise<ProductReviewsDto | null> {
-  const product = await db.first<{ id: string }>(`SELECT "id" FROM "products" WHERE "slug" = ?`, slug);
+  const product = await db.first<{ id: string }>(
+    `SELECT "id" FROM "products" WHERE "slug" = ?`,
+    slug,
+  );
   if (!product) return null;
 
   const summary = await db.all<{ rating: number; n: number; verified: number }>(
@@ -363,7 +375,10 @@ export async function getProductReviews(
     reviewCount,
     distribution,
     verifiedCount,
-    items: items.map((item) => ({ ...item, isVerifiedPurchase: fromBool(item.isVerifiedPurchase) })),
+    items: items.map((item) => ({
+      ...item,
+      isVerifiedPurchase: fromBool(item.isVerifiedPurchase),
+    })),
     total,
     page,
     pageSize,

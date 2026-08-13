@@ -661,7 +661,12 @@ export async function mergeAnonymousCart(
   const target = await resolveCart(db, { userId, anonymousToken: null }, { create: true });
   if (!target || target.id === anonymous.id) return;
 
-  const lines = await db.all<{ id: string; variantId: string; quantity: number; savedForLater: number }>(
+  const lines = await db.all<{
+    id: string;
+    variantId: string;
+    quantity: number;
+    savedForLater: number;
+  }>(
     `SELECT "id", "variantId", "quantity", "savedForLater" FROM "cart_items" WHERE "cartId" = ?`,
     anonymous.id,
   );
