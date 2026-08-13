@@ -135,13 +135,17 @@ export class StubD1 {
   }
 }
 
-let cachedSeedSql: string | null = null;
+let cachedSeedSql = '';
 
 /** Builds the seed once per process; it is deterministic, so reuse is safe. */
 async function seedSql(): Promise<string> {
   if (cachedSeedSql) return cachedSeedSql;
-  const { generateSeedSql } = await import('../../scripts/build-seed-sql.mjs');
-  cachedSeedSql = generateSeedSql({
+  // The seed generator is plain JavaScript with no declaration file; the
+  // shape it returns is asserted here rather than pretending it is typed.
+  const module = (await import('../../scripts/build-seed-sql.mjs')) as {
+    generateSeedSql(env: Record<string, string>): { sql: string };
+  };
+  cachedSeedSql = module.generateSeedSql({
     SEED_ADMIN_PASSWORD: TEST_ADMIN_PASSWORD,
     SEED_CUSTOMER_PASSWORD: TEST_CUSTOMER_PASSWORD,
   }).sql;

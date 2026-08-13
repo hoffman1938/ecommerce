@@ -20,7 +20,8 @@
 
 import type { Context, MiddlewareHandler, Next } from 'hono';
 import { ApiError } from '../lib/errors';
-import { readConfig, type Env } from '../env';
+import { readConfig } from '../env';
+import type { AppEnv } from './context';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -53,7 +54,7 @@ function securityHeaders(headers: Headers, isDevelopment: boolean): void {
   }
 }
 
-export const security: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
+export const security: MiddlewareHandler<AppEnv> = async (c, next) => {
   const config = readConfig(c.env);
   const origin = c.req.header('origin') ?? null;
   const allowed = originAllowed(origin, config.allowedOrigins);
@@ -103,7 +104,7 @@ export const security: MiddlewareHandler<{ Bindings: Env }> = async (c, next) =>
  * works while nothing can act on a signed-in user's behalf without proving
  * where it came from.
  */
-export function assertSameSiteRequest(c: Context<{ Bindings: Env }>, allowedOrigins: string[]): void {
+export function assertSameSiteRequest(c: Context<AppEnv>, allowedOrigins: string[]): void {
   const origin = c.req.header('origin');
   const hasCookie = Boolean(c.req.header('cookie'));
 
@@ -133,7 +134,7 @@ export function assertSameSiteRequest(c: Context<{ Bindings: Env }>, allowedOrig
   }
 }
 
-function assertBodyWithinLimit(c: Context<{ Bindings: Env }>): void {
+function assertBodyWithinLimit(c: Context<AppEnv>): void {
   const declared = c.req.header('content-length');
   if (!declared) return;
   const length = Number.parseInt(declared, 10);
@@ -147,7 +148,7 @@ function assertBodyWithinLimit(c: Context<{ Bindings: Env }>): void {
 }
 
 /** Best-effort client address, used for rate limiting and audit rows. */
-export function clientIp(c: Context<{ Bindings: Env }>): string | null {
+export function clientIp(c: Context<AppEnv>): string | null {
   return c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
 }
 
