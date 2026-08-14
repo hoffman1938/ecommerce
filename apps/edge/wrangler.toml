@@ -1,10 +1,15 @@
 # Cloudflare Worker: the demo/staging API.
 #
 # Everything here is a *name* or a *public* value. No account id, no API token,
-# no secret. `database_id` is filled in by whoever creates the D1 database —
-# see infrastructure/cloudflare/d1-and-r2.md — and is safe to commit once set,
-# but is left empty in the repository so a fork cannot accidentally write to
-# someone else's database.
+# no secret. `database_id` and the KV `id` identify resources but grant nothing:
+# reaching either needs a Cloudflare API token, which lives only in the shell
+# of whoever deploys. They are committed because wrangler needs them to target
+# the right resources, and because a deploy that works only on one machine is
+# not a deploy — see infrastructure/cloudflare/d1-and-r2.md.
+#
+# A fork of this repository will point at these resources and be refused by
+# Cloudflare, which is the intended outcome: create your own with
+# `wrangler d1 create` and replace them.
 #
 # Secrets (SESSION_SECRET, SEED_ADMIN_PASSWORD, …) are never in this file.
 # They are set with `wrangler secret put NAME` and read from `env` at runtime.
@@ -32,7 +37,7 @@ PUBLIC_MEDIA_BASE_URL = ""
 [[d1_databases]]
 binding = "DB"
 database_name = "outlet-demo"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "516caddc-64f2-4f79-90a3-8db15e2a6375"
 migrations_dir = "migrations"
 
 # --- R2 ----------------------------------------------------------------------
@@ -49,7 +54,7 @@ preview_bucket_name = "outlet-demo-media"
 # fork without KV still runs — it just does not rate limit.
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+id = "d0a178f289bb45a5b4a185d9fc9d65b4"
 
 # --- Scheduled work ----------------------------------------------------------
 # Expiring stale inventory reservations. Cron triggers are free; this is the
@@ -71,7 +76,7 @@ PUBLIC_MEDIA_BASE_URL = ""
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "outlet-demo"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "516caddc-64f2-4f79-90a3-8db15e2a6375"
 migrations_dir = "migrations"
 
 [[env.production.r2_buckets]]
@@ -80,4 +85,4 @@ bucket_name = "outlet-demo-media"
 
 [[env.production.kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+id = "d0a178f289bb45a5b4a185d9fc9d65b4"
