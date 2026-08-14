@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { COLOR_HEX } from '@outlet/catalog';
+import { BRANDS as CATALOG_BRANDS, COLOR_HEX } from '@outlet/catalog';
 import { CheckIcon, ChevronDown, CloseIcon, cx } from '@outlet/ui';
 import { track } from '@/lib/analytics';
 import { useI18n } from '@/lib/i18n';
@@ -39,19 +39,13 @@ const DISCOUNTS = [
  */
 const COLORS: Array<[string, string]> = Object.entries(COLOR_HEX);
 
-/** Featured brands, in the order the storefront presents them elsewhere. */
-const BRANDS: Array<[string, string]> = [
-  ['adidas', 'Adidas'],
-  ['nike', 'Nike'],
-  ['puma', 'Puma'],
-  ['tommy-hilfiger', 'Tommy Hilfiger'],
-  ['calvin-klein', 'Calvin Klein'],
-  ['levis', 'Levi’s'],
-  ['new-balance', 'New Balance'],
-  ['the-north-face', 'The North Face'],
-  ['lacoste', 'Lacoste'],
-  ['champion', 'Champion'],
-];
+/**
+ * Brands, read from the catalogue for the same reason the colour swatches are:
+ * a hand-maintained copy here is how the filter ends up offering a brand the
+ * shop no longer carries. Order matches the order the storefront presents them
+ * elsewhere.
+ */
+const BRANDS: Array<[string, string]> = CATALOG_BRANDS.map((brand) => [brand.slug, brand.name]);
 
 const RATINGS = [
   ['4', '4 stars & up'],

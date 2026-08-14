@@ -1,0 +1,83 @@
+# Cloudflare Worker: the demo/staging API.
+#
+# Everything here is a *name* or a *public* value. No account id, no API token,
+# no secret. `database_id` is filled in by whoever creates the D1 database —
+# see infrastructure/cloudflare/d1-and-r2.md — and is safe to commit once set,
+# but is left empty in the repository so a fork cannot accidentally write to
+# someone else's database.
+#
+# Secrets (SESSION_SECRET, SEED_ADMIN_PASSWORD, …) are never in this file.
+# They are set with `wrangler secret put NAME` and read from `env` at runtime.
+
+name = "outlet-demo-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[observability]
+enabled = true
+
+# --- Public configuration ----------------------------------------------------
+# These reach the browser in responses anyway; none of them is a credential.
+[vars]
+ENVIRONMENT = "demo"
+DEMO_MODE = "true"
+# Comma-separated exact origins allowed to send credentialed requests.
+# Overridden per environment; never widened to "*" (see SECURITY.md).
+ALLOWED_ORIGINS = "http://localhost:3000,http://localhost:3001"
+PUBLIC_MEDIA_BASE_URL = ""
+
+# --- D1 ----------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "outlet-demo"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# --- R2 ----------------------------------------------------------------------
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "outlet-demo-media"
+preview_bucket_name = "outlet-demo-media"
+
+# --- Rate limiting -----------------------------------------------------------
+# A KV namespace is the free, Cloudflare-native place to keep the counters the
+# login/checkout limiter reads. Create it with:
+#   wrangler kv namespace create RATE_LIMIT
+# and paste the id below. The limiter fails open if the binding is absent, so a
+# fork without KV still runs — it just does not rate limit.
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+# --- Scheduled work ----------------------------------------------------------
+# Expiring stale inventory reservations. Cron triggers are free; this is the
+# only background job the demo needs, which is why there is no Queue binding.
+[triggers]
+crons = ["*/5 * * * *"]
+
+# --- Environments ------------------------------------------------------------
+
+[env.production]
+name = "outlet-demo-api"
+
+[env.production.vars]
+ENVIRONMENT = "demo"
+DEMO_MODE = "true"
+ALLOWED_ORIGINS = "https://ecommerce-135.pages.dev"
+PUBLIC_MEDIA_BASE_URL = ""
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "outlet-demo"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[[env.production.r2_buckets]]
+binding = "MEDIA"
+bucket_name = "outlet-demo-media"
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"

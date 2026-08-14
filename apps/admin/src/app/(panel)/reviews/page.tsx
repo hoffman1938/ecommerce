@@ -698,7 +698,7 @@ function ReviewRowView({
           </p>
         </td>
         <td className="text-xs">
-          <Link href={`/products/${review.product.id}`} className="hover:underline">
+          <Link href={`/products/view?id=${review.product.id}`} className="hover:underline">
             {review.product.name}
           </Link>
         </td>

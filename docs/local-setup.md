@@ -47,7 +47,7 @@ after editing it, or run `tsc -w` in that package.
 
 1. Open http://localhost:3000 and register a new customer.
 2. Open http://localhost:8025 (Mailpit), click the verification link, sign in.
-3. Browse campaigns and products; open **Adidas Samba Classic** — it has exactly one unit.
+3. Browse campaigns and products; open **Aster Sambra Court Sneaker** — it has exactly one unit.
 4. Add it to the cart: the 20-minute countdown appears; refresh — the timer does **not** reset.
 5. In a private window, open the same product: size 42 is disabled for the second customer.
 6. Checkout → mock payment page → **TEST-SUCCESS** → order confirmed; the confirmation email is

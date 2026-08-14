@@ -14,7 +14,7 @@ const baseCoupon: CouponSnapshot = {
 const lines: CouponCartLine[] = [
   {
     productId: 'p1',
-    brandId: 'nike',
+    brandId: 'northline',
     categoryId: 'shoes',
     campaignId: null,
     unitPriceMinor: 5000,
@@ -22,7 +22,7 @@ const lines: CouponCartLine[] = [
   },
   {
     productId: 'p2',
-    brandId: 'adidas',
+    brandId: 'aster',
     categoryId: 'tees',
     campaignId: 'c1',
     unitPriceMinor: 2000,
@@ -78,13 +78,13 @@ describe('validateCoupon', () => {
   });
 
   it('restricts by brand and only counts matching lines', () => {
-    const coupon = { ...baseCoupon, brandIds: ['nike'] };
+    const coupon = { ...baseCoupon, brandIds: ['northline'] };
     const result = validateCoupon(coupon, lines, freshCustomer);
     expect(result).toEqual({ valid: true, eligibleSubtotalMinor: 5000 });
   });
 
   it('rejects when no line matches the restrictions', () => {
-    const coupon = { ...baseCoupon, brandIds: ['puma'] };
+    const coupon = { ...baseCoupon, brandIds: ['velora'] };
     expect(validateCoupon(coupon, lines, freshCustomer).valid).toBe(false);
   });
 });

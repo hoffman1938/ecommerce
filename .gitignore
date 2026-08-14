@@ -15,8 +15,18 @@ coverage/
 !.env.local.example
 !.env.test.example
 
+# wrangler's local secrets for `wrangler dev` — the Cloudflare equivalent of
+# .env, and the file a Worker developer will reach for by convention.
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
 # prisma
 packages/database/generated/
+
+# generated D1 seed — contains password hashes, rebuilt by `pnpm db:seed`
+apps/edge/.seed/
+.wrangler/
 
 # generated catalogue artwork (rebuilt by predev/prebuild from packages/catalog)
 apps/storefront/public/artwork/

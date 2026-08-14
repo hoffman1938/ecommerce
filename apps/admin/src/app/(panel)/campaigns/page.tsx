@@ -77,7 +77,10 @@ export default function CampaignsAdminPage() {
             {(campaigns ?? []).map((campaign) => (
               <tr key={campaign.id}>
                 <td>
-                  <Link href={`/campaigns/${campaign.id}`} className="font-medium hover:underline">
+                  <Link
+                    href={`/campaigns/view?id=${campaign.id}`}
+                    className="font-medium hover:underline"
+                  >
                     {campaign.title}
                   </Link>
                   <span className="block font-mono text-xs text-gray-400">{campaign.slug}</span>

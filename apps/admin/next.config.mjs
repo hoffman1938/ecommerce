@@ -1,12 +1,18 @@
 /**
- * Two build targets share this config, mirroring the storefront:
+ * Three build targets share this config, mirroring the storefront:
  *
  *  - Default (`output: 'standalone'`) — the Docker image used by
  *    docker-compose, talking to the NestJS API.
- *  - Demo (`NEXT_PUBLIC_DEMO_MODE=true` -> `output: 'export'`) — a fully static
- *    panel for Cloudflare Pages, backed by src/lib/demo instead of the API.
+ *  - Cloudflare (`STATIC_EXPORT=true` -> `output: 'export'`) — a static panel
+ *    for Pages, talking to the Cloudflare Worker API at
+ *    NEXT_PUBLIC_API_BASE_URL. Every administrative action is authorised
+ *    server-side by that Worker, so the panel being static changes nothing
+ *    about who is allowed to do what.
+ *  - Bundled demo (`NEXT_PUBLIC_DEMO_MODE=true`) — the same export backed by
+ *    src/lib/demo, for a preview built before the Worker exists.
  */
 const isDemoExport = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+const isStaticExport = isDemoExport || process.env.STATIC_EXPORT === 'true';
 
 /**
  * Serve the panel under a sub-path (`ADMIN_BASE_PATH=/admin`) so the demo build
@@ -26,10 +32,10 @@ const nextConfig = {
   // Cloudflare Pages-compatible choices mirror the storefront app; see
   // /infrastructure/cloudflare/admin-pages.md.
   images: { unoptimized: true },
-  output: isDemoExport ? 'export' : 'standalone',
-  // The demo build runs on Cloudflare's CI, where @outlet/eslint-config is not
+  output: isStaticExport ? 'export' : 'standalone',
+  // The Cloudflare build runs on Pages' CI, where @outlet/eslint-config is not
   // part of the installed dependency subtree.
-  eslint: { ignoreDuringBuilds: isDemoExport },
+  eslint: { ignoreDuringBuilds: isStaticExport },
 };
 
 export default nextConfig;

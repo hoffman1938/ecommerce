@@ -58,7 +58,10 @@ export default function CustomersPage() {
             {(data?.items ?? []).map((customer) => (
               <tr key={customer.id}>
                 <td>
-                  <Link href={`/customers/${customer.id}`} className="font-medium hover:underline">
+                  <Link
+                    href={`/customers/view?id=${customer.id}`}
+                    className="font-medium hover:underline"
+                  >
                     {customer.firstName} {customer.lastName}
                   </Link>
                   <span className="block text-xs text-gray-400">{customer.email}</span>

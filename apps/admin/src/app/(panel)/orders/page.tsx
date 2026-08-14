@@ -92,7 +92,7 @@ export default function OrdersAdminPage() {
               <tr key={order.id}>
                 <td>
                   <Link
-                    href={`/orders/${order.id}`}
+                    href={`/orders/view?id=${order.id}`}
                     className="font-medium hover:underline"
                     data-testid={`order-${order.orderNumber}`}
                   >

@@ -23,7 +23,7 @@ test.describe('reservation expiration', () => {
       // 2. Reserve an item as a fresh anonymous shopper.
       const shopper = await page.context().browser()!.newContext();
       const shopperPage = await shopper.newPage();
-      await shopperPage.goto('/products/puma-training-shorts');
+      await shopperPage.goto('/products/velora-training-shorts');
       await shopperPage.getByTestId('variant-PUM-TRN-PT-GREEN-XL').click();
       await shopperPage.getByTestId('add-to-cart').click();
       await expect(shopperPage.getByTestId('purchase-feedback')).toContainText('reserved');

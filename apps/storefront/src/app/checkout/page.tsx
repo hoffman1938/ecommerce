@@ -293,17 +293,32 @@ export default function CheckoutPage() {
               </div>
             </dl>
           ) : null}
+          {/*
+            Demo payment.
+
+            There is no payment step to continue to and no card to enter: the
+            server creates the order and marks its own payment record paid. The
+            notice says so before the button rather than after, because a
+            reviewer should never be left wondering whether something just
+            charged them.
+          */}
+          <div className="mt-5 border border-line bg-surface p-3 dark:rounded">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-950">
+              Demo payment
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-600">
+              No real money is charged and no card details are collected. Placing this order creates
+              a genuine order record, reduces stock and sends a confirmation to your account.
+            </p>
+          </div>
           <button
             type="submit"
             disabled={submitting}
             data-testid="pay-now"
-            className="mt-5 w-full rounded bg-accent px-5 py-3 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover disabled:bg-ink-200 disabled:text-content-disabled"
+            className="mt-3 w-full rounded bg-accent px-5 py-3 text-sm font-semibold text-accent-contrast transition-colors duration-150 hover:bg-accent-hover disabled:bg-ink-200 disabled:text-content-disabled"
           >
-            {submitting ? 'Creating payment…' : 'Continue to payment'}
+            {submitting ? 'Placing your demo order…' : 'Place demo order'}
           </button>
-          <p className="mt-3 text-xs text-ink-500">
-            <T id="ui.localDevelopmentUsesMockPayment" />
-          </p>
         </aside>
       </form>
     </div>

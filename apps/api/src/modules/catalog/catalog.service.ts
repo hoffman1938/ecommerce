@@ -451,8 +451,8 @@ export class CatalogService {
 
   /**
    * Type-ahead suggestions. Prefix matches outrank substring matches so that
-   * typing "nik" surfaces Nike products before something that merely mentions
-   * Nike in its keywords.
+   * typing "nor" surfaces Northline products before something that merely mentions
+   * Northline in its keywords.
    */
   async suggest(query: string): Promise<SearchSuggestionsDto> {
     const needle = query.trim();

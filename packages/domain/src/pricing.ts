@@ -33,6 +33,14 @@ export interface CouponRules {
   value: number;
   minOrderMinor?: number | null;
   maxDiscountMinor?: number | null;
+  /**
+   * Waives standard shipping instead of reducing the subtotal.
+   *
+   * Modelled as a flag rather than a third coupon type because it composes:
+   * a code can both take 10% off *and* cover delivery, which a `FREE_SHIPPING`
+   * type could not express without a second coupon.
+   */
+  freeShipping?: boolean | null;
 }
 
 /**
@@ -63,7 +71,9 @@ export function shippingCostMinor(
   rules: ShippingRules,
   method: 'STANDARD' | 'EXPRESS',
   subtotalAfterDiscountMinor: number,
+  couponWaivesShipping = false,
 ): number {
+  if (method === 'STANDARD' && couponWaivesShipping) return 0;
   if (
     method === 'STANDARD' &&
     rules.freeShippingThresholdMinor != null &&
@@ -108,7 +118,18 @@ export function computeCartTotals(input: CartTotalsInput): CartTotals {
 
   const discount = input.coupon ? couponDiscountMinor(input.coupon, eligibleSubtotal) : 0;
   const discountedSubtotal = subtotal - discount;
-  const shipping = shippingCostMinor(input.shippingRules, input.shippingMethod, discountedSubtotal);
+  // A free-shipping coupon only counts once its own minimum order is met —
+  // otherwise `FREESHIP` would waive delivery on a €5 basket.
+  const waivesShipping = Boolean(
+    input.coupon?.freeShipping &&
+    (input.coupon.minOrderMinor == null || eligibleSubtotal >= input.coupon.minOrderMinor),
+  );
+  const shipping = shippingCostMinor(
+    input.shippingRules,
+    input.shippingMethod,
+    discountedSubtotal,
+    waivesShipping,
+  );
   const total = discountedSubtotal + shipping;
   const tax = includedTaxMinor(total, input.taxRateBps);
 

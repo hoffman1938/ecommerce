@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
 
+# The default GITHUB_TOKEN is scoped down to reading the repository: no job
+# here writes a commit, a release, a package or a comment.
+permissions:
+  contents: read
+
 jobs:
   prebuild:
     runs-on: ubuntu-latest
