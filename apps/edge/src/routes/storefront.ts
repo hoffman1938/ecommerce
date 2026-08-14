@@ -16,7 +16,7 @@ import { ctxOf } from '../http/context';
 import { ApiError, notFound } from '../lib/errors';
 import { enforceRateLimit } from '../http/rate-limit';
 import { Db, fromBool, nowIso } from '../lib/sql';
-import { newId } from '../lib/ids';
+import { formatRmaNumber, newId } from '../lib/ids';
 import {
   getProductBySlug,
   listProducts,
@@ -53,6 +53,7 @@ import {
   pathSlug,
   profileSchema,
   readJson,
+  returnRequestSchema,
   reviewSchema,
   addressSchema,
   checkoutSchema,
@@ -662,6 +663,126 @@ storefront.post('/account/orders/:id/cancel', async (c) => {
     ),
   ]);
   return c.json({ ok: true });
+});
+
+// --- Returns -----------------------------------------------------------------
+
+storefront.get('/account/returns', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requireSession(ctx.session);
+  return c.json(
+    await ctx.db.all(
+      `SELECT r."id", r."rmaNumber", r."status", r."reason", r."customerNote", r."createdAt",
+              o."orderNumber", o."id" AS "orderId",
+              (SELECT COALESCE(SUM(ri."quantity"), 0) FROM "return_items" ri
+                WHERE ri."returnRequestId" = r."id") AS "itemCount",
+              (SELECT COALESCE(SUM(rf."amountMinor"), 0) FROM "refunds" rf
+                WHERE rf."returnRequestId" = r."id" AND rf."status" = 'SUCCEEDED') AS "refundedMinor"
+         FROM "return_requests" r
+         JOIN "orders" o ON o."id" = r."orderId"
+        WHERE r."userId" = ?
+        ORDER BY r."createdAt" DESC`,
+      session.user.id,
+    ),
+  );
+});
+
+/**
+ * Requesting a return.
+ *
+ * The order has to be the caller's, delivered, and the quantities have to be
+ * within what is left unreturned on each line — all checked here against the
+ * database, because the form that produced them is the least trustworthy
+ * source of any of it.
+ */
+storefront.post('/account/returns', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requireSession(ctx.session);
+  const body = parse(returnRequestSchema, await readJson(c.req.raw));
+
+  const order = await ctx.db.first<{ id: string; status: string; orderNumber: string }>(
+    `SELECT "id", "status", "orderNumber" FROM "orders" WHERE "id" = ? AND "userId" = ?`,
+    body.orderId,
+    session.user.id,
+  );
+  // 404 rather than 403: an order that is not yours is one you cannot see.
+  if (!order) throw notFound('Order not found.');
+  if (!['DELIVERED', 'PARTIALLY_RETURNED'].includes(order.status)) {
+    throw new ApiError('CONFLICT', 'Only a delivered order can be returned.');
+  }
+
+  const ids = body.items.map((item) => item.orderItemId);
+  const lines = await ctx.db.all<{ id: string; quantity: number; returnedQuantity: number }>(
+    `SELECT "id", "quantity", "returnedQuantity" FROM "order_items"
+      WHERE "orderId" = ? AND "id" IN (${ids.map(() => '?').join(', ')})`,
+    order.id,
+    ...ids,
+  );
+  if (lines.length !== ids.length) {
+    throw new ApiError('BAD_REQUEST', 'Those items are not all on that order.');
+  }
+
+  for (const item of body.items) {
+    const line = lines.find((row) => row.id === item.orderItemId)!;
+    const remaining = line.quantity - line.returnedQuantity;
+    if (item.quantity > remaining) {
+      throw new ApiError('BAD_REQUEST', `Only ${remaining} of that item can still be returned.`);
+    }
+  }
+
+  const sequence = await ctx.db.count(`SELECT COUNT(*) AS "c" FROM "return_requests"`);
+  const returnId = newId();
+  const now = nowIso();
+
+  await ctx.db.batch([
+    ctx.db.statement(
+      `INSERT INTO "return_requests" ("id", "rmaNumber", "orderId", "userId", "status", "reason", "customerNote")
+       VALUES (?, ?, ?, ?, 'REQUESTED', ?, ?)`,
+      returnId,
+      formatRmaNumber(sequence + 1),
+      order.id,
+      session.user.id,
+      body.reason,
+      body.customerNote ?? null,
+    ),
+    ...body.items.map((item) =>
+      ctx.db.statement(
+        `INSERT INTO "return_items" ("id", "returnRequestId", "orderItemId", "quantity") VALUES (?, ?, ?, ?)`,
+        newId(),
+        returnId,
+        item.orderItemId,
+        item.quantity,
+      ),
+    ),
+    ctx.db.statement(
+      `UPDATE "orders" SET "status" = 'RETURN_REQUESTED', "updatedAt" = ? WHERE "id" = ?`,
+      now,
+      order.id,
+    ),
+    ctx.db.statement(
+      `INSERT INTO "order_status_history" ("id", "orderId", "fromStatus", "toStatus", "note", "actorUserId", "createdAt")
+       VALUES (?, ?, ?, 'RETURN_REQUESTED', 'Return requested by the customer', ?, ?)`,
+      newId(),
+      order.id,
+      order.status,
+      session.user.id,
+      now,
+    ),
+    ctx.db.statement(
+      `INSERT INTO "notifications" ("id", "userId", "type", "title", "body", "createdAt")
+       VALUES (?, ?, 'RETURN_REQUESTED', ?, ?, ?)`,
+      newId(),
+      session.user.id,
+      `Return requested for ${order.orderNumber}`,
+      'We have received your return request and will review it shortly.',
+      now,
+    ),
+  ]);
+
+  return c.json(
+    { id: returnId, rmaNumber: formatRmaNumber(sequence + 1), status: 'REQUESTED' },
+    201,
+  );
 });
 
 // --- Notifications -----------------------------------------------------------

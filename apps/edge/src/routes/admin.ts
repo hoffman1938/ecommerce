@@ -12,6 +12,7 @@
  */
 
 import { Hono } from 'hono';
+import { z } from 'zod';
 import { Permissions } from '@outlet/types';
 import type { AppEnv } from '../http/context';
 import { ctxOf } from '../http/context';
@@ -1082,12 +1083,25 @@ admin.get('/content', async (c) => {
   return c.json(await listContentPages(ctx.db));
 });
 
+/*
+ * The admin panel addresses the CMS two ways: `/admin/content/pages` with the
+ * key in the body, and `/admin/content/<key>` with it in the path. Both are
+ * served by this one pair of handlers rather than by a literal route beside a
+ * parameterised one — Hono resolves `/content/pages` to the `:key` route
+ * whichever order they are registered in, so a separate literal is simply
+ * unreachable. `pages` is therefore treated as "the key is in the body".
+ */
+const PAGES_COLLECTION = 'pages';
+
 admin.get('/content/:key', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.ContentManage);
+  const key = pathSlug(c.req.param('key'), 'page key');
+  if (key === PAGES_COLLECTION) return c.json(await listContentPages(ctx.db));
+
   const page = await ctx.db.first(
     `SELECT "key", "title", "body", "updatedAt" FROM "content_pages" WHERE "key" = ?`,
-    pathSlug(c.req.param('key'), 'page key'),
+    key,
   );
   if (!page) throw notFound('Page not found.');
   return c.json(page);
@@ -1096,8 +1110,17 @@ admin.get('/content/:key', async (c) => {
 admin.put('/content/:key', async (c) => {
   const ctx = ctxOf(c);
   const session = requirePermission(ctx.session, Permissions.ContentManage);
-  const key = pathSlug(c.req.param('key'), 'page key');
-  const body = parse(adminContentSchema, await readJson(c.req.raw));
+  const pathKey = pathSlug(c.req.param('key'), 'page key');
+  const raw = await readJson(c.req.raw);
+
+  const collectionSchema = adminContentSchema.extend({
+    key: z.string().trim().min(1).max(64),
+  });
+  const body =
+    pathKey === PAGES_COLLECTION
+      ? parse(collectionSchema, raw)
+      : { ...parse(adminContentSchema, raw), key: pathKey };
+  const key = pathSlug(body.key, 'page key');
 
   const before = await ctx.db.first(
     `SELECT "title", "body" FROM "content_pages" WHERE "key" = ?`,
@@ -1121,7 +1144,7 @@ admin.put('/content/:key', async (c) => {
       after: { title: body.title },
     }),
   ]);
-  return c.json({ ok: true });
+  return c.json({ ok: true, key });
 });
 
 // --- Settings ----------------------------------------------------------------

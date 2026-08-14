@@ -121,6 +121,18 @@ export const profileSchema = z
   })
   .strict();
 
+export const returnRequestSchema = z
+  .object({
+    orderId: trimmed(64),
+    reason: trimmed(200),
+    customerNote: z.string().trim().max(1000).nullish(),
+    items: z
+      .array(z.object({ orderItemId: trimmed(64), quantity: z.number().int().min(1).max(100) }))
+      .min(1)
+      .max(50),
+  })
+  .strict();
+
 export const newsletterSchema = z.object({ email: emailSchema }).strict();
 
 export const wishlistAddSchema = z
