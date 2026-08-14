@@ -33,7 +33,7 @@ export default function NewCampaignPage() {
               '/admin/campaigns',
               toCampaignPayload(values),
             );
-            router.push(`/campaigns/${campaign.id}`);
+            router.push(`/campaigns/view?id=${campaign.id}`);
           } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Create failed.');
           }

@@ -9,6 +9,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 
 export const DATABASE_NAME = 'outlet-demo';
 
@@ -58,12 +59,31 @@ export function assertResettable(target, argv) {
   }
 }
 
+/**
+ * Wrangler's own JS entry point, resolved from node_modules.
+ *
+ * Running it with `process.execPath` rather than through `pnpm exec` avoids
+ * two Windows problems at once: `pnpm` and `wrangler` are both `.cmd` shims,
+ * which Node refuses to spawn directly since CVE-2024-27980, and going through
+ * a shell instead would mean quoting file paths that can contain spaces. Node
+ * executing a `.js` file needs neither.
+ */
+const wranglerEntry = () => {
+  const require = createRequire(import.meta.url);
+  for (const candidate of ['wrangler/bin/wrangler.js', 'wrangler/wrangler-dist/cli.js']) {
+    try {
+      return require.resolve(candidate);
+    } catch {
+      // Try the next known layout.
+    }
+  }
+  console.error('Could not find wrangler. Run `pnpm install` first.');
+  process.exit(1);
+};
+
 export function runWrangler(args, cwd) {
-  // `wrangler` is a .cmd shim on Windows, which Node will not spawn directly;
-  // going through the package runner keeps one command line working on both.
-  const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
   try {
-    execFileSync(command, ['exec', 'wrangler', ...args], { cwd, stdio: 'inherit' });
+    execFileSync(process.execPath, [wranglerEntry(), ...args], { cwd, stdio: 'inherit' });
   } catch (error) {
     console.error(`\nwrangler ${args[0]} ${args[1] ?? ''} failed.`);
     process.exit(typeof error.status === 'number' ? error.status : 1);

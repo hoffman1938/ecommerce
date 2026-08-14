@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReturnRequestDto } from '@outlet/types';
 import { Badge } from '@outlet/ui';
@@ -11,7 +11,8 @@ import { T } from '@/components/t';
 
 export default function ReturnDetailPage() {
   const { money } = useI18n();
-  const params = useParams<{ id: string }>();
+  // Addressed as ?id=… rather than as a route segment; see ./page.tsx.
+  const params = { id: useSearchParams().get('id') ?? '' };
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [receiveState, setReceiveState] = useState<

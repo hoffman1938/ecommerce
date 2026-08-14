@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDate, Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
@@ -45,7 +45,8 @@ interface CustomerDetail {
 
 export default function CustomerDetailPage() {
   const { t, money } = useI18n();
-  const params = useParams<{ id: string }>();
+  // Addressed as ?id=… rather than as a route segment; see ./page.tsx.
+  const params = { id: useSearchParams().get('id') ?? '' };
   const queryClient = useQueryClient();
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +121,10 @@ export default function CustomerDetailPage() {
             {customer.orders.map((order) => (
               <tr key={order.id}>
                 <td>
-                  <Link href={`/orders/${order.id}`} className="font-medium hover:underline">
+                  <Link
+                    href={`/orders/view?id=${order.id}`}
+                    className="font-medium hover:underline"
+                  >
                     {order.orderNumber}
                   </Link>
                 </td>
@@ -162,7 +166,7 @@ export default function CustomerDetailPage() {
           </h2>
           {customer.returnRequests.map((r) => (
             <p key={r.id} className="text-gray-600">
-              <Link href={`/returns/${r.id}`} className="hover:underline">
+              <Link href={`/returns/view?id=${r.id}`} className="hover:underline">
                 {r.rmaNumber}
               </Link>{' '}
               · {r.status}

@@ -21,7 +21,9 @@ const target = resolveTarget(process.argv.slice(2));
 
 console.log(`Building the seed…`);
 const { paths, counts, generated, bytes, statements } = writeSeedSql();
-console.log(`  ${statements} statements, ${(bytes / 1024).toFixed(0)} KB in ${paths.length} files\n`);
+console.log(
+  `  ${statements} statements, ${(bytes / 1024).toFixed(0)} KB in ${paths.length} files\n`,
+);
 reportCounts(counts);
 
 console.log(`\nApplying to the ${target.label} database "${DATABASE_NAME}"…`);

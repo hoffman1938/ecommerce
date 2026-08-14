@@ -8,9 +8,15 @@
  * practical to assert on things like "the second concurrent order is rejected"
  * in a unit test.
  *
- * What it does not reproduce is D1's distribution: latency, eventual read
- * consistency at the edge, and its request limits. Those belong to a deployed
- * environment, and the tests here do not claim to cover them.
+ * What it does not reproduce:
+ *
+ *  - D1's distribution — latency, eventual read consistency at the edge, and
+ *    its request limits. Those belong to a deployed environment.
+ *  - D1's exact SQLite build. Node's is more permissive in at least one way
+ *    that has already bitten: an outer-query reference inside a *subquery's
+ *    ORDER BY* runs here and is rejected by D1 with "no such column". A green
+ *    suite is therefore necessary but not sufficient — run the API against
+ *    `wrangler dev --local` before trusting a new query shape.
  */
 
 import { readFileSync, readdirSync } from 'node:fs';

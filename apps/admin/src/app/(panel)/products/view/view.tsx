@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
@@ -35,7 +35,8 @@ export default function EditProductPage({ id }: { id?: string } = {}) {
   const { t, money } = useI18n();
   // `id` is passed when this editor is rendered from the static export's
   // not-found fallback, where there is no route param to read.
-  const params = useParams<{ id: string }>();
+  // Addressed as ?id=… rather than as a route segment; see ./page.tsx.
+  const params = { id: useSearchParams().get('id') ?? '' };
   const productId = id ?? params.id;
   const queryClient = useQueryClient();
   const [values, setValues] = useState<ProductFormValues>(EMPTY_PRODUCT);
@@ -97,7 +98,7 @@ export default function EditProductPage({ id }: { id?: string } = {}) {
               const copy = await api.post<{ id: string }>(
                 `/admin/products/${product.id}/duplicate`,
               );
-              window.location.href = `/products/${copy.id}`;
+              window.location.href = `/products/view?id=${copy.id}`;
             }}
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
           >

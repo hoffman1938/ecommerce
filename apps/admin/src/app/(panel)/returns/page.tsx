@@ -68,7 +68,7 @@ export default function ReturnsAdminPage() {
               <tr key={request.id}>
                 <td>
                   <Link
-                    href={`/returns/${request.id}`}
+                    href={`/returns/view?id=${request.id}`}
                     className="font-medium hover:underline"
                     data-testid={`return-${request.rmaNumber}`}
                   >

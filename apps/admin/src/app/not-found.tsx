@@ -2,34 +2,44 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import ProductEditor from './(panel)/products/[id]/view';
+
+/** Sections whose detail screens moved from `/<section>/<id>` to `/<section>/view?id=…`. */
+const DETAIL_SECTIONS = ['orders', 'products', 'customers', 'returns', 'campaigns'];
+
+/** Sub-paths of those sections that are real pages, not identifiers. */
+const RESERVED = ['new', 'view'];
 
 /**
- * Not found — with one rescue.
+ * Not found — with one redirect.
  *
- * A statically exported panel only has HTML for the products that existed when
- * it was built, so the editor for a product created afterwards has no file and
- * lands here. Everything that page needs is resolved in the browser anyway, so
- * this hands the id straight to the same editor the real route would render.
+ * The detail screens used to be dynamic `[id]` segments, which a static export
+ * can only serve for ids that existed at build time. They are now
+ * `/<section>/view?id=…`, which works for any row. This catches the old shape
+ * — a bookmark, a link in an email, a browser autocomplete — and forwards it
+ * rather than showing a dead end.
  *
- * On a deployment with a server behind it this never runs — those routes
- * resolve dynamically.
+ * Everything is decided from the current path in the browser, so it costs
+ * nothing on a deployment where these routes resolve server-side.
  */
 export default function AdminNotFound() {
-  const [productId, setProductId] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     const segments = window.location.pathname.split('/').filter(Boolean);
-    const index = segments.indexOf('products');
-    if (index >= 0 && segments[index + 1] && segments[index + 1] !== 'new') {
-      setProductId(segments[index + 1]);
+    const index = segments.findIndex((segment) => DETAIL_SECTIONS.includes(segment));
+    const identifier = index >= 0 ? segments[index + 1] : undefined;
+
+    if (identifier && !RESERVED.includes(identifier)) {
+      const base = segments.slice(0, index + 1).join('/');
+      window.location.replace(`/${base}/view?id=${encodeURIComponent(identifier)}`);
+      return;
     }
     setChecked(true);
   }, []);
 
+  // Nothing is rendered until the redirect has been ruled out, so a forwarded
+  // URL never flashes a 404 on its way through.
   if (!checked) return null;
-  if (productId) return <ProductEditor id={productId} />;
 
   return (
     <div className="p-10 text-center">

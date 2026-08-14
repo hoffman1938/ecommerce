@@ -1,0 +1,16 @@
+# Local secrets for `wrangler dev`. Copy to `.dev.vars`, which is gitignored.
+#
+#   cp apps/edge/.dev.vars.example apps/edge/.dev.vars
+#
+# This file carries names only. Deployed environments do not read it at all —
+# there, the same values are set with `wrangler secret put NAME`.
+
+# Keys the HMAC that hashes session tokens before they are stored.
+#
+# Only optional when ENVIRONMENT=development. wrangler.toml sets
+# ENVIRONMENT=demo, so `wrangler dev` needs this or every request returns 500 —
+# deliberately, since falling back to a value from a public repository would
+# mean sessions signed with a key everybody has.
+#
+#   openssl rand -base64 32
+SESSION_SECRET=

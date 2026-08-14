@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
@@ -32,7 +32,8 @@ function toLocalInput(iso: string): string {
 
 export default function EditCampaignPage() {
   const { money } = useI18n();
-  const params = useParams<{ id: string }>();
+  // Addressed as ?id=… rather than as a route segment; see ./page.tsx.
+  const params = { id: useSearchParams().get('id') ?? '' };
   const queryClient = useQueryClient();
   const [values, setValues] = useState<CampaignFormValues>(EMPTY_CAMPAIGN);
   const [error, setError] = useState<string | null>(null);

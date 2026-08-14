@@ -118,7 +118,10 @@ export function writeSeedSql(env = process.env) {
   const chunkCount = Math.ceil(statements.length / STATEMENTS_PER_CHUNK);
 
   for (let index = 0; index < chunkCount; index += 1) {
-    const chunk = statements.slice(index * STATEMENTS_PER_CHUNK, (index + 1) * STATEMENTS_PER_CHUNK);
+    const chunk = statements.slice(
+      index * STATEMENTS_PER_CHUNK,
+      (index + 1) * STATEMENTS_PER_CHUNK,
+    );
     const body = `${seedHeader(index + 1, chunkCount)}\n${chunk.join('\n')}\n`;
     const path = join(dir, `seed.${String(index + 1).padStart(3, '0')}.sql`);
     writeFileSync(path, body, 'utf8');

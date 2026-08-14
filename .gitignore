@@ -15,6 +15,12 @@ coverage/
 !.env.local.example
 !.env.test.example
 
+# wrangler's local secrets for `wrangler dev` — the Cloudflare equivalent of
+# .env, and the file a Worker developer will reach for by convention.
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
 # prisma
 packages/database/generated/
 

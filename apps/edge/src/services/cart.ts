@@ -141,10 +141,20 @@ async function readLines(db: Db, cartId: string): Promise<CartLineRow[]> {
             p."status" AS "productStatus", p."outletPriceMinor", p."originalPriceMinor",
             p."categoryId",
             b."id" AS "brandId", b."name" AS "brandName",
-            (SELECT i."url" FROM "product_images" i
-              WHERE i."productId" = p."id"
-              ORDER BY (CASE WHEN i."variantId" = v."id" THEN 0 ELSE 1 END), i."position"
-              LIMIT 1) AS "imageUrl",
+            -- The colourway's own shot when there is one, otherwise the
+            -- product's first. Two correlated subqueries rather than one with
+            -- a CASE in its ORDER BY: D1's SQLite rejects an outer-query
+            -- reference inside a subquery's ORDER BY, though it is happy with
+            -- one in a WHERE. (node:sqlite accepts both, so the unit tests do
+            -- not catch it — this only shows up against real D1.)
+            COALESCE(
+              (SELECT i."url" FROM "product_images" i
+                WHERE i."productId" = p."id" AND i."variantId" = v."id"
+                ORDER BY i."position" LIMIT 1),
+              (SELECT i."url" FROM "product_images" i
+                WHERE i."productId" = p."id"
+                ORDER BY i."position" LIMIT 1)
+            ) AS "imageUrl",
             MAX(0, COALESCE(ib."onHandQuantity", 0) - COALESCE(ib."reservedQuantity", 0)
                    + COALESCE(r."quantity", 0)) AS "available",
             r."id" AS "reservationId", r."status" AS "reservationStatus", r."expiresAt" AS "reservationExpiresAt"

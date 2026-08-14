@@ -95,10 +95,17 @@ async function readPayableLines(db: Db, cartId: string): Promise<PayableLine[]> 
             p."id" AS "productId", p."name" AS "productName", p."slug" AS "productSlug",
             p."originalPriceMinor", p."outletPriceMinor", p."categoryId",
             b."id" AS "brandId", b."name" AS "brandName",
-            (SELECT i."url" FROM "product_images" i
-              WHERE i."productId" = p."id"
-              ORDER BY (CASE WHEN i."variantId" = v."id" THEN 0 ELSE 1 END), i."position"
-              LIMIT 1) AS "imageUrl",
+            -- See the note in services/cart.ts: D1 rejects an outer reference
+            -- inside a subquery's ORDER BY, so the colourway preference is
+            -- expressed as two correlated subqueries instead.
+            COALESCE(
+              (SELECT i."url" FROM "product_images" i
+                WHERE i."productId" = p."id" AND i."variantId" = v."id"
+                ORDER BY i."position" LIMIT 1),
+              (SELECT i."url" FROM "product_images" i
+                WHERE i."productId" = p."id"
+                ORDER BY i."position" LIMIT 1)
+            ) AS "imageUrl",
             COALESCE(ib."onHandQuantity", 0) AS "onHand",
             MAX(0, COALESCE(ib."onHandQuantity", 0) - COALESCE(ib."reservedQuantity", 0)
                    + COALESCE(r."quantity", 0)) AS "available",

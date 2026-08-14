@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
 import { formatDate, Badge } from '@outlet/ui';
@@ -31,7 +31,8 @@ interface AdminOrderDetail extends OrderDto {
 
 export default function AdminOrderDetailPage() {
   const { t, money } = useI18n();
-  const params = useParams<{ id: string }>();
+  // Addressed as ?id=… rather than as a route segment; see ./page.tsx.
+  const params = { id: useSearchParams().get('id') ?? '' };
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [statusForm, setStatusForm] = useState({

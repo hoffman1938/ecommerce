@@ -142,7 +142,7 @@ export default function AdminProductsPage() {
                   <tr key={product.id}>
                     <td>
                       <Link
-                        href={`/products/${product.id}`}
+                        href={`/products/view?id=${product.id}`}
                         className="font-medium hover:underline"
                       >
                         {product.name}

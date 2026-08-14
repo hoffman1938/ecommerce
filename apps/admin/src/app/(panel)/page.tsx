@@ -99,7 +99,10 @@ export default function DashboardPage() {
               {stats.recentOrders.map((order) => (
                 <tr key={order.id}>
                   <td>
-                    <Link href={`/orders/${order.id}`} className="font-medium hover:underline">
+                    <Link
+                      href={`/orders/view?id=${order.id}`}
+                      className="font-medium hover:underline"
+                    >
                       {order.orderNumber}
                     </Link>
                     <span className="block text-xs text-gray-400">
