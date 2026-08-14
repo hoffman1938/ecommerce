@@ -11,7 +11,7 @@
  * where the change is batched, so "who did this" is answerable afterwards.
  */
 
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import { Permissions } from '@outlet/types';
 import type { AppEnv } from '../http/context';
@@ -1283,7 +1283,15 @@ admin.get('/audit-logs', async (c) => {
  * builds the object key itself from a generated id — the client never supplies
  * a path, so there is no traversal to defend against here.
  */
-admin.post('/media/upload', async (c) => {
+/**
+ * `/admin/uploads` is what the panel posts to; `/admin/media/upload` is the
+ * name this API introduced. Both reach the same handler rather than one of
+ * them 404ing on a file the administrator has already chosen.
+ */
+admin.post('/uploads', (c) => uploadHandler(c));
+admin.post('/media/upload', (c) => uploadHandler(c));
+
+async function uploadHandler(c: Context<AppEnv>) {
   const ctx = ctxOf(c);
   const session = requirePermission(ctx.session, Permissions.ProductsUpdate);
   await enforceRateLimit(ctx.env.RATE_LIMIT, 'upload', session.user.id);
@@ -1331,7 +1339,7 @@ admin.post('/media/upload', async (c) => {
   ]);
 
   return c.json({ id, objectKey: key, url: `/media/${key}`, mimeType: mime }, 201);
-});
+}
 
 admin.delete('/media/:id', async (c) => {
   const ctx = ctxOf(c);
