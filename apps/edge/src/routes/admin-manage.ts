@@ -1188,6 +1188,252 @@ adminManage.post('/returns/:id/complete', async (c) => {
   return c.json({ ok: true, refundId, amountMinor: amount, demo: true });
 });
 
+// --- Products: duplicate and CSV import --------------------------------------
+
+/**
+ * Duplicating a product.
+ *
+ * Copies the record and its variants as a DRAFT with a suffixed slug and SKUs,
+ * because a duplicate that went straight onto the storefront under a colliding
+ * slug is not what "duplicate" means. Stock starts at zero: the copy is a
+ * template, not inventory that exists.
+ */
+adminManage.post('/products/:id/duplicate', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requirePermission(ctx.session, Permissions.ProductsCreate);
+  const id = pathId(c.req.param('id'));
+
+  const source = await ctx.db.first<Record<string, string | number | null>>(
+    `SELECT * FROM "products" WHERE "id" = ?`,
+    id,
+  );
+  if (!source) throw notFound('Product not found.');
+
+  const variants = await ctx.db.all<{
+    sku: string;
+    size: string | null;
+    color: string | null;
+    position: number;
+  }>(
+    `SELECT "sku", "size", "color", "position" FROM "product_variants" WHERE "productId" = ? ORDER BY "position"`,
+    id,
+  );
+
+  // A suffix that is already taken would fail the unique index, so it counts up
+  // until it finds one that is free rather than guessing once.
+  let suffix = 2;
+  let slug = `${source.slug}-copy`;
+  while (await ctx.db.first(`SELECT 1 FROM "products" WHERE "slug" = ?`, slug)) {
+    slug = `${source.slug}-copy-${suffix}`;
+    suffix += 1;
+  }
+
+  const newProductId = newId();
+  const statements = [
+    ctx.db.statement(
+      `INSERT INTO "products"
+         ("id", "name", "slug", "brandId", "categoryId", "shortDescription", "description",
+          "targetGroup", "materials", "careInstructions", "countryOfOrigin",
+          "originalPriceMinor", "outletPriceMinor", "currencyCode", "taxClass", "status",
+          "seoTitle", "seoDescription", "searchKeywords")
+       SELECT ?, "name" || ' (copy)', ?, "brandId", "categoryId", "shortDescription", "description",
+              "targetGroup", "materials", "careInstructions", "countryOfOrigin",
+              "originalPriceMinor", "outletPriceMinor", "currencyCode", "taxClass", 'DRAFT',
+              "seoTitle", "seoDescription", "searchKeywords"
+         FROM "products" WHERE "id" = ?`,
+      newProductId,
+      slug,
+      id,
+    ),
+  ];
+
+  for (const variant of variants) {
+    const variantId = newId();
+    statements.push(
+      ctx.db.statement(
+        `INSERT INTO "product_variants" ("id", "productId", "sku", "size", "color", "position")
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        variantId,
+        newProductId,
+        `${variant.sku}-C${suffix}`,
+        variant.size,
+        variant.color,
+        variant.position,
+      ),
+      ctx.db.statement(
+        `INSERT INTO "inventory_balances" ("id", "variantId", "onHandQuantity") VALUES (?, ?, 0)`,
+        newId(),
+        variantId,
+      ),
+    );
+  }
+
+  statements.push(
+    auditStatement(ctx.db, session, ctx.ip, {
+      action: 'product.duplicate',
+      entityType: 'Product',
+      entityId: newProductId,
+      after: { copiedFrom: id, slug },
+    }),
+  );
+
+  await ctx.db.batch(statements);
+  return c.json({ id: newProductId, slug }, 201);
+});
+
+/**
+ * Bulk stock import.
+ *
+ * Two columns — `sku,quantity`. Rows naming an unknown SKU are skipped and
+ * counted rather than failing the whole file, because a spreadsheet with one
+ * stale line should not cost the operator the other four hundred.
+ */
+adminManage.post('/products/import/csv', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requirePermission(ctx.session, Permissions.InventoryAdjust);
+  const body = parse(
+    z.object({ csv: z.string().min(1).max(1_000_000) }).strict(),
+    await readJson(c.req.raw),
+  );
+
+  const rows = body.csv
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, '')))
+    // A header row is common and must not be read as a SKU.
+    .filter((cells, index) => !(index === 0 && cells[0]?.toLowerCase() === 'sku'));
+
+  if (rows.length > 5000) {
+    throw new ApiError('PAYLOAD_TOO_LARGE', 'Import at most 5000 rows at a time.');
+  }
+
+  let created = 0;
+  let skipped = 0;
+  const now = nowIso();
+  const statements = [];
+
+  for (const [sku, rawQuantity] of rows) {
+    const quantity = Number.parseInt(rawQuantity ?? '', 10);
+    if (!sku || !Number.isFinite(quantity) || quantity < 0) {
+      skipped += 1;
+      continue;
+    }
+    const variant = await ctx.db.first<{ id: string; onHand: number }>(
+      `SELECT v."id", COALESCE(b."onHandQuantity", 0) AS "onHand"
+         FROM "product_variants" v
+         LEFT JOIN "inventory_balances" b ON b."variantId" = v."id"
+        WHERE v."sku" = ?`,
+      sku,
+    );
+    if (!variant) {
+      skipped += 1;
+      continue;
+    }
+
+    statements.push(
+      ctx.db.statement(
+        `UPDATE "inventory_balances" SET "onHandQuantity" = ?, "version" = "version" + 1, "updatedAt" = ?
+          WHERE "variantId" = ? AND ? >= "reservedQuantity"`,
+        quantity,
+        now,
+        variant.id,
+        quantity,
+      ),
+      ctx.db.statement(
+        `INSERT INTO "inventory_movements"
+           ("id", "variantId", "type", "quantityChange", "previousOnHand", "newOnHand", "reason", "actorUserId", "createdAt")
+         VALUES (?, ?, 'CORRECTION', ?, ?, ?, 'CSV import', ?, ?)`,
+        newId(),
+        variant.id,
+        quantity - variant.onHand,
+        variant.onHand,
+        quantity,
+        session.user.id,
+        now,
+      ),
+    );
+    created += 1;
+  }
+
+  statements.push(
+    auditStatement(ctx.db, session, ctx.ip, {
+      action: 'inventory.import',
+      entityType: 'InventoryBalance',
+      after: { rows: rows.length, applied: created, skipped },
+    }),
+  );
+
+  await ctx.db.batch(statements);
+  return c.json({ created, skipped });
+});
+
+// --- Orders: confirmation ------------------------------------------------------
+
+/**
+ * "Resend confirmation", in an environment with no email provider.
+ *
+ * It writes the in-app notification the customer would have been emailed, and
+ * says so. Silently succeeding while sending nothing would be worse than the
+ * button not existing.
+ */
+adminManage.post('/orders/:id/resend-confirmation', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requirePermission(ctx.session, Permissions.OrdersUpdate);
+  const id = pathId(c.req.param('id'));
+
+  const order = await ctx.db.first<{ orderNumber: string; userId: string | null }>(
+    `SELECT "orderNumber", "userId" FROM "orders" WHERE "id" = ?`,
+    id,
+  );
+  if (!order) throw notFound('Order not found.');
+  if (!order.userId) {
+    throw new ApiError(
+      'CONFLICT',
+      'That order was placed as a guest, so there is no inbox to send to.',
+    );
+  }
+
+  await ctx.db.batch([
+    ctx.db.statement(
+      `INSERT INTO "notifications" ("id", "userId", "type", "title", "body", "createdAt")
+       VALUES (?, ?, 'ORDER_CONFIRMATION', ?, ?, ?)`,
+      newId(),
+      order.userId,
+      `Confirmation for ${order.orderNumber}`,
+      'A copy of your order confirmation. This demo sends no email; it appears in your account instead.',
+      nowIso(),
+    ),
+    auditStatement(ctx.db, session, ctx.ip, {
+      action: 'order.resend_confirmation',
+      entityType: 'Order',
+      entityId: id,
+    }),
+  ]);
+
+  return c.json({ ok: true, delivered: 'in-app', email: false });
+});
+
+// --- Reservations --------------------------------------------------------------
+// The panel lists these under /admin/inventory/reservations; routes/admin.ts
+// serves /admin/reservations. Both answer.
+
+adminManage.get('/inventory/reservations', async (c) => {
+  const ctx = ctxOf(c);
+  requirePermission(ctx.session, Permissions.ReservationsView);
+  return c.json(
+    await ctx.db.all(
+      `SELECT r."id", v."sku", p."name" AS "productName", r."quantity", r."status",
+              u."email" AS "customerEmail", r."createdAt", r."expiresAt"
+         FROM "inventory_reservations" r
+         JOIN "product_variants" v ON v."id" = r."variantId"
+         JOIN "products" p ON p."id" = v."productId"
+         LEFT JOIN "users" u ON u."id" = r."userId"
+        ORDER BY r."createdAt" DESC LIMIT 100`,
+    ),
+  );
+});
+
 // --- Refunds -----------------------------------------------------------------
 
 /**

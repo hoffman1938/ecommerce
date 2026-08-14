@@ -272,9 +272,11 @@ export default function EditProductPage({ id }: { id?: string } = {}) {
           <span className="mb-1 block font-medium">
             <T id="ui.uploadImagePngJpegWebp" />
           </span>
+          {/* No SVG: it can carry script, so the API refuses it. Offering a
+              type the server will reject only produces a failed upload. */}
           <input
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            accept="image/png,image/jpeg,image/webp"
             data-testid="image-upload"
             onChange={async (e) => {
               const file = e.target.files?.[0];
