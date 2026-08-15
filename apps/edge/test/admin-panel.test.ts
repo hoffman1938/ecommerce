@@ -380,6 +380,184 @@ describe('content', () => {
   });
 });
 
+/**
+ * A freshly placed order, so a fulfilment test never depends on how many PAID
+ * orders the seed happens to contain or on what an earlier test did to them.
+ */
+async function freshPaidOrder(): Promise<{ id: string }> {
+  const shopper = harness.client();
+  const listing = await shopper.get('/catalog/products?inStock=true&pageSize=24');
+  for (const item of listing.body.items) {
+    const product = await shopper.get(`/catalog/products/${item.slug}`);
+    const variant = product.body.variants.find((v: any) => v.availableQuantity > 2 && v.isEnabled);
+    if (!variant) continue;
+
+    await shopper.post('/cart/items', { variantId: variant.id, quantity: 1 });
+    const placed = await shopper.post('/checkout/submit', {
+      email: 'fulfilment@demo.local',
+      shippingAddress: {
+        firstName: 'Ful',
+        lastName: 'Filment',
+        line1: '9 Example Street',
+        city: 'Porto',
+        postalCode: '4000',
+        countryCode: 'PT',
+      },
+      shippingMethod: 'STANDARD',
+    });
+    expect(placed.status).toBe(201);
+    return { id: placed.body.orderId };
+  }
+  throw new Error('The seed produced no purchasable variant');
+}
+
+describe('methods the panel actually uses', () => {
+  /*
+   * Three routes existed under a method the panel never sends. Each answered
+   * "No such endpoint." to the only UI that calls it, so the feature was
+   * simply inoperable — order fulfilment could not be advanced at all.
+   */
+  it('advances an order by POST, as the order screen does', async () => {
+    const paid = await freshPaidOrder();
+
+    const { status } = await admin.post(`/admin/orders/${paid.id}/status`, {
+      status: 'PROCESSING',
+      note: null,
+      trackingNumber: null,
+      carrier: null,
+    });
+    expect(status).toBe(200);
+    expect((await admin.get(`/admin/orders/${paid.id}`)).body.status).toBe('PROCESSING');
+  });
+
+  /*
+   * The carrier and tracking number the dispatch form collects were rejected
+   * by a strict schema and, once accepted, went nowhere: `shipments` was only
+   * ever written by the seed, so a shipped order gave the customer nothing to
+   * track.
+   */
+  it('records a shipment when an order is marked shipped', async () => {
+    const target = await freshPaidOrder();
+
+    await admin.post(`/admin/orders/${target.id}/status`, { status: 'PROCESSING' });
+    await admin.post(`/admin/orders/${target.id}/status`, { status: 'PACKED' });
+    const shipped = await admin.post(`/admin/orders/${target.id}/status`, {
+      status: 'SHIPPED',
+      note: null,
+      trackingNumber: 'SIM-TRACK-4471',
+      carrier: 'DHL',
+    });
+    expect(shipped.status).toBe(200);
+
+    const detail = await admin.get(`/admin/orders/${target.id}`);
+    const shipment = detail.body.shipments?.[0];
+    expect(shipment).toBeTruthy();
+    expect(shipment.trackingNumber).toBe('SIM-TRACK-4471');
+    expect(shipment.carrier).toBe('DHL');
+
+    // And the customer is told the number, not merely that it shipped.
+    const listed = (await admin.get('/admin/shipments')).body;
+    expect(listed.some((s: any) => s.trackingNumber === 'SIM-TRACK-4471')).toBe(true);
+  });
+
+  it('still accepts PATCH for the same change', async () => {
+    const paid = await freshPaidOrder();
+    const { status } = await admin.patch(`/admin/orders/${paid.id}/status`, {
+      status: 'PROCESSING',
+    });
+    expect(status).toBe(200);
+  });
+
+  it('edits a coupon by PUT, as the coupons screen does', async () => {
+    const [coupon] = (await admin.get('/admin/coupons')).body;
+    const { status } = await admin.put(`/admin/coupons/${coupon.id}`, {
+      code: coupon.code,
+      type: 'PERCENTAGE',
+      value: 12,
+      description: 'Edited by PUT',
+      minOrderMinor: null,
+      maxDiscountMinor: null,
+      maxRedemptions: null,
+      maxRedemptionsPerCustomer: null,
+      firstOrderOnly: false,
+      freeShipping: false,
+      endsAt: null,
+      isActive: true,
+    });
+    expect(status).toBe(200);
+
+    const reloaded = (await admin.get('/admin/coupons')).body.find((c: any) => c.id === coupon.id);
+    expect(reloaded.description).toBe('Edited by PUT');
+  });
+
+  /*
+   * The receive form sends a per-line `restock` flag and the item schema was
+   * strict without it, so the whole request was rejected and a return could
+   * never be received — the step every later one depends on.
+   */
+  it('receives a return with the per-line restock flag the form sends', async () => {
+    const requested = (await admin.get('/admin/returns')).body.find(
+      (r: any) => r.status === 'REQUESTED',
+    );
+    expect(requested).toBeTruthy();
+
+    expect(
+      (await admin.post(`/admin/returns/${requested.id}/decision`, { decision: 'APPROVED' }))
+        .status,
+    ).toBe(200);
+
+    const detail = (await admin.get(`/admin/returns/${requested.id}`)).body;
+    const { status } = await admin.post(`/admin/returns/${requested.id}/receive`, {
+      items: detail.items.map((item: any) => ({
+        returnItemId: item.id,
+        receivedQuantity: item.quantity,
+        condition: 'RESELLABLE',
+        restock: true,
+      })),
+    });
+    expect(status).toBe(200);
+    expect((await admin.get(`/admin/returns/${requested.id}`)).body.status).toBe('RECEIVED');
+  });
+
+  it('holds a resellable unit back when the operator clears restock', async () => {
+    const requested = (await admin.get('/admin/returns')).body.find(
+      (r: any) => r.status === 'REQUESTED',
+    );
+    if (!requested) return; // one per seeded fixture; the case above may have taken it
+
+    await admin.post(`/admin/returns/${requested.id}/decision`, { decision: 'APPROVED' });
+    const detail = (await admin.get(`/admin/returns/${requested.id}`)).body;
+    const line = detail.items[0];
+
+    const variant = await harness.database.d1
+      .prepare(
+        `SELECT oi."variantId" AS v FROM "return_items" ri
+           JOIN "order_items" oi ON oi."id" = ri."orderItemId" WHERE ri."id" = ?`,
+      )
+      .bind(line.id)
+      .first<{ v: string }>();
+    const before = await harness.database.d1
+      .prepare(`SELECT "onHandQuantity" AS q FROM "inventory_balances" WHERE "variantId" = ?`)
+      .bind(variant!.v)
+      .first<{ q: number }>();
+
+    await admin.post(`/admin/returns/${requested.id}/receive`, {
+      items: detail.items.map((item: any) => ({
+        returnItemId: item.id,
+        receivedQuantity: item.quantity,
+        condition: 'RESELLABLE',
+        restock: false,
+      })),
+    });
+
+    const after = await harness.database.d1
+      .prepare(`SELECT "onHandQuantity" AS q FROM "inventory_balances" WHERE "variantId" = ?`)
+      .bind(variant!.v)
+      .first<{ q: number }>();
+    expect(after!.q).toBe(before!.q);
+  });
+});
+
 describe('the counts the list views render', () => {
   /*
    * `_count` is Prisma's shape, which is what the panel was written against
@@ -396,6 +574,69 @@ describe('the counts the list views render', () => {
   it('gives customers a _count.orders', async () => {
     const [customer] = (await admin.get('/admin/customers?page=1&pageSize=1')).body.items;
     expect(customer._count.orders).toEqual(expect.any(Number));
+  });
+});
+
+/**
+ * The detail screens, which the list-view coverage above does not reach.
+ *
+ * Each reads several collections unguarded — `order.refunds.length`,
+ * `customer.returnRequests.map(…)` — so a field the API does not send is not a
+ * missing panel, it is a thrown render and a blank page. All four of these
+ * screens were blank against this API while every list view worked.
+ */
+describe('the detail screens', () => {
+  it('order detail carries refunds and the history the screen maps over', async () => {
+    const [order] = (await admin.get('/admin/orders?page=1&pageSize=1')).body.items;
+    const { status, body } = await admin.get(`/admin/orders/${order.id}`);
+
+    expect(status).toBe(200);
+    expect(Array.isArray(body.items)).toBe(true);
+    expect(Array.isArray(body.payments)).toBe(true);
+    expect(Array.isArray(body.refunds)).toBe(true);
+    expect(Array.isArray(body.statusHistory)).toBe(true);
+  });
+
+  it('customer detail carries returns, refunds and support notes', async () => {
+    const [customer] = (await admin.get('/admin/customers?page=1&pageSize=1')).body.items;
+    const { status, body } = await admin.get(`/admin/customers/${customer.id}`);
+
+    expect(status).toBe(200);
+    expect(Array.isArray(body.orders)).toBe(true);
+    expect(Array.isArray(body.addresses)).toBe(true);
+    expect(Array.isArray(body.supportNotes)).toBe(true);
+    expect(Array.isArray(body.returnRequests)).toBe(true);
+    expect(Array.isArray(body.refunds)).toBe(true);
+    expect(body).toHaveProperty('disabledReason');
+  });
+
+  it('campaign detail nests each product the editor renders', async () => {
+    // A seeded campaign, not one an earlier case created empty.
+    const campaign = (await admin.get('/admin/campaigns')).body.find(
+      (c: any) => c._count.products > 0,
+    );
+    expect(campaign).toBeTruthy();
+    const { status, body } = await admin.get(`/admin/campaigns/${campaign.id}`);
+
+    expect(status).toBe(200);
+    expect(body.products.length).toBeGreaterThan(0);
+    for (const row of body.products) {
+      expect(row.product).toMatchObject({
+        id: expect.any(String),
+        name: expect.any(String),
+        outletPriceMinor: expect.any(Number),
+      });
+      expect(row.product.brand.name).toEqual(expect.any(String));
+    }
+  });
+
+  it('return detail carries its refunds', async () => {
+    const [request] = (await admin.get('/admin/returns')).body;
+    const { status, body } = await admin.get(`/admin/returns/${request.id}`);
+
+    expect(status).toBe(200);
+    expect(Array.isArray(body.items)).toBe(true);
+    expect(Array.isArray(body.refunds)).toBe(true);
   });
 });
 

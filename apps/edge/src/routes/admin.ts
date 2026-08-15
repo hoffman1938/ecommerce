@@ -681,7 +681,7 @@ admin.get('/orders/:id', async (c) => {
       id: pathId(c.req.param('id')),
     },
   );
-  const [timeline, payments, movements] = await Promise.all([
+  const [timeline, payments, movements, refunds] = await Promise.all([
     orderTimeline(ctx.db, order.id),
     paymentsForOrder(ctx.db, order.id),
     // What this order did to stock — the "view inventory effects" the admin
@@ -693,11 +693,39 @@ admin.get('/orders/:id', async (c) => {
         WHERE m."orderId" = ? ORDER BY m."createdAt"`,
       order.id,
     ),
+    /*
+     * Money already sent back. The order screen lists these under the totals
+     * and reads `order.refunds.length` before anything else, so omitting them
+     * threw during render — the whole screen, not just the refunds panel.
+     */
+    ctx.db.all(
+      `SELECT "id", "amountMinor", "status", "reason", "providerRefundId", "createdAt"
+         FROM "refunds" WHERE "orderId" = ? ORDER BY "createdAt" DESC`,
+      order.id,
+    ),
   ]);
-  return c.json({ ...order, timeline, payments, inventoryMovements: movements });
+
+  return c.json({
+    ...order,
+    timeline,
+    // The same rows under the name the screen reads them by. `timeline` is
+    // this API's vocabulary; `statusHistory` is the panel's, and it maps over
+    // it directly.
+    statusHistory: timeline,
+    payments,
+    refunds,
+    inventoryMovements: movements,
+  });
 });
 
-admin.patch('/orders/:id/status', async (c) => {
+/*
+ * Registered for POST as well as PATCH.
+ *
+ * The order detail screen POSTs here — it is the only way to advance an order
+ * through the panel — and the route existed only as PATCH, so every status
+ * change returned "No such endpoint." Fulfilment could not be driven at all.
+ */
+const changeOrderStatus = async (c: Context<AppEnv>) => {
   const ctx = ctxOf(c);
   const session = requirePermission(ctx.session, Permissions.OrdersUpdate);
   const id = pathId(c.req.param('id'));
@@ -750,13 +778,81 @@ admin.patch('/orders/:id/status', async (c) => {
     }),
   ];
 
+  /*
+   * Dispatch, recorded rather than dropped.
+   *
+   * The panel collects a carrier and a tracking number when an order ships,
+   * and until now both were discarded: the schema rejected them and the
+   * `shipments` table was only ever written by the seed. A customer looking at
+   * a shipped order saw no way to track it.
+   *
+   * Upserted by order rather than inserted, so correcting a mistyped tracking
+   * number updates the consignment instead of creating a second one.
+   */
+  if (body.status === 'SHIPPED' || body.status === 'DELIVERED') {
+    const existing = await ctx.db.first<{ id: string }>(
+      `SELECT "id" FROM "shipments" WHERE "orderId" = ? ORDER BY "createdAt" LIMIT 1`,
+      id,
+    );
+    const shipmentId = existing?.id ?? newId();
+    const delivered = body.status === 'DELIVERED';
+
+    statements.push(
+      existing
+        ? ctx.db.statement(
+            `UPDATE "shipments"
+                SET "carrier" = COALESCE(?, "carrier"),
+                    "trackingNumber" = COALESCE(?, "trackingNumber"),
+                    "status" = ?,
+                    "shippedAt" = COALESCE("shippedAt", ?),
+                    "deliveredAt" = CASE WHEN ? THEN ? ELSE "deliveredAt" END,
+                    "updatedAt" = ?
+              WHERE "id" = ?`,
+            body.carrier ?? null,
+            body.trackingNumber ?? null,
+            body.status,
+            now,
+            delivered ? 1 : 0,
+            now,
+            now,
+            shipmentId,
+          )
+        : ctx.db.statement(
+            `INSERT INTO "shipments"
+               ("id", "orderId", "carrier", "trackingNumber", "status", "shippedAt", "deliveredAt", "createdAt", "updatedAt")
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            shipmentId,
+            id,
+            body.carrier ?? null,
+            body.trackingNumber ?? null,
+            body.status,
+            now,
+            delivered ? now : null,
+            now,
+            now,
+          ),
+      ctx.db.statement(
+        `INSERT INTO "shipment_events" ("id", "shipmentId", "code", "label", "occurredAt")
+         VALUES (?, ?, ?, ?, ?)`,
+        newId(),
+        shipmentId,
+        delivered ? 'DELIVERED' : 'SHIPPED',
+        delivered ? 'Delivered' : 'Handed to carrier',
+        now,
+      ),
+    );
+  }
+
   if (order.userId) {
+    const tracking = body.trackingNumber
+      ? ` Tracking number ${body.trackingNumber}${body.carrier ? ` (${body.carrier})` : ''}.`
+      : '';
     statements.push(
       ...notify(ctx.db, {
         userId: order.userId,
         type: 'ORDER_STATUS',
         title: `Order ${order.orderNumber} updated`,
-        body: `Your order is now ${body.status.toLowerCase().replace(/_/g, ' ')}.`,
+        body: `Your order is now ${body.status.toLowerCase().replace(/_/g, ' ')}.${tracking}`,
         email: order.email,
         orderId: id,
         template: 'order_status',
@@ -767,7 +863,10 @@ admin.patch('/orders/:id/status', async (c) => {
 
   await ctx.db.batch(statements);
   return c.json({ ok: true, status: body.status });
-});
+};
+
+admin.post('/orders/:id/status', changeOrderStatus);
+admin.patch('/orders/:id/status', changeOrderStatus);
 
 admin.patch('/orders/:id/note', async (c) => {
   const ctx = ctxOf(c);
@@ -855,13 +954,13 @@ admin.get('/customers/:id', async (c) => {
 
   const customer = await ctx.db.first(
     `SELECT "id", "email", "firstName", "lastName", "status", "isEmailVerified",
-            "newsletterOptIn", "createdAt"
+            "newsletterOptIn", "disabledReason", "createdAt"
        FROM "users" WHERE "id" = ?`,
     id,
   );
   if (!customer) throw notFound('Customer not found.');
 
-  const [orders, addresses, notes, roles] = await Promise.all([
+  const [orders, addresses, notes, roles, returnRequests, refunds] = await Promise.all([
     ctx.db.all(
       `SELECT "id", "orderNumber", "status", "totalMinor", "placedAt"
          FROM "orders" WHERE "userId" = ? ORDER BY "placedAt" DESC LIMIT 25`,
@@ -882,6 +981,26 @@ admin.get('/customers/:id', async (c) => {
       `SELECT r."name" FROM "user_roles" ur JOIN "roles" r ON r."id" = ur."roleId" WHERE ur."userId" = ?`,
       id,
     ),
+    /*
+     * Returns and refunds for this customer. The support screen renders both
+     * panels and reads `.length` on each before rendering anything, so their
+     * absence threw and blanked the page rather than showing empty sections.
+     */
+    ctx.db.all(
+      `SELECT r."id", r."rmaNumber", r."status", r."createdAt", o."orderNumber"
+         FROM "return_requests" r
+         JOIN "orders" o ON o."id" = r."orderId"
+        WHERE r."userId" = ? ORDER BY r."createdAt" DESC LIMIT 25`,
+      id,
+    ),
+    ctx.db.all(
+      `SELECT rf."id", rf."amountMinor", rf."status", rf."reason", rf."createdAt",
+              o."orderNumber"
+         FROM "refunds" rf
+         JOIN "orders" o ON o."id" = rf."orderId"
+        WHERE o."userId" = ? ORDER BY rf."createdAt" DESC LIMIT 25`,
+      id,
+    ),
   ]);
 
   return c.json({
@@ -889,6 +1008,10 @@ admin.get('/customers/:id', async (c) => {
     orders,
     addresses,
     notes,
+    // `supportNotes` is the name the screen binds to; `notes` is this API's.
+    supportNotes: notes,
+    returnRequests,
+    refunds,
     roles: roles.map((r) => (r as { name: string }).name),
   });
 });
@@ -1284,7 +1407,11 @@ admin.post('/coupons', async (c) => {
   return c.json({ id, ...body }, 201);
 });
 
-admin.patch('/coupons/:id', async (c) => {
+/*
+ * PUT and PATCH both. The coupons screen sends PUT; the route was PATCH only,
+ * so editing a coupon 404'd. The body is a whole coupon either way.
+ */
+const updateCoupon = async (c: Context<AppEnv>) => {
   const ctx = ctxOf(c);
   const session = requirePermission(ctx.session, Permissions.CouponsManage);
   const id = pathId(c.req.param('id'));
@@ -1324,7 +1451,10 @@ admin.patch('/coupons/:id', async (c) => {
     }),
   ]);
   return c.json({ id, ...body });
-});
+};
+
+admin.put('/coupons/:id', updateCoupon);
+admin.patch('/coupons/:id', updateCoupon);
 
 // --- Campaigns and promotions ------------------------------------------------
 
