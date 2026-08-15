@@ -13,12 +13,13 @@ import { z } from 'zod';
 import type { AppEnv } from '../http/context';
 import { ctxOf } from '../http/context';
 import { admin } from './admin';
-import { ApiError, notFound } from '../lib/errors';
+import { ApiError, conflict, notFound } from '../lib/errors';
 import { newId } from '../lib/ids';
-import { Db, bool, fromBool, nowIso, toJson } from '../lib/sql';
+import { Db, bool, fromBool, inClause, nowIso, toJson } from '../lib/sql';
 import { auditStatement, requirePermission, writeAudit } from '../auth/rbac';
 import { adjustStock, release } from '../services/inventory';
-import { parse, pathId, readJson } from '../lib/validate';
+import { notify } from '../services/inbox';
+import { adminCampaignSchema, parse, pathId, readJson } from '../lib/validate';
 
 /*
  * These attach to the *same* Hono instance as routes/admin.ts. The split is
@@ -651,20 +652,56 @@ adminManage.post('/reviews/bulk', async (c) => {
   return c.json({ count: body.ids.length, ids: body.ids });
 });
 
+/**
+ * The moderation dashboard's header.
+ *
+ * `statusCounts` and `distribution` are maps, not columns: the queue's tab
+ * counts index `statusCounts[tab.key]` and the histogram indexes
+ * `distribution['5']`. Returning the flat SUM row instead threw on
+ * `Object.values(undefined)` and blanked the reviews screen.
+ */
 adminManage.get('/reviews/stats', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.ReviewsView);
-  const row = await ctx.db.first(
-    `SELECT COUNT(*) AS "total",
-            SUM(CASE WHEN "status" = 'PENDING' THEN 1 ELSE 0 END) AS "pending",
-            SUM(CASE WHEN "status" = 'PUBLISHED' THEN 1 ELSE 0 END) AS "published",
-            SUM(CASE WHEN "status" = 'REJECTED' THEN 1 ELSE 0 END) AS "rejected",
-            SUM(CASE WHEN "status" = 'HIDDEN' THEN 1 ELSE 0 END) AS "hidden",
-            SUM(CASE WHEN "reportCount" > 0 THEN 1 ELSE 0 END) AS "reported",
-            ROUND(AVG("rating"), 2) AS "averageRating"
-       FROM "product_reviews"`,
-  );
-  return c.json(row);
+
+  const [byStatus, byRating, row] = await Promise.all([
+    ctx.db.all<{ status: string; c: number }>(
+      `SELECT "status", COUNT(*) AS "c" FROM "product_reviews" GROUP BY "status"`,
+    ),
+    ctx.db.all<{ rating: number; c: number }>(
+      `SELECT "rating", COUNT(*) AS "c" FROM "product_reviews"
+        WHERE "status" = 'PUBLISHED' GROUP BY "rating"`,
+    ),
+    ctx.db.first<{ reported: number; unanswered: number; ratingAverage: number | null }>(
+      `SELECT SUM(CASE WHEN "reportCount" > 0 THEN 1 ELSE 0 END) AS "reported",
+              SUM(CASE WHEN "adminReply" IS NULL AND "status" = 'PUBLISHED' THEN 1 ELSE 0 END)
+                AS "unanswered",
+              ROUND(AVG(CASE WHEN "status" = 'PUBLISHED' THEN "rating" END), 2) AS "ratingAverage"
+         FROM "product_reviews"`,
+    ),
+  ]);
+
+  // Every status present, so a tab with no reviews shows 0 rather than blank.
+  const statusCounts: Record<string, number> = {
+    PENDING: 0,
+    PUBLISHED: 0,
+    REJECTED: 0,
+    HIDDEN: 0,
+  };
+  for (const { status, c: count } of byStatus) statusCounts[status] = count;
+
+  const distribution: Record<string, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  for (const { rating, c: count } of byRating) distribution[String(rating)] = count;
+
+  return c.json({
+    statusCounts,
+    distribution,
+    reported: row?.reported ?? 0,
+    unanswered: row?.unanswered ?? 0,
+    publishedCount: statusCounts.PUBLISHED,
+    ratingAverage: row?.ratingAverage ?? null,
+    total: Object.values(statusCounts).reduce((a, b) => a + b, 0),
+  });
 });
 
 // --- Customers ---------------------------------------------------------------
@@ -783,6 +820,110 @@ adminManage.post('/users/:id/roles', async (c) => {
 });
 
 // --- Campaigns ---------------------------------------------------------------
+
+/**
+ * The slug is what `/campaigns/:slug` on the storefront resolves, so a second
+ * campaign claiming one would make the first unreachable. The column has no
+ * UNIQUE index (a slug freed by an archived campaign should be reusable), so
+ * the check is here, and it excludes the row being edited — otherwise saving a
+ * campaign without touching its slug would report a conflict with itself.
+ */
+async function assertSlugFree(
+  db: ReturnType<typeof ctxOf>['db'],
+  slug: string,
+  exceptId?: string,
+): Promise<void> {
+  const clash = await db.first<{ id: string }>(
+    `SELECT "id" FROM "campaigns" WHERE "slug" = ? AND "id" <> ? LIMIT 1`,
+    slug,
+    exceptId ?? '',
+  );
+  if (clash) throw conflict('Another campaign already uses that slug.');
+}
+
+adminManage.post('/campaigns', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requirePermission(ctx.session, Permissions.CampaignsManage);
+  const body = parse(adminCampaignSchema, await readJson(c.req.raw));
+  await assertSlugFree(ctx.db, body.slug);
+
+  const id = newId();
+  await ctx.db.batch([
+    ctx.db.statement(
+      `INSERT INTO "campaigns"
+         ("id", "title", "slug", "shortDescription", "description", "coverImageUrl",
+          "startsAt", "endsAt", "status", "position", "isVisible", "seoTitle", "seoDescription")
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      id,
+      body.title,
+      body.slug,
+      body.shortDescription ?? null,
+      body.description ?? null,
+      body.coverImageUrl ?? null,
+      body.startsAt,
+      body.endsAt,
+      body.status,
+      body.position,
+      bool(body.isVisible),
+      body.seoTitle ?? null,
+      body.seoDescription ?? null,
+    ),
+    auditStatement(ctx.db, session, ctx.ip, {
+      action: 'campaign.create',
+      entityType: 'Campaign',
+      entityId: id,
+      after: body,
+    }),
+  ]);
+  return c.json({ id, ...body }, 201);
+});
+
+adminManage.put('/campaigns/:id', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requirePermission(ctx.session, Permissions.CampaignsManage);
+  const id = pathId(c.req.param('id'));
+  const body = parse(adminCampaignSchema, await readJson(c.req.raw));
+
+  const before = await ctx.db.first(`SELECT * FROM "campaigns" WHERE "id" = ?`, id);
+  if (!before) throw notFound('Campaign not found.');
+  await assertSlugFree(ctx.db, body.slug, id);
+
+  await ctx.db.batch([
+    ctx.db.statement(
+      `UPDATE "campaigns"
+          SET "title" = ?, "slug" = ?, "shortDescription" = ?, "description" = ?,
+              "coverImageUrl" = ?, "startsAt" = ?, "endsAt" = ?, "status" = ?, "position" = ?,
+              "isVisible" = ?, "seoTitle" = ?, "seoDescription" = ?,
+              "archivedAt" = CASE WHEN ? = 'ARCHIVED' THEN COALESCE("archivedAt", ?) ELSE NULL END,
+              "updatedAt" = ?
+        WHERE "id" = ?`,
+      body.title,
+      body.slug,
+      body.shortDescription ?? null,
+      body.description ?? null,
+      body.coverImageUrl ?? null,
+      body.startsAt,
+      body.endsAt,
+      body.status,
+      body.position,
+      bool(body.isVisible),
+      body.seoTitle ?? null,
+      body.seoDescription ?? null,
+      body.status,
+      nowIso(),
+      nowIso(),
+      id,
+    ),
+    auditStatement(ctx.db, session, ctx.ip, {
+      action: 'campaign.update',
+      entityType: 'Campaign',
+      entityId: id,
+      before,
+      after: body,
+    }),
+  ]);
+  return c.json({ id, ...body });
+});
 
 adminManage.get('/campaigns/:id', async (c) => {
   const ctx = ctxOf(c);
@@ -1382,8 +1523,8 @@ adminManage.post('/orders/:id/resend-confirmation', async (c) => {
   const session = requirePermission(ctx.session, Permissions.OrdersUpdate);
   const id = pathId(c.req.param('id'));
 
-  const order = await ctx.db.first<{ orderNumber: string; userId: string | null }>(
-    `SELECT "orderNumber", "userId" FROM "orders" WHERE "id" = ?`,
+  const order = await ctx.db.first<{ orderNumber: string; userId: string | null; email: string }>(
+    `SELECT "orderNumber", "userId", "email" FROM "orders" WHERE "id" = ?`,
     id,
   );
   if (!order) throw notFound('Order not found.');
@@ -1395,15 +1536,15 @@ adminManage.post('/orders/:id/resend-confirmation', async (c) => {
   }
 
   await ctx.db.batch([
-    ctx.db.statement(
-      `INSERT INTO "notifications" ("id", "userId", "type", "title", "body", "createdAt")
-       VALUES (?, ?, 'ORDER_CONFIRMATION', ?, ?, ?)`,
-      newId(),
-      order.userId,
-      `Confirmation for ${order.orderNumber}`,
-      'A copy of your order confirmation. This demo sends no email; it appears in your account instead.',
-      nowIso(),
-    ),
+    ...notify(ctx.db, {
+      userId: order.userId,
+      type: 'ORDER_CONFIRMATION',
+      title: `Confirmation for ${order.orderNumber}`,
+      body: 'A copy of your order confirmation. This demo sends no email; it appears in your account instead.',
+      email: order.email,
+      orderId: id,
+      template: 'order_confirmation',
+    }),
     auditStatement(ctx.db, session, ctx.ip, {
       action: 'order.resend_confirmation',
       entityType: 'Order',
@@ -1418,20 +1559,50 @@ adminManage.post('/orders/:id/resend-confirmation', async (c) => {
 // The panel lists these under /admin/inventory/reservations; routes/admin.ts
 // serves /admin/reservations. Both answer.
 
+/**
+ * The reservations screen, which filters by status and reads `data.items`.
+ *
+ * Paginated rather than a bare array for that reason: the page renders
+ * `data.items.length` before anything else, so returning the rows unwrapped
+ * threw during render and blanked the screen. The status filter is compared
+ * against the column values, not interpolated.
+ */
 adminManage.get('/inventory/reservations', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.ReservationsView);
-  return c.json(
-    await ctx.db.all(
-      `SELECT r."id", v."sku", p."name" AS "productName", r."quantity", r."status",
-              u."email" AS "customerEmail", r."createdAt", r."expiresAt"
-         FROM "inventory_reservations" r
-         JOIN "product_variants" v ON v."id" = r."variantId"
-         JOIN "products" p ON p."id" = v."productId"
-         LEFT JOIN "users" u ON u."id" = r."userId"
-        ORDER BY r."createdAt" DESC LIMIT 100`,
-    ),
+  const query = c.req.query();
+
+  const clauses: string[] = [];
+  const bindings: string[] = [];
+  if (query.status) {
+    clauses.push(`r."status" = ?`);
+    bindings.push(query.status);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+
+  const pageSize = Math.max(1, Math.min(200, Number(query.pageSize) || 100));
+  const total = await ctx.db.count(
+    `SELECT COUNT(*) AS "c" FROM "inventory_reservations" r ${where}`,
+    ...bindings,
   );
+  const totalPages = Math.ceil(total / pageSize);
+  const page = totalPages === 0 ? 1 : Math.min(Math.max(1, Number(query.page) || 1), totalPages);
+
+  const items = await ctx.db.all(
+    `SELECT r."id", v."sku", p."name" AS "productName", r."quantity", r."status",
+            u."email" AS "customerEmail", r."createdAt", r."expiresAt"
+       FROM "inventory_reservations" r
+       JOIN "product_variants" v ON v."id" = r."variantId"
+       JOIN "products" p ON p."id" = v."productId"
+       LEFT JOIN "users" u ON u."id" = r."userId"
+       ${where}
+      ORDER BY r."createdAt" DESC LIMIT ? OFFSET ?`,
+    ...bindings,
+    pageSize,
+    (page - 1) * pageSize,
+  );
+
+  return c.json({ items, total, page, pageSize, totalPages });
 });
 
 // --- Refunds -----------------------------------------------------------------

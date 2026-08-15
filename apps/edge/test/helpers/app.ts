@@ -148,6 +148,7 @@ export class TestClient {
 
   get = (path: string) => this.request('GET', path);
   post = (path: string, body?: unknown) => this.request('POST', path, body ?? {});
+  put = (path: string, body?: unknown) => this.request('PUT', path, body ?? {});
   patch = (path: string, body?: unknown) => this.request('PATCH', path, body ?? {});
   delete = (path: string) => this.request('DELETE', path);
 

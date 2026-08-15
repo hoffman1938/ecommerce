@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type RegisterInput } from '@outlet/validation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Button, TextField } from '@outlet/ui';
-import { api, ApiError, DEMO_MODE } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { T } from '@/components/t';
 import { useI18n } from '@/lib/i18n';
 
@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
   const queryClient = useQueryClient();
   const form = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) });
 
@@ -22,10 +23,19 @@ export default function RegisterPage() {
     setError(null);
     try {
       await api.post('/auth/register', values);
-      // The demo has no mail server, so registration verifies the address and
-      // signs the user in immediately. Refresh the session-derived queries so
-      // the header reflects that straight away.
-      if (DEMO_MODE) await queryClient.invalidateQueries();
+      /*
+       * Whether the account still needs an emailed verification link is not
+       * something this page can assume: the Cloudflare deployment has no mail
+       * provider and signs the new account in immediately, the local NestJS
+       * stack sends to Mailpit and does not. Asking who we are afterwards
+       * distinguishes the two by observation, so neither backend gets told
+       * "check your email" when nothing was sent.
+       */
+      const me = await api
+        .get<{ user: { id: string } | null }>('/auth/me')
+        .catch(() => ({ user: null }));
+      setSignedIn(Boolean(me?.user));
+      if (me?.user) await queryClient.invalidateQueries();
       setDone(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Registration failed.');
@@ -36,13 +46,13 @@ export default function RegisterPage() {
     return (
       <div className="text-center">
         <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">
-          {DEMO_MODE ? 'You’re all set' : 'Check your email'}
+          {signedIn ? 'You’re all set' : 'Check your email'}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-ink-600">
-          {DEMO_MODE ? (
+          {signedIn ? (
             <>
-              Your account was created and you are signed in. The demo has no mail server, so the
-              email verification step is skipped.
+              Your account was created and you are signed in. This environment has no mail provider,
+              so the email verification step is skipped rather than pretended.
             </>
           ) : (
             <>
@@ -60,10 +70,10 @@ export default function RegisterPage() {
           )}
         </p>
         <Link
-          href={DEMO_MODE ? '/account' : '/login'}
+          href={signedIn ? '/account' : '/login'}
           className="mt-7 inline-flex h-11 items-center rounded bg-ink-950 px-6 text-sm font-semibold text-ink-25 transition-colors hover:bg-ink-800"
         >
-          {DEMO_MODE ? 'Go to your account' : 'Go to sign in'}
+          {signedIn ? 'Go to your account' : 'Go to sign in'}
         </Link>
       </div>
     );

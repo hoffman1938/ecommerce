@@ -395,9 +395,18 @@ export async function getContentPage(db: Db, key: string) {
   );
 }
 
+/**
+ * The CMS pages, bodies included.
+ *
+ * The admin editor loads this list and binds the selected page's `body`
+ * straight into its textarea — it does not fetch the page again — so omitting
+ * the column opens every page blank and saves the blank back over it. There
+ * are a handful of these rows and only an administrator can read them, so the
+ * payload is not a reason to leave the column out.
+ */
 export async function listContentPages(db: Db) {
-  return db.all<{ key: string; title: string; updatedAt: string }>(
-    `SELECT "key", "title", "updatedAt" FROM "content_pages" ORDER BY "key"`,
+  return db.all<{ key: string; title: string; body: string; updatedAt: string }>(
+    `SELECT "key", "title", "body", "updatedAt" FROM "content_pages" ORDER BY "key"`,
   );
 }
 

@@ -220,8 +220,8 @@ describe('object-level authorization (IDOR)', () => {
   it('will not show one customer another customer’s order', async () => {
     const owner = await signIn('customer@demo.local');
     const orders = await owner.get('/account/orders');
-    expect(orders.body.total).toBeGreaterThan(0);
-    const someoneElsesOrderId = orders.body.items[0].id;
+    expect(orders.body.length).toBeGreaterThan(0);
+    const someoneElsesOrderId = orders.body[0].id;
 
     const stranger = await signIn('jonas.weber@demo.local');
     const { status } = await stranger.get(`/account/orders/${someoneElsesOrderId}`);
@@ -231,7 +231,7 @@ describe('object-level authorization (IDOR)', () => {
 
   it('will not let a customer cancel another customer’s order', async () => {
     const owner = await signIn('customer@demo.local');
-    const orderId = (await owner.get('/account/orders')).body.items[0].id;
+    const orderId = (await owner.get('/account/orders')).body[0].id;
 
     const stranger = await signIn('emma.novak@demo.local');
     const { status } = await stranger.post(`/account/orders/${orderId}/cancel`);

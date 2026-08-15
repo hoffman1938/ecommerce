@@ -34,6 +34,7 @@ import {
   resolveCategoryPath,
 } from '../services/navigation';
 import { readSettings } from '../services/settings';
+import { notify } from '../services/inbox';
 import * as cartService from '../services/cart';
 import { findOrderByIdempotencyKey, placeDemoOrder } from '../services/checkout';
 import {
@@ -51,6 +52,7 @@ import {
   parse,
   pathId,
   pathSlug,
+  notificationPreferencesSchema,
   profileSchema,
   readJson,
   returnRequestSchema,
@@ -384,10 +386,19 @@ storefront.post('/checkout/submit', async (c) => {
     paymentId: result.paymentId,
     orderId: result.orderId,
     provider: 'demo',
-    // The order is already placed and marked paid, so the browser goes
-    // straight to confirmation. There is no payment page to visit because
-    // there is no payment to make.
-    redirectUrl: `/checkout/result?paymentId=${encodeURIComponent(result.paymentId)}&order=${encodeURIComponent(result.orderNumber)}`,
+    /*
+     * The order is already placed and marked paid, so the browser goes
+     * straight to confirmation. There is no payment page to visit because
+     * there is no payment to make.
+     *
+     * `orderId` first, and spelled that way: the confirmation page polls
+     * `/account/orders/:orderId` and gives up with "Missing order reference"
+     * without it. Both other backends emit the same parameter — this one used
+     * to send `order=<number>`, so a completed purchase ended on an error
+     * screen even though the order was placed correctly. `paymentId` rides
+     * along for the guest path, which polls the payment instead.
+     */
+    redirectUrl: `/checkout/result?orderId=${encodeURIComponent(result.orderId)}&paymentId=${encodeURIComponent(result.paymentId)}`,
     amountMinor: result.totalMinor,
     currencyCode: result.currencyCode,
   };
@@ -432,10 +443,35 @@ storefront.get('/payments/:id/status', async (c) => {
 
 // --- Account -----------------------------------------------------------------
 
+/**
+ * The account profile, carrying the notification preferences with it.
+ *
+ * The preferences screen binds `profile.notificationPreferences.orderUpdates`
+ * and has no second request to fall back on, so the session user alone left it
+ * reading a property of undefined and blanked the page. The three flags are
+ * stored as separate columns and grouped here under the names the form uses.
+ */
 storefront.get('/account/profile', async (c) => {
   const ctx = ctxOf(c);
   const session = requireSession(ctx.session);
-  return c.json(session.user);
+  const prefs = await ctx.db.first<{
+    notifyOrderUpdates: number;
+    notifyCampaigns: number;
+    newsletterOptIn: number;
+  }>(
+    `SELECT "notifyOrderUpdates", "notifyCampaigns", "newsletterOptIn"
+       FROM "users" WHERE "id" = ?`,
+    session.user.id,
+  );
+
+  return c.json({
+    ...session.user,
+    notificationPreferences: {
+      orderUpdates: fromBool(prefs?.notifyOrderUpdates ?? 1),
+      campaignAnnouncements: fromBool(prefs?.notifyCampaigns ?? 1),
+      newsletter: fromBool(prefs?.newsletterOptIn ?? 0),
+    },
+  });
 });
 
 storefront.patch('/account/profile', async (c) => {
@@ -464,20 +500,35 @@ storefront.patch('/account/profile', async (c) => {
 storefront.patch('/account/notification-preferences', async (c) => {
   const ctx = ctxOf(c);
   const session = requireSession(ctx.session);
-  const body = parse(profileSchema, await readJson(c.req.raw));
+  const body = parse(notificationPreferencesSchema, await readJson(c.req.raw));
+
+  // The form posts the preference object it was given back, under the names
+  // GET /account/profile publishes; the column names are this API's own.
+  const orderUpdates = body.orderUpdates ?? body.notifyOrderUpdates;
+  const campaigns = body.campaignAnnouncements ?? body.notifyCampaigns;
+  const newsletter = body.newsletter ?? body.newsletterOptIn;
+  const flag = (value: boolean | undefined) => (value === undefined ? null : value ? 1 : 0);
+
   await ctx.db.run(
     `UPDATE "users" SET "notifyOrderUpdates" = COALESCE(?, "notifyOrderUpdates"),
                         "notifyCampaigns" = COALESCE(?, "notifyCampaigns"),
                         "newsletterOptIn" = COALESCE(?, "newsletterOptIn"),
                         "updatedAt" = ?
       WHERE "id" = ?`,
-    body.notifyOrderUpdates === undefined ? null : body.notifyOrderUpdates ? 1 : 0,
-    body.notifyCampaigns === undefined ? null : body.notifyCampaigns ? 1 : 0,
-    body.newsletterOptIn === undefined ? null : body.newsletterOptIn ? 1 : 0,
+    flag(orderUpdates),
+    flag(campaigns),
+    flag(newsletter),
     nowIso(),
     session.user.id,
   );
-  return c.json({ ok: true });
+  return c.json({
+    ok: true,
+    notificationPreferences: {
+      orderUpdates: orderUpdates ?? true,
+      campaignAnnouncements: campaigns ?? true,
+      newsletter: newsletter ?? false,
+    },
+  });
 });
 
 storefront.get('/account/addresses', async (c) => {
@@ -603,10 +654,22 @@ storefront.delete('/account/wishlist/:id', async (c) => {
 
 // --- Orders ------------------------------------------------------------------
 
+/**
+ * Order history, as a bare array.
+ *
+ * That is the contract the NestJS API publishes and the one the storefront was
+ * written against: the overview page does `orders.slice(0, 5)` and the history
+ * page maps over the response directly. Returning the paginated envelope threw
+ * on `.slice` and blanked both. Paging still works — `?page=`/`?pageSize=` are
+ * honoured and the meta comes back in headers rather than wrapping the body.
+ */
 storefront.get('/account/orders', async (c) => {
   const ctx = ctxOf(c);
   const session = requireSession(ctx.session);
-  return c.json(await listOrdersForCustomer(ctx.db, session.user.id, c.req.query()));
+  const result = await listOrdersForCustomer(ctx.db, session.user.id, c.req.query());
+  c.header('x-total-count', String(result.total));
+  c.header('x-total-pages', String(result.totalPages));
+  return c.json(result.items);
 });
 
 storefront.get('/account/orders/:id', async (c) => {
@@ -768,15 +831,16 @@ storefront.post('/account/returns', async (c) => {
       session.user.id,
       now,
     ),
-    ctx.db.statement(
-      `INSERT INTO "notifications" ("id", "userId", "type", "title", "body", "createdAt")
-       VALUES (?, ?, 'RETURN_REQUESTED', ?, ?, ?)`,
-      newId(),
-      session.user.id,
-      `Return requested for ${order.orderNumber}`,
-      'We have received your return request and will review it shortly.',
-      now,
-    ),
+    ...notify(ctx.db, {
+      userId: session.user.id,
+      type: 'RETURN_REQUESTED',
+      title: `Return requested for ${order.orderNumber}`,
+      body: 'We have received your return request and will review it shortly.',
+      email: session.user.email,
+      orderId: order.id,
+      template: 'return_requested',
+      at: now,
+    }),
   ]);
 
   return c.json(
@@ -787,16 +851,70 @@ storefront.post('/account/returns', async (c) => {
 
 // --- Notifications -----------------------------------------------------------
 
+/**
+ * The notification centre.
+ *
+ * Returned as `{ items, unreadCount }` rather than a bare array because the
+ * inbox renders a count on the tab, and deriving it from a page capped at 50
+ * would be wrong the moment somebody has more than fifty unread.
+ */
 storefront.get('/account/notifications', async (c) => {
   const ctx = ctxOf(c);
   const session = requireSession(ctx.session);
-  return c.json(
-    await ctx.db.all(
-      `SELECT "id", "type", "title", "body", "readAt", "createdAt"
-         FROM "notifications" WHERE "userId" = ? ORDER BY "createdAt" DESC LIMIT 50`,
+  const [items, unreadCount] = await Promise.all([
+    ctx.db.all(
+      `SELECT n."id", n."type", n."title", n."body", n."readAt", n."createdAt", o."orderNumber"
+         FROM "notifications" n
+         LEFT JOIN "orders" o ON o."id" = n."orderId"
+        WHERE n."userId" = ? ORDER BY n."createdAt" DESC LIMIT 50`,
       session.user.id,
     ),
+    ctx.db.count(
+      `SELECT COUNT(*) AS "c" FROM "notifications" WHERE "userId" = ? AND "readAt" IS NULL`,
+      session.user.id,
+    ),
+  ]);
+  return c.json({ items, unreadCount });
+});
+
+/**
+ * The simulated mailbox.
+ *
+ * There is no email provider in this deployment and no SMTP transport in the
+ * Worker at all, so the messages a real system would have sent are written to
+ * `simulated_emails` and read back here. Nothing is transmitted to anybody.
+ * See SECURITY.md — this is the deliberate substitute, not a stub.
+ */
+storefront.get('/account/inbox', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requireSession(ctx.session);
+  const [items, unreadCount] = await Promise.all([
+    ctx.db.all(
+      `SELECT e."id", e."to", e."subject", e."body", e."template", e."readAt", e."sentAt",
+              o."orderNumber"
+         FROM "simulated_emails" e
+         LEFT JOIN "orders" o ON o."id" = e."orderId"
+        WHERE e."userId" = ? ORDER BY e."sentAt" DESC LIMIT 50`,
+      session.user.id,
+    ),
+    ctx.db.count(
+      `SELECT COUNT(*) AS "c" FROM "simulated_emails" WHERE "userId" = ? AND "readAt" IS NULL`,
+      session.user.id,
+    ),
+  ]);
+  return c.json({ items, unreadCount });
+});
+
+storefront.post('/account/inbox/:id/read', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requireSession(ctx.session);
+  await ctx.db.run(
+    `UPDATE "simulated_emails" SET "readAt" = ? WHERE "id" = ? AND "userId" = ? AND "readAt" IS NULL`,
+    nowIso(),
+    pathId(c.req.param('id')),
+    session.user.id,
   );
+  return c.json({ ok: true });
 });
 
 storefront.post('/account/notifications/read-all', async (c) => {

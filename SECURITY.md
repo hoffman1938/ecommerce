@@ -93,9 +93,13 @@ Absence is a security property here, not an omission:
   field. `POST /checkout/submit` writes a `payments` row with
   `provider = 'demo'` and marks it paid itself. There is no code path that
   could move money even if a credential were supplied.
-- **No email provider.** So `POST /auth/forgot-password` does not issue a reset
-  token. Returning one would hand anybody who knows an address the ability to
-  take over that account; the endpoint says what it actually did instead.
+- **No email provider.** There is no SMTP client, no provider SDK and no
+  credential for one. Messages the platform would have sent are written to the
+  `simulated_emails` table and read back by the customer who owns them at
+  `/account/inbox`; nothing is transmitted to any address. `POST
+/auth/forgot-password` and `POST /auth/reset-password` therefore issue no
+  token — returning one would hand anybody who knows an address the ability to
+  take over that account — and both say what they actually did instead.
 - **No third-party analytics, tag managers or advertising scripts.** The
   Content-Security-Policy on the API is `default-src 'none'`.
 

@@ -1,0 +1,434 @@
+/**
+ * The administration panel's contract with this API.
+ *
+ * Every case here drives a screen the way the panel drives it: the same path,
+ * the same method, the same body shape apps/admin actually sends. That is the
+ * point. A route can exist, be covered by its own unit test, and still 404 the
+ * panel because the panel sends PUT where the API registered PATCH, or sends
+ * `{ body }` where the schema wants `{ adminReply }` — mismatches no test of
+ * either side alone can see. Each expectation below stands in for a screen a
+ * reviewer will click, so a failure names the screen that broke.
+ *
+ * The rule for adding to this file: copy the call out of apps/admin verbatim,
+ * do not restate it in whatever shape the API happens to prefer.
+ */
+
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createHarness, type TestClient, type TestHarness } from './helpers/app';
+import { TEST_ADMIN_PASSWORD, TEST_CUSTOMER_PASSWORD } from './helpers/d1';
+
+let harness: TestHarness;
+let admin: TestClient;
+
+beforeAll(async () => {
+  harness = await createHarness();
+  admin = harness.client();
+  const signIn = await admin.post('/auth/login', {
+    email: 'admin@demo.local',
+    password: TEST_ADMIN_PASSWORD,
+  });
+  expect(signIn.status).toBe(200);
+});
+afterAll(() => harness.close());
+
+describe('the session the panel gates on', () => {
+  /*
+   * The panel's sign-in screen reads `me.user.permissions` and refuses the
+   * account when it is empty. Returning the user object bare instead of inside
+   * `{ user }` type-checked on both sides and told a Super Admin they had no
+   * admin permissions — the storefront header, which reads the same envelope,
+   * showed every signed-in customer as signed out at the same time.
+   */
+  it('answers as { user } with the permissions the gate reads', async () => {
+    const { status, body } = await admin.get('/auth/me');
+    expect(status).toBe(200);
+    expect(body.user).toBeTruthy();
+    expect(body.user.email).toBe('admin@demo.local');
+    expect(Array.isArray(body.user.permissions)).toBe(true);
+    expect(body.user.permissions.length).toBeGreaterThan(0);
+    expect(body.user.isStaff).toBe(true);
+  });
+
+  it('answers as { user: null } when signed out, not as null', async () => {
+    const { status, body } = await harness.client().get('/auth/me');
+    expect(status).toBe(200);
+    expect(body).toEqual({ user: null });
+  });
+
+  it('refuses a customer account at the panel’s door', async () => {
+    const customer = harness.client();
+    await customer.post('/auth/login', {
+      email: 'customer@demo.local',
+      password: TEST_CUSTOMER_PASSWORD,
+    });
+
+    const me = await customer.get('/auth/me');
+    expect(me.body.user.permissions).toHaveLength(0);
+    // And the API refuses independently of what the panel chose to render.
+    expect((await customer.get('/admin/dashboard')).status).toBe(403);
+  });
+});
+
+/** Ten minutes out and an hour long — a window the campaign constraint accepts. */
+const window = () => ({
+  startsAt: new Date(Date.now() + 600_000).toISOString(),
+  endsAt: new Date(Date.now() + 4_200_000).toISOString(),
+});
+
+describe('campaigns', () => {
+  /*
+   * The screen this covers had no endpoint at all: the panel shipped a
+   * "Create campaign" form posting to a path the Worker never registered, so
+   * every submission returned "No such endpoint."
+   */
+  it('creates a campaign from the new-campaign form', async () => {
+    const { status, body } = await admin.post('/admin/campaigns', {
+      title: 'Midseason Clearance',
+      slug: 'midseason-clearance',
+      shortDescription: 'A short run of deeper cuts.',
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...window(),
+    });
+
+    expect(status).toBe(201);
+    expect(body.id).toBeTruthy();
+
+    const listed = await admin.get('/admin/campaigns');
+    expect(listed.body.map((c: any) => c.slug)).toContain('midseason-clearance');
+  });
+
+  it('edits a campaign from the campaign editor', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Renamed Later',
+      slug: 'renamed-later',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 3,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...window(),
+    });
+
+    const { status } = await admin.put(`/admin/campaigns/${created.body.id}`, {
+      title: 'Renamed Now',
+      slug: 'renamed-now',
+      shortDescription: 'Edited.',
+      description: null,
+      status: 'SCHEDULED',
+      position: 3,
+      isVisible: false,
+      seoTitle: null,
+      seoDescription: null,
+      ...window(),
+    });
+    expect(status).toBe(200);
+
+    const reloaded = await admin.get(`/admin/campaigns/${created.body.id}`);
+    expect(reloaded.body.title).toBe('Renamed Now');
+    expect(reloaded.body.slug).toBe('renamed-now');
+    expect(reloaded.body.status).toBe('SCHEDULED');
+  });
+
+  it('refuses a slug another campaign already holds', async () => {
+    const { status, body } = await admin.post('/admin/campaigns', {
+      title: 'Clashing',
+      slug: 'midseason-clearance',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...window(),
+    });
+    expect(status).toBe(409);
+    expect(body.code).toBe('CONFLICT');
+  });
+
+  it('refuses a window that ends before it starts', async () => {
+    const { status } = await admin.post('/admin/campaigns', {
+      title: 'Backwards',
+      slug: 'backwards',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      startsAt: new Date(Date.now() + 4_200_000).toISOString(),
+      endsAt: new Date(Date.now() + 600_000).toISOString(),
+    });
+    expect(status).toBe(422);
+  });
+
+  it('publishes, then puts products in and takes them out', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Stocked',
+      slug: 'stocked',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...window(),
+    });
+    const id = created.body.id;
+
+    expect((await admin.post(`/admin/campaigns/${id}/status`, { action: 'publish' })).status).toBe(
+      200,
+    );
+
+    const products = await admin.get('/admin/products?page=1&pageSize=1');
+    const productId = products.body.items[0].id;
+
+    const added = await admin.post(`/admin/campaigns/${id}/products`, {
+      productId,
+      campaignPriceMinor: 1234,
+    });
+    expect(added.status).toBe(201);
+
+    const withProduct = await admin.get(`/admin/campaigns/${id}`);
+    expect(withProduct.body.products).toHaveLength(1);
+
+    expect((await admin.delete(`/admin/campaigns/${id}/products/${productId}`)).status).toBe(200);
+    expect((await admin.get(`/admin/campaigns/${id}`)).body.products).toHaveLength(0);
+  });
+});
+
+describe('products', () => {
+  /* The list view's status dropdown sends PUT with one field. */
+  it('changes status from the list without resending the whole product', async () => {
+    const products = await admin.get('/admin/products?page=1&pageSize=1');
+    const product = products.body.items[0];
+
+    const { status } = await admin.put(`/admin/products/${product.id}`, { status: 'DISABLED' });
+    expect(status).toBe(200);
+
+    const reloaded = await admin.get(`/admin/products/${product.id}`);
+    expect(reloaded.body.status).toBe('DISABLED');
+    // Everything the partial did not name is still there.
+    expect(reloaded.body.name).toBe(product.name);
+    expect(reloaded.body.outletPriceMinor).toBe(product.outletPriceMinor);
+
+    await admin.put(`/admin/products/${product.id}`, { status: 'ACTIVE' });
+  });
+
+  it('still checks the price rule when only one price is sent', async () => {
+    const products = await admin.get('/admin/products?page=1&pageSize=1');
+    const product = products.body.items[0];
+
+    const { status } = await admin.put(`/admin/products/${product.id}`, {
+      outletPriceMinor: product.originalPriceMinor + 1,
+    });
+    expect(status).toBe(422);
+  });
+
+  it('saves the full product the edit form submits', async () => {
+    const products = await admin.get('/admin/products?page=1&pageSize=1');
+    const product = (await admin.get(`/admin/products/${products.body.items[0].id}`)).body;
+
+    const { status } = await admin.put(`/admin/products/${product.id}`, {
+      name: 'Renamed By Test',
+      slug: product.slug,
+      brandId: product.brandId,
+      categoryId: product.categoryId,
+      shortDescription: product.shortDescription,
+      description: product.description,
+      targetGroup: product.targetGroup,
+      materials: product.materials,
+      careInstructions: product.careInstructions,
+      countryOfOrigin: product.countryOfOrigin,
+      originalPriceMinor: product.originalPriceMinor,
+      outletPriceMinor: product.outletPriceMinor,
+      status: product.status,
+      seoTitle: product.seoTitle,
+      seoDescription: product.seoDescription,
+      searchKeywords: product.searchKeywords,
+    });
+    expect(status).toBe(200);
+    expect((await admin.get(`/admin/products/${product.id}`)).body.name).toBe('Renamed By Test');
+  });
+});
+
+describe('reviews', () => {
+  const firstReview = async () =>
+    (await admin.get('/admin/reviews?page=1&pageSize=1')).body.items[0];
+
+  it('lists reviews in the shape the queue renders', async () => {
+    const review = await firstReview();
+    // The queue reads review.product.slug and review.user?.email directly.
+    expect(review.product).toMatchObject({ id: expect.any(String), slug: expect.any(String) });
+    expect(typeof review.isVerifiedPurchase).toBe('boolean');
+    expect(review).toHaveProperty('helpfulCount');
+    expect(review).toHaveProperty('adminReplyBy');
+    expect(review).toHaveProperty('moderatedBy');
+  });
+
+  it('replies with the field name the panel sends, then withdraws it', async () => {
+    const review = await firstReview();
+
+    expect(
+      (await admin.post(`/admin/reviews/${review.id}/reply`, { body: 'Thanks.' })).status,
+    ).toBe(200);
+    const replied = await firstReview();
+    expect(replied.adminReply).toBe('Thanks.');
+    expect(replied.adminReplyBy?.email).toBe('admin@demo.local');
+
+    expect((await admin.delete(`/admin/reviews/${review.id}/reply`)).status).toBe(200);
+    expect((await firstReview()).adminReply).toBeNull();
+  });
+
+  it('edits review text through the same path moderation uses', async () => {
+    const review = await firstReview();
+    const { status } = await admin.patch(`/admin/reviews/${review.id}`, {
+      title: 'Tidied',
+      body: 'Rewritten by a moderator.',
+    });
+    expect(status).toBe(200);
+
+    const edited = await firstReview();
+    expect(edited.body).toBe('Rewritten by a moderator.');
+    // The status is untouched: editing text is not moderating.
+    expect(edited.status).toBe(review.status);
+  });
+
+  it('moderates through that path too, and moves the product rating', async () => {
+    const review = await firstReview();
+    const { status } = await admin.patch(`/admin/reviews/${review.id}`, {
+      status: 'HIDDEN',
+      moderationNote: 'Off topic.',
+    });
+    expect(status).toBe(200);
+    expect((await firstReview()).status).toBe('HIDDEN');
+  });
+
+  it('deletes a review and recounts the product', async () => {
+    const review = await firstReview();
+    const before = (await admin.get(`/admin/products/${review.product.id}`)).body.reviewCount;
+
+    expect((await admin.delete(`/admin/reviews/${review.id}`)).status).toBe(200);
+
+    const after = (await admin.get(`/admin/products/${review.product.id}`)).body.reviewCount;
+    expect(after).toBeLessThanOrEqual(before);
+    expect((await admin.delete(`/admin/reviews/${review.id}`)).status).toBe(404);
+  });
+});
+
+describe('settings', () => {
+  it('reads settings as the object the form binds to', async () => {
+    const { status, body } = await admin.get('/admin/settings');
+    expect(status).toBe(200);
+    // Not a rows array: the form binds settings.reservationDurationMinutes.
+    expect(Array.isArray(body)).toBe(false);
+    expect(typeof body.reservationDurationMinutes).toBe('number');
+    expect(typeof body.taxRateBps).toBe('number');
+  });
+
+  it('saves the whole form in one request', async () => {
+    const before = (await admin.get('/admin/settings')).body;
+
+    const { status, body } = await admin.put('/admin/settings', {
+      ...before,
+      lowStockThreshold: 7,
+      standardShippingMinor: 599,
+    });
+    expect(status).toBe(200);
+    expect(body.lowStockThreshold).toBe(7);
+
+    expect((await admin.get('/admin/settings')).body.standardShippingMinor).toBe(599);
+  });
+
+  it('refuses a key nothing reads rather than storing it', async () => {
+    const { status } = await admin.put('/admin/settings', { notASetting: 1 });
+    expect(status).toBe(422);
+  });
+
+  it('refuses a reservation window of zero minutes', async () => {
+    const { status } = await admin.put('/admin/settings', { reservationDurationMinutes: 0 });
+    expect(status).toBe(422);
+  });
+});
+
+describe('content', () => {
+  it('lists and saves CMS pages the way the editor addresses them', async () => {
+    const pages = await admin.get('/admin/content/pages');
+    expect(pages.status).toBe(200);
+    expect(pages.body.length).toBeGreaterThan(0);
+
+    const { status } = await admin.put('/admin/content/pages', {
+      key: pages.body[0].key,
+      title: pages.body[0].title,
+      body: 'Edited by the contract test.',
+    });
+    expect(status).toBe(200);
+
+    const reloaded = await admin.get('/admin/content/pages');
+    expect(reloaded.body.find((p: any) => p.key === pages.body[0].key).body).toBe(
+      'Edited by the contract test.',
+    );
+  });
+});
+
+describe('the counts the list views render', () => {
+  /*
+   * `_count` is Prisma's shape, which is what the panel was written against
+   * when it talked to the NestJS API. The Worker builds its counts in SQL, so
+   * it has to publish them under that name too — reading `undefined.products`
+   * threw during render and blanked the entire page, which is a worse failure
+   * than a missing number and one no status-code assertion can see.
+   */
+  it('gives campaigns a _count.products', async () => {
+    const [campaign] = (await admin.get('/admin/campaigns')).body;
+    expect(campaign._count.products).toEqual(expect.any(Number));
+  });
+
+  it('gives customers a _count.orders', async () => {
+    const [customer] = (await admin.get('/admin/customers?page=1&pageSize=1')).body.items;
+    expect(customer._count.orders).toEqual(expect.any(Number));
+  });
+});
+
+describe('every screen the panel loads', () => {
+  /*
+   * The read behind each menu item. A 404 here means the panel would render an
+   * error where a page should be — the failure mode this whole file exists to
+   * catch, and the one that shipped.
+   */
+  const screens: Array<[string, string]> = [
+    ['Dashboard', '/admin/dashboard'],
+    ['Products', '/admin/products?page=1&pageSize=25'],
+    ['Categories', '/admin/categories'],
+    ['Brands', '/admin/brands'],
+    ['Inventory', '/admin/inventory?page=1&pageSize=100'],
+    ['Inventory movements', '/admin/inventory/movements?page=1&pageSize=50'],
+    ['Reservations', '/admin/inventory/reservations?page=1&pageSize=100'],
+    ['Orders', '/admin/orders?page=1&pageSize=25'],
+    ['Customers', '/admin/customers?page=1&pageSize=50'],
+    ['Reviews', '/admin/reviews?page=1&pageSize=25'],
+    ['Review stats', '/admin/reviews/stats'],
+    ['Coupons', '/admin/coupons'],
+    ['Campaigns', '/admin/campaigns'],
+    ['Returns', '/admin/returns'],
+    ['Content', '/admin/content/pages'],
+    ['Settings', '/admin/settings'],
+    ['Admin users', '/admin/users'],
+    ['Roles', '/admin/roles'],
+    ['Audit log', '/admin/audit-logs?page=1&pageSize=50'],
+  ];
+
+  it.each(screens)('%s loads', async (_name, path) => {
+    const { status } = await admin.get(path);
+    expect(status).toBe(200);
+  });
+});

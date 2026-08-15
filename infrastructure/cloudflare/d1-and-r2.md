@@ -123,8 +123,15 @@ Add one build environment variable:
 
 With it set, the build pre-renders pages against the Worker — so the deployed
 HTML ships with real catalogue data — and the client talks to it live
-afterwards. Without it the build falls back to the bundled catalogue and says
-so loudly in the log.
+afterwards.
+
+**Without it the build fails.** That is deliberate. The catalogue-only fallback
+produces a site that looks finished and is not: its admin panel accepts any
+password and every write reports that it needs a database. A published Pages
+deployment that had quietly landed there is what this check exists to prevent —
+the build used to warn and continue, and nobody reads the log of a build that
+succeeded. If you really do want the catalogue-only export, ask for it with
+`ALLOW_MOCK_BUILD=true`.
 
 ---
 
@@ -180,9 +187,12 @@ keys. Nothing downstream cares where an image came from.
 
 ## The fallback: a build with no backend
 
-Leaving `API_BASE_URL` unset produces the older bundled-catalogue export. It
-browses, but it has no database: sign-in, cart and checkout do not work. It is
-useful for a preview before the Worker exists, and for nothing else.
+`ALLOW_MOCK_BUILD=true` with no `API_BASE_URL` produces the older
+bundled-catalogue export. It browses, but it has no database: sign-in, cart and
+checkout do not work, and the admin panel accepts any password because there is
+no user table to check one against. It is useful for a preview before the
+Worker exists, and for nothing else — never publish it as a demo of the
+product.
 
 ---
 

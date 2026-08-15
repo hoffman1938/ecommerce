@@ -6,6 +6,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { api, ApiError, DEMO_MODE } from '@/lib/api';
 import { T } from '@/components/t';
 
+/**
+ * Whether this panel is pointed at the local Docker stack, whose Postgres seed
+ * creates the fixed pair the hint below names. NEXT_PUBLIC_BACKEND is set by
+ * build-demo.mjs for the Cloudflare export, whose D1 seed uses different
+ * accounts and a password chosen at seed time — printing the Postgres pair
+ * there would be advertising credentials that do not work. Not a hostname
+ * check: the Worker runs on localhost too when you develop against it.
+ */
+const LOCAL_STACK = !DEMO_MODE && !process.env.NEXT_PUBLIC_BACKEND;
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -103,11 +113,17 @@ export default function AdminLoginPage() {
               <T id="ui.doNotEnterRealPassword" />
             </strong>
           </p>
-        ) : (
+        ) : LOCAL_STACK ? (
+          /*
+           * Only true of the Docker stack, whose Postgres seed creates exactly
+           * this pair. The Cloudflare deployment seeds admin@demo.local with a
+           * password chosen at seed time and never written down, so printing
+           * this there would be advertising credentials that do not work.
+           */
           <p className="mt-4 text-xs text-gray-400">
             <T id="ui.localSeedAdminExampleLocal" />
           </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

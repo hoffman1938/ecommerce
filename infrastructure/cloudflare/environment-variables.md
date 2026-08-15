@@ -2,6 +2,23 @@
 
 No secrets in this file — set real values in the Pages/host dashboards or a secret manager.
 
+## The demo deployment (Workers + D1)
+
+Only one variable is set by hand; the rest the build derives from it.
+
+| Variable           | Where                 | Value                                                       |
+| ------------------ | --------------------- | ----------------------------------------------------------- |
+| `API_BASE_URL`     | Pages build vars      | the Worker's URL. **Required** — the build fails without it |
+| `ALLOW_MOCK_BUILD` | Pages build vars      | only to opt into the catalogue-only export; normally unset  |
+| `SESSION_SECRET`   | `wrangler secret put` | the Worker's only secret                                    |
+
+The build then sets `NEXT_PUBLIC_API_BASE_URL`, `API_INTERNAL_URL`,
+`STATIC_EXPORT`, `NEXT_PUBLIC_DEMO_MODE=false` and `NEXT_PUBLIC_BACKEND=edge`
+itself — see `infrastructure/scripts/build-demo.mjs`. `NEXT_PUBLIC_BACKEND` is
+how the front ends know which backend they are on: unset means the NestJS
+stack, which really does send email and whose Postgres seed has the documented
+credential pair. Setting it by hand is not something a deployment needs to do.
+
 ## Storefront (Cloudflare Pages)
 
 | Variable                     | Example (production)                                            |

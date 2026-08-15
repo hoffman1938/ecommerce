@@ -354,9 +354,11 @@ describe('accounts and order history', () => {
     });
     expect(registered.status).toBe(201);
 
+    // `{ user }`, not the user bare: the storefront header and the admin
+    // panel's permission gate both read `data.user`.
     const me = await client.get('/auth/me');
-    expect(me.body.email).toBe('newshopper@demo.local');
-    expect(me.body.isStaff).toBe(false);
+    expect(me.body.user.email).toBe('newshopper@demo.local');
+    expect(me.body.user.isStaff).toBe(false);
 
     const { variant } = await inStockVariant(client);
     await client.post('/cart/items', { variantId: variant.id, quantity: 1 });
@@ -374,11 +376,15 @@ describe('accounts and order history', () => {
     });
     expect(placed.status).toBe(201);
 
+    // A bare array, as the NestJS API publishes it and as the account pages
+    // read it — they call `.slice(0, 5)` and map over the response directly.
     const orders = await client.get('/account/orders');
-    expect(orders.body.total).toBe(1);
-    expect(orders.body.items[0].items.length).toBeGreaterThan(0);
-    expect(orders.body.items[0].timeline.length).toBeGreaterThan(0);
-    expect(orders.body.items[0].payments[0].provider).toBe('demo');
+    expect(Array.isArray(orders.body)).toBe(true);
+    expect(orders.body).toHaveLength(1);
+    expect(orders.response.headers.get('x-total-count')).toBe('1');
+    expect(orders.body[0].items.length).toBeGreaterThan(0);
+    expect(orders.body[0].timeline.length).toBeGreaterThan(0);
+    expect(orders.body[0].payments[0].provider).toBe('demo');
   });
 
   it('signs an existing demo customer in and out', async () => {
@@ -388,13 +394,13 @@ describe('accounts and order history', () => {
       password: TEST_CUSTOMER_PASSWORD,
     });
     expect(login.status).toBe(200);
-    expect((await client.get('/auth/me')).body.email).toBe('customer@demo.local');
+    expect((await client.get('/auth/me')).body.user.email).toBe('customer@demo.local');
 
     const orders = await client.get('/account/orders');
-    expect(orders.body.total).toBeGreaterThan(0);
+    expect(orders.body.length).toBeGreaterThan(0);
 
     await client.post('/auth/logout');
-    expect((await client.get('/auth/me')).body).toBeNull();
+    expect((await client.get('/auth/me')).body.user).toBeNull();
     expect((await client.get('/account/orders')).status).toBe(401);
   });
 
@@ -429,6 +435,209 @@ describe('accounts and order history', () => {
 
     const cart = await client.get('/cart');
     expect(cart.body.itemCount).toBe(1);
+  });
+});
+
+/**
+ * The substitute for email.
+ *
+ * There is no provider and no SMTP transport in this build, so every message
+ * the platform would have sent is written to the account and read back here.
+ * The storefront binds `{ items, unreadCount }` on both endpoints — a bare
+ * array renders as a permanently empty inbox rather than as an error, which is
+ * why the envelope is asserted and not just the status code.
+ */
+describe('notifications and the simulated mailbox', () => {
+  const signIn = async () => {
+    const client = harness.client();
+    await client.post('/auth/login', {
+      email: 'customer@demo.local',
+      password: TEST_CUSTOMER_PASSWORD,
+    });
+    return client;
+  };
+
+  it('serves seeded history in both tabs', async () => {
+    const client = await signIn();
+
+    const notifications = await client.get('/account/notifications');
+    expect(notifications.status).toBe(200);
+    expect(notifications.body.items.length).toBeGreaterThan(0);
+    expect(typeof notifications.body.unreadCount).toBe('number');
+
+    const inbox = await client.get('/account/inbox');
+    expect(inbox.status).toBe(200);
+    expect(inbox.body.items.length).toBeGreaterThan(0);
+    expect(inbox.body.items[0].subject).toBeTruthy();
+    expect(inbox.body.items[0].to).toBe('customer@demo.local');
+  });
+
+  it('writes a confirmation to the mailbox when an order is placed', async () => {
+    const client = await signIn();
+    const before = (await client.get('/account/inbox')).body.items.length;
+
+    const { variant } = await inStockVariant(client);
+    await client.post('/cart/items', { variantId: variant.id, quantity: 1 });
+    const placed = await client.post('/checkout/submit', {
+      email: 'customer@demo.local',
+      shippingAddress: {
+        firstName: 'Nina',
+        lastName: 'Ortiz',
+        line1: '3 Example Street',
+        city: 'Lisbon',
+        postalCode: '1000',
+        countryCode: 'PT',
+      },
+      shippingMethod: 'STANDARD',
+    });
+    expect(placed.status).toBe(201);
+
+    const order = await client.get(`/account/orders/${placed.body.orderId}`);
+    const inbox = await client.get('/account/inbox');
+    expect(inbox.body.items.length).toBe(before + 1);
+    expect(inbox.body.items[0].template).toBe('order_confirmation');
+    // Linked to the order, so the message can be opened from it and back.
+    expect(inbox.body.items[0].orderNumber).toBe(order.body.orderNumber);
+  });
+
+  it('marks a message read and drops the unread count', async () => {
+    const client = await signIn();
+    const before = await client.get('/account/inbox');
+    // The confirmation the previous case placed is unread by construction —
+    // finding one in the seed instead would depend on how the fixture happens
+    // to distribute readAt.
+    const unread = before.body.items.find((email: any) => email.readAt === null);
+    expect(unread).toBeTruthy();
+
+    expect((await client.post(`/account/inbox/${unread.id}/read`, {})).status).toBe(200);
+
+    const after = await client.get('/account/inbox');
+    expect(after.body.unreadCount).toBe(before.body.unreadCount - 1);
+    expect(after.body.items.find((email: any) => email.id === unread.id).readAt).toBeTruthy();
+  });
+
+  it('will not show one customer another customer’s mailbox', async () => {
+    const other = harness.client();
+    await other.post('/auth/login', {
+      email: 'jonas.weber@demo.local',
+      password: TEST_CUSTOMER_PASSWORD,
+    });
+    const inbox = await other.get('/account/inbox');
+    for (const email of inbox.body.items) {
+      expect(email.to).toBe('jonas.weber@demo.local');
+    }
+  });
+
+  it('needs a session', async () => {
+    expect((await harness.client().get('/account/inbox')).status).toBe(401);
+  });
+});
+
+/**
+ * The account screens' contract, the same way test/admin-panel.test.ts covers
+ * the panel's: the shape each page binds to, asserted here because a page that
+ * reads `profile.notificationPreferences.orderUpdates` off an object that does
+ * not carry it throws during render and shows the customer a blank screen —
+ * which no status-code assertion notices.
+ */
+describe('what the account pages read', () => {
+  const signIn = async () => {
+    const client = harness.client();
+    await client.post('/auth/login', {
+      email: 'customer@demo.local',
+      password: TEST_CUSTOMER_PASSWORD,
+    });
+    return client;
+  };
+
+  it('sends checkout to a confirmation URL that page can actually read', async () => {
+    const client = await signIn();
+    const { variant } = await inStockVariant(client);
+    await client.post('/cart/items', { variantId: variant.id, quantity: 1 });
+
+    const placed = await client.post('/checkout/submit', {
+      email: 'customer@demo.local',
+      shippingAddress: {
+        firstName: 'Nina',
+        lastName: 'Ortiz',
+        line1: '14 Rua das Flores',
+        city: 'Lisbon',
+        postalCode: '1200-192',
+        countryCode: 'PT',
+      },
+      shippingMethod: 'STANDARD',
+    });
+    expect(placed.status).toBe(201);
+
+    // `orderId`, because /checkout/result polls /account/orders/:orderId and
+    // shows "Missing order reference" without it.
+    const url = new URL(placed.body.redirectUrl, 'http://storefront.test');
+    expect(url.pathname).toBe('/checkout/result');
+    expect(url.searchParams.get('orderId')).toBe(placed.body.orderId);
+    expect(url.searchParams.get('paymentId')).toBe(placed.body.paymentId);
+
+    // And that id resolves, which is the thing the page goes on to do.
+    expect((await client.get(`/account/orders/${url.searchParams.get('orderId')}`)).status).toBe(
+      200,
+    );
+  });
+
+  it('gives the profile its notification preferences', async () => {
+    const { status, body } = await (await signIn()).get('/account/profile');
+    expect(status).toBe(200);
+    expect(body.notificationPreferences).toEqual({
+      orderUpdates: expect.any(Boolean),
+      campaignAnnouncements: expect.any(Boolean),
+      newsletter: expect.any(Boolean),
+    });
+  });
+
+  it('saves preferences under the names the form sends', async () => {
+    const client = await signIn();
+    const { status } = await client.patch('/account/notification-preferences', {
+      orderUpdates: false,
+      campaignAnnouncements: true,
+      newsletter: true,
+    });
+    expect(status).toBe(200);
+
+    const profile = await client.get('/account/profile');
+    expect(profile.body.notificationPreferences.orderUpdates).toBe(false);
+    expect(profile.body.notificationPreferences.newsletter).toBe(true);
+  });
+
+  it('lists orders as an array the overview can slice', async () => {
+    const { status, body } = await (await signIn()).get('/account/orders');
+    expect(status).toBe(200);
+    expect(Array.isArray(body)).toBe(true);
+    expect(typeof body.slice).toBe('function');
+    expect(body[0].items.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * Password reset, which this deployment deliberately does not do.
+ *
+ * Both halves answer with the explanation rather than 404ing, so the screens
+ * that link to them read as "the demo does not send email" instead of as a
+ * broken deployment. See SECURITY.md.
+ */
+describe('password reset', () => {
+  it('explains why the request cannot be honoured', async () => {
+    const { status, body } = await harness
+      .client()
+      .post('/auth/forgot-password', { email: 'customer@demo.local' });
+    expect(status).toBe(200);
+    expect(body.message).toMatch(/email provider/i);
+  });
+
+  it('refuses to complete a reset, and says why', async () => {
+    const { status, body } = await harness
+      .client()
+      .post('/auth/reset-password', { token: 'anything', password: 'a-long-enough-password' });
+    expect(status).toBe(501);
+    expect(body.code).toBe('FEATURE_UNAVAILABLE');
+    expect(body.message).toMatch(/email provider/i);
   });
 });
 

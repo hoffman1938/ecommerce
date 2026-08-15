@@ -111,6 +111,25 @@ export const reviewSchema = z
   })
   .strict();
 
+/**
+ * Notification preferences, under either vocabulary.
+ *
+ * The preferences form round-trips the object `GET /account/profile` gave it
+ * (`orderUpdates`, `campaignAnnouncements`, `newsletter`); the profile PATCH
+ * and this API's columns use `notifyOrderUpdates` and friends. Both are
+ * accepted so neither caller has to translate.
+ */
+export const notificationPreferencesSchema = z
+  .object({
+    orderUpdates: z.boolean().optional(),
+    campaignAnnouncements: z.boolean().optional(),
+    newsletter: z.boolean().optional(),
+    notifyOrderUpdates: z.boolean().optional(),
+    notifyCampaigns: z.boolean().optional(),
+    newsletterOptIn: z.boolean().optional(),
+  })
+  .strict();
+
 export const profileSchema = z
   .object({
     firstName: trimmed(100).optional(),
@@ -141,7 +160,16 @@ export const wishlistAddSchema = z
 
 // --- Admin -------------------------------------------------------------------
 
-export const adminProductSchema = z
+/**
+ * The product fields, before the cross-field rule is attached.
+ *
+ * Kept separate because `.refine()` produces a ZodEffects, which has no
+ * `.partial()` — and the panel's product list edits one field at a time (the
+ * status dropdown sends `{ status }` alone). The update route derives the
+ * partial from this and re-checks the merged result against the full schema
+ * below, so a partial edit cannot slip past the price rule.
+ */
+export const adminProductFields = z
   .object({
     name: trimmed(200),
     slug: z
@@ -165,11 +193,18 @@ export const adminProductSchema = z
     seoDescription: z.string().trim().max(400).nullish(),
     searchKeywords: z.string().trim().max(500).nullish(),
   })
-  .strict()
-  .refine((value) => value.outletPriceMinor <= value.originalPriceMinor, {
+  .strict();
+
+export const adminProductSchema = adminProductFields.refine(
+  (value) => value.outletPriceMinor <= value.originalPriceMinor,
+  {
     message: 'The outlet price cannot be above the original price.',
     path: ['outletPriceMinor'],
-  });
+  },
+);
+
+/** A product edit that names only the fields it changes. */
+export const adminProductPatchSchema = adminProductFields.partial();
 
 export const adminInventorySchema = z
   .object({
@@ -209,8 +244,34 @@ export const adminReviewModerationSchema = z
   })
   .strict();
 
+/**
+ * A merchant reply.
+ *
+ * Two spellings because two callers exist: the panel posts `{ body }`, and the
+ * field is `adminReply` everywhere in the schema and the API's own vocabulary.
+ * Accepting both is a smaller thing to carry than a rename that would have to
+ * land in the panel and the API in the same deploy.
+ */
 export const adminReviewReplySchema = z
-  .object({ adminReply: z.string().trim().min(1).max(1000) })
+  .object({
+    adminReply: z.string().trim().min(1).max(1000).optional(),
+    body: z.string().trim().min(1).max(1000).optional(),
+  })
+  .strict()
+  .refine((value) => Boolean(value.adminReply ?? value.body), {
+    message: 'A reply cannot be empty.',
+    path: ['body'],
+  })
+  // Normalised here so the handler receives one field rather than deciding
+  // which of two spellings arrived.
+  .transform((value) => ({ adminReply: (value.adminReply ?? value.body) as string }));
+
+/** Rewriting the text of a review. The rating is deliberately not editable. */
+export const adminReviewContentSchema = z
+  .object({
+    title: z.string().trim().max(200).nullish(),
+    body: z.string().trim().min(1).max(5000),
+  })
   .strict();
 
 export const adminCouponSchema = z
@@ -244,12 +305,74 @@ export const adminCouponSchema = z
     path: ['value'],
   });
 
+/**
+ * Creating and editing a campaign.
+ *
+ * The window is checked here as well as by the table's `campaign_window_ordered`
+ * constraint: a `CHECK` failure surfaces as a 500 with a SQLite message in it,
+ * and "the end has to come after the start" is something the person filling in
+ * the form should be told in the form.
+ */
+export const adminCampaignSchema = z
+  .object({
+    title: trimmed(200),
+    slug: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase words separated by hyphens.'),
+    shortDescription: z.string().trim().max(500).nullish(),
+    description: z.string().trim().max(5000).nullish(),
+    coverImageUrl: z.string().trim().max(500).nullish(),
+    startsAt: z.string().datetime({ offset: true }),
+    endsAt: z.string().datetime({ offset: true }),
+    status: z.enum(['DRAFT', 'SCHEDULED', 'ACTIVE', 'PAUSED', 'ENDED', 'ARCHIVED']),
+    position: z.number().int().min(0).max(10_000).default(0),
+    isVisible: z.boolean().default(true),
+    seoTitle: z.string().trim().max(200).nullish(),
+    seoDescription: z.string().trim().max(400).nullish(),
+  })
+  .strict()
+  .refine((value) => Date.parse(value.endsAt) > Date.parse(value.startsAt), {
+    message: 'A campaign has to end after it starts.',
+    path: ['endsAt'],
+  });
+
 export const adminContentSchema = z
   .object({ title: trimmed(200), body: z.string().trim().min(1).max(50_000) })
   .strict();
 
 export const adminSettingSchema = z
   .object({ value: z.union([z.string(), z.number(), z.boolean(), z.null()]) })
+  .strict();
+
+/**
+ * The whole settings form in one request.
+ *
+ * Every field is optional so the panel can send only what it edits, but the
+ * object is `.strict()`: a key `services/settings.ts` does not model would be
+ * written to `site_settings` and then ignored by every read, which looks
+ * exactly like a save that did not work. Bounds are the ones the storefront
+ * can survive — a reservation window of zero minutes expires every cart
+ * before checkout can finish.
+ */
+export const adminSettingsBulkSchema = z
+  .object({
+    reservationDurationMinutes: z.number().int().min(1).max(1440).optional(),
+    lowStockThreshold: z.number().int().min(0).max(10_000).optional(),
+    standardShippingMinor: z.number().int().min(0).max(100_000_00).optional(),
+    expressShippingMinor: z.number().int().min(0).max(100_000_00).optional(),
+    freeShippingThresholdMinor: z.number().int().min(0).max(100_000_00).nullable().optional(),
+    taxRateBps: z.number().int().min(0).max(10_000).optional(),
+    currencyCode: z.string().trim().toUpperCase().length(3).optional(),
+    storeName: trimmed(120).optional(),
+    supportEmail: emailSchema.optional(),
+    heroHeadline: trimmed(200).optional(),
+    heroSubheadline: z.string().trim().max(300).optional(),
+    heroCtaLabel: trimmed(60).optional(),
+    heroCtaHref: z.string().trim().max(200).startsWith('/', 'Use a path such as /shop.').optional(),
+  })
   .strict();
 
 // --- Helpers -----------------------------------------------------------------

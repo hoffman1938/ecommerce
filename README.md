@@ -80,10 +80,15 @@ pnpm dev:edge                 # the Worker locally (wrangler dev)
 pnpm db:migrate:demo          # apply D1 migrations, local
 pnpm db:seed:demo             # seed the local D1 database (idempotent)
 pnpm db:reset-demo            # wipe and re-seed the local D1 database
-pnpm --filter @outlet/edge test    # 98 tests: journeys, security, catalogue
-pnpm build:cloudflare         # the static export Pages serves
+pnpm --filter @outlet/edge test    # 147 tests: journeys, security, catalogue, admin panel
+API_BASE_URL=… pnpm build:cloudflare   # the static export Pages serves
 pnpm deploy:edge              # deploy the Worker
 ```
+
+`build:cloudflare` needs `API_BASE_URL` — the Worker's URL — and fails without
+it rather than quietly producing the catalogue-only export, which browses but
+has no database behind it. See
+[infrastructure/cloudflare/d1-and-r2.md](infrastructure/cloudflare/d1-and-r2.md).
 
 The remote equivalents are `db:migrate:demo:remote` and `db:seed:demo:remote`. Resetting a
 remote database additionally requires `ENVIRONMENT` to identify itself as a demo one _and_

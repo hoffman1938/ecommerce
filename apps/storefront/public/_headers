@@ -10,3 +10,11 @@
 # Hashed build assets are immutable.
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
+
+# The admin panel is nested inside this project at /admin, so it is on the same
+# origin as the storefront and inherits everything above. robots.txt already
+# disallows the whole site; this is the header-level belt to that braces, and it
+# survives a robots.txt that someone later relaxes for the storefront alone.
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store

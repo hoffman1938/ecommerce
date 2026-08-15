@@ -1,9 +1,15 @@
-#!/usr/bin/env node
 /**
  * Generates the demo seed as a single SQL file.
  *
  * Run on its own to inspect what the seed would do:
  *   node scripts/build-seed-sql.mjs
+ *
+ * No shebang here, unlike its sibling scripts. This module is the only one the
+ * test suite imports (test/helpers/d1.ts builds the seed to populate an
+ * in-memory database), and Vite hands the source to the runtime without
+ * stripping a leading `#!`, which fails as `SyntaxError: Invalid or unexpected
+ * token` and skips all 98 tests. Every entry point runs it as
+ * `node scripts/…`, so the line bought nothing.
  *
  * Passwords never appear in the output — only PBKDF2 hashes, derived here with
  * exactly the parameters src/auth/password.ts verifies against, so a hash

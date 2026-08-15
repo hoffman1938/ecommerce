@@ -16,9 +16,9 @@ import { z } from 'zod';
 import { Permissions } from '@outlet/types';
 import type { AppEnv } from '../http/context';
 import { ctxOf } from '../http/context';
-import { ApiError, notFound } from '../lib/errors';
+import { ApiError, badRequest, notFound } from '../lib/errors';
 import { newId } from '../lib/ids';
-import { Db, allowListed, fromBool, nowIso, toJson, type SqlValue } from '../lib/sql';
+import { Db, allowListed, fromBool, inClause, nowIso, toJson, type SqlValue } from '../lib/sql';
 import { auditStatement, requirePermission, writeAudit } from '../auth/rbac';
 import { adjustStock } from '../services/inventory';
 import {
@@ -29,6 +29,8 @@ import {
   paymentsForOrder,
 } from '../services/orders';
 import { listCategoriesForAdmin, listContentPages } from '../services/navigation';
+import { readSettings } from '../services/settings';
+import { notify } from '../services/inbox';
 import { assertUploadable, extensionFor } from './media';
 import { enforceRateLimit } from '../http/rate-limit';
 import {
@@ -37,10 +39,13 @@ import {
   adminInventorySchema,
   adminNoteSchema,
   adminOrderStatusSchema,
+  adminProductPatchSchema,
   adminProductSchema,
+  adminReviewContentSchema,
   adminReviewModerationSchema,
   adminReviewReplySchema,
   adminSettingSchema,
+  adminSettingsBulkSchema,
   parse,
   pathId,
   pathSlug,
@@ -253,7 +258,67 @@ admin.get('/products', async (c) => {
     (page - 1) * pageSize,
   );
 
-  return c.json({ items, total, page, pageSize, totalPages });
+  /*
+   * The listing needs each product's variants with their stock, because it
+   * totals availability per row. Fetched in one query for the whole page
+   * rather than per product — 25 rows would otherwise be 25 round-trips, and
+   * D1 charges for each.
+   */
+  const productIds = items.map((row) => (row as { id: string }).id);
+  const { sql: idList, bindings: idBindings } = inClause(productIds);
+  const variants = await ctx.db.all<{
+    id: string;
+    productId: string;
+    sku: string;
+    isEnabled: number;
+    onHandQuantity: number | null;
+    reservedQuantity: number | null;
+  }>(
+    `SELECT v."id", v."productId", v."sku", v."isEnabled",
+            ib."onHandQuantity", ib."reservedQuantity"
+       FROM "product_variants" v
+       LEFT JOIN "inventory_balances" ib ON ib."variantId" = v."id"
+      WHERE v."productId" IN ${idList}
+      ORDER BY v."position"`,
+    ...idBindings,
+  );
+
+  const byProduct = new Map<string, unknown[]>();
+  for (const variant of variants) {
+    const list = byProduct.get(variant.productId) ?? [];
+    list.push({
+      id: variant.id,
+      sku: variant.sku,
+      isEnabled: fromBool(variant.isEnabled),
+      // Nested, and null when a variant has no balance row — exactly what the
+      // panel's `v.inventory?.onHandQuantity ?? 0` is written against.
+      inventory:
+        variant.onHandQuantity === null
+          ? null
+          : {
+              onHandQuantity: variant.onHandQuantity,
+              reservedQuantity: variant.reservedQuantity ?? 0,
+            },
+    });
+    byProduct.set(variant.productId, list);
+  }
+
+  return c.json({
+    items: items.map((row) => {
+      const record = row as Record<string, unknown>;
+      return {
+        ...record,
+        // `brand.name` and `category.name`, as the panel reads them.
+        brand: { id: record.brandId, name: record.brandName },
+        category: record.categoryId ? { id: record.categoryId, name: record.categoryName } : null,
+        variants: byProduct.get(record.id as string) ?? [],
+      };
+    }),
+    total,
+    page,
+    pageSize,
+    totalPages,
+  });
 });
 
 admin.get('/products/:id', async (c) => {
@@ -337,14 +402,47 @@ admin.post('/products', async (c) => {
   return c.json({ id, ...body }, 201);
 });
 
-admin.patch('/products/:id', async (c) => {
+/**
+ * Editing a product.
+ *
+ * Registered for PUT and PATCH alike. The panel's edit form sends a complete
+ * product, its list view sends `{ status }` from a dropdown, and both arrive
+ * as PUT — so the handler takes whatever subset is offered, lays it over the
+ * stored row, and validates the result as a whole. That ordering is what makes
+ * `{ outletPriceMinor }` on its own still answerable against the original
+ * price it is not sending.
+ */
+const updateProduct = async (c: Context<AppEnv>) => {
   const ctx = ctxOf(c);
   const session = requirePermission(ctx.session, Permissions.ProductsUpdate);
   const id = pathId(c.req.param('id'));
-  const body = parse(adminProductSchema, await readJson(c.req.raw));
+  const patch = parse(adminProductPatchSchema, await readJson(c.req.raw));
 
-  const before = await ctx.db.first(`SELECT * FROM "products" WHERE "id" = ?`, id);
+  const before = await ctx.db.first<Record<string, SqlValue>>(
+    `SELECT * FROM "products" WHERE "id" = ?`,
+    id,
+  );
   if (!before) throw notFound('Product not found.');
+
+  const body = parse(adminProductSchema, {
+    name: before.name,
+    slug: before.slug,
+    brandId: before.brandId,
+    categoryId: before.categoryId,
+    shortDescription: before.shortDescription,
+    description: before.description,
+    targetGroup: before.targetGroup,
+    materials: before.materials,
+    careInstructions: before.careInstructions,
+    countryOfOrigin: before.countryOfOrigin,
+    originalPriceMinor: before.originalPriceMinor,
+    outletPriceMinor: before.outletPriceMinor,
+    status: before.status,
+    seoTitle: before.seoTitle,
+    seoDescription: before.seoDescription,
+    searchKeywords: before.searchKeywords,
+    ...patch,
+  });
 
   await ctx.db.batch([
     ctx.db.statement(
@@ -353,6 +451,7 @@ admin.patch('/products/:id', async (c) => {
               "description" = ?, "targetGroup" = ?, "materials" = ?, "careInstructions" = ?,
               "countryOfOrigin" = ?, "originalPriceMinor" = ?, "outletPriceMinor" = ?,
               "status" = ?, "seoTitle" = ?, "seoDescription" = ?, "searchKeywords" = ?,
+              "publishedFrom" = CASE WHEN ? = 'ACTIVE' THEN COALESCE("publishedFrom", ?) ELSE "publishedFrom" END,
               "version" = "version" + 1, "updatedAt" = ?
         WHERE "id" = ?`,
       body.name,
@@ -371,6 +470,8 @@ admin.patch('/products/:id', async (c) => {
       body.seoTitle ?? null,
       body.seoDescription ?? null,
       body.searchKeywords ?? null,
+      body.status,
+      nowIso(),
       nowIso(),
       id,
     ),
@@ -384,7 +485,10 @@ admin.patch('/products/:id', async (c) => {
   ]);
 
   return c.json({ id, ...body });
-});
+};
+
+admin.put('/products/:id', updateProduct);
+admin.patch('/products/:id', updateProduct);
 
 /**
  * Archiving, not deleting.
@@ -599,10 +703,12 @@ admin.patch('/orders/:id/status', async (c) => {
   const id = pathId(c.req.param('id'));
   const body = parse(adminOrderStatusSchema, await readJson(c.req.raw));
 
-  const order = await ctx.db.first<{ status: string; userId: string | null; orderNumber: string }>(
-    `SELECT "status", "userId", "orderNumber" FROM "orders" WHERE "id" = ?`,
-    id,
-  );
+  const order = await ctx.db.first<{
+    status: string;
+    userId: string | null;
+    orderNumber: string;
+    email: string;
+  }>(`SELECT "status", "userId", "orderNumber", "email" FROM "orders" WHERE "id" = ?`, id);
   if (!order) throw notFound('Order not found.');
 
   // The state machine, enforced server-side: without it an admin-panel bug
@@ -646,15 +752,16 @@ admin.patch('/orders/:id/status', async (c) => {
 
   if (order.userId) {
     statements.push(
-      ctx.db.statement(
-        `INSERT INTO "notifications" ("id", "userId", "type", "title", "body", "createdAt")
-         VALUES (?, ?, 'ORDER_STATUS', ?, ?, ?)`,
-        newId(),
-        order.userId,
-        `Order ${order.orderNumber} updated`,
-        `Your order is now ${body.status.toLowerCase().replace(/_/g, ' ')}.`,
-        now,
-      ),
+      ...notify(ctx.db, {
+        userId: order.userId,
+        type: 'ORDER_STATUS',
+        title: `Order ${order.orderNumber} updated`,
+        body: `Your order is now ${body.status.toLowerCase().replace(/_/g, ' ')}.`,
+        email: order.email,
+        orderId: id,
+        template: 'order_status',
+        at: now,
+      }),
     );
   }
 
@@ -721,12 +828,19 @@ admin.get('/customers', async (c) => {
   );
 
   return c.json({
-    items: items.map((row) => ({
-      ...(row as Record<string, unknown>),
-      isEmailVerified: fromBool((row as Record<string, unknown>).isEmailVerified),
-      roles:
-        ((row as Record<string, string | null>).roleNames ?? '')?.split(',').filter(Boolean) ?? [],
-    })),
+    items: items.map((row) => {
+      const record = row as Record<string, unknown>;
+      return {
+        ...record,
+        isEmailVerified: fromBool(record.isEmailVerified),
+        roles: ((record.roleNames as string | null) ?? '').split(',').filter(Boolean),
+        // The panel renders `customer._count.orders`, the shape Prisma gives it
+        // against the NestJS API. Emitting only the flat `orderCount` read as
+        // undefined and took the whole customers page down with a client-side
+        // exception. Both are sent; the flat one is what SQL produced.
+        _count: { orders: Number(record.orderCount ?? 0) },
+      };
+    }),
     total,
     page,
     pageSize,
@@ -804,6 +918,63 @@ admin.post('/customers/:id/notes', async (c) => {
 
 // --- Reviews -----------------------------------------------------------------
 
+/**
+ * A moderation-queue row, joined flat and reshaped here.
+ *
+ * The queue shows who wrote a review, who replied to it and who last moderated
+ * it, which is four tables. SQL returns that as one flat row; the panel binds
+ * to `review.product.slug` and `review.moderatedBy.email`, so the nesting is
+ * rebuilt on the way out rather than by four extra round-trips per row.
+ */
+interface ReviewRow {
+  id: string;
+  rating: number;
+  title: string | null;
+  body: string;
+  authorName: string;
+  status: string;
+  isVerifiedPurchase: number;
+  helpfulCount: number;
+  reportCount: number;
+  adminReply: string | null;
+  adminReplyAt: string | null;
+  moderationNote: string | null;
+  moderatedAt: string | null;
+  createdAt: string;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  userId: string | null;
+  userEmail: string | null;
+  adminReplyById: string | null;
+  adminReplyByEmail: string | null;
+  moderatedById: string | null;
+  moderatedByEmail: string | null;
+}
+
+const actor = (id: string | null, email: string | null) => (id && email ? { id, email } : null);
+
+const toReviewDto = (row: ReviewRow) => ({
+  id: row.id,
+  rating: row.rating,
+  title: row.title,
+  body: row.body,
+  authorName: row.authorName,
+  status: row.status,
+  isVerifiedPurchase: fromBool(row.isVerifiedPurchase),
+  helpfulCount: row.helpfulCount,
+  reportCount: row.reportCount,
+  adminReply: row.adminReply,
+  adminReplyAt: row.adminReplyAt,
+  moderationNote: row.moderationNote,
+  moderatedAt: row.moderatedAt,
+  createdAt: row.createdAt,
+  product: { id: row.productId, name: row.productName, slug: row.productSlug },
+  user: actor(row.userId, row.userEmail),
+  adminReplyBy: actor(row.adminReplyById, row.adminReplyByEmail),
+  moderatedBy: actor(row.moderatedById, row.moderatedByEmail),
+});
+
 admin.get('/reviews', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.ReviewsView);
@@ -826,12 +997,19 @@ admin.get('/reviews', async (c) => {
   const totalPages = Math.ceil(total / pageSize);
   const page = totalPages === 0 ? 1 : Math.min(Math.max(1, Number(query.page) || 1), totalPages);
 
-  const items = await ctx.db.all(
+  const rows = await ctx.db.all<ReviewRow>(
     `SELECT r."id", r."rating", r."title", r."body", r."authorName", r."status",
-            r."isVerifiedPurchase", r."reportCount", r."adminReply", r."moderationNote",
-            r."createdAt", p."name" AS "productName", p."slug" AS "productSlug"
+            r."isVerifiedPurchase", r."helpfulCount", r."reportCount",
+            r."adminReply", r."adminReplyAt", r."moderationNote", r."moderatedAt", r."createdAt",
+            p."id" AS "productId", p."name" AS "productName", p."slug" AS "productSlug",
+            u."id" AS "userId", u."email" AS "userEmail",
+            ar."id" AS "adminReplyById", ar."email" AS "adminReplyByEmail",
+            mb."id" AS "moderatedById", mb."email" AS "moderatedByEmail"
        FROM "product_reviews" r
        JOIN "products" p ON p."id" = r."productId"
+       LEFT JOIN "users" u ON u."id" = r."userId"
+       LEFT JOIN "users" ar ON ar."id" = r."adminReplyByUserId"
+       LEFT JOIN "users" mb ON mb."id" = r."moderatedByUserId"
        ${where}
        ORDER BY r."reportCount" DESC, r."createdAt" DESC
        LIMIT ? OFFSET ?`,
@@ -840,7 +1018,7 @@ admin.get('/reviews', async (c) => {
     (page - 1) * pageSize,
   );
 
-  return c.json({ items, total, page, pageSize, totalPages });
+  return c.json({ items: rows.map(toReviewDto), total, page, pageSize, totalPages });
 });
 
 /**
@@ -850,11 +1028,60 @@ admin.get('/reviews', async (c) => {
  * batch, so hiding a one-star review moves the average immediately rather than
  * leaving the product page contradicting the moderation queue.
  */
+/**
+ * Editing the text of a review.
+ *
+ * Changing what somebody else wrote is a heavier act than deciding whether it
+ * is shown, so it takes `reviews.delete` — the permission for removing it —
+ * rather than `reviews.moderate`, and the previous text goes into the audit
+ * row. The rating is untouched: a moderator fixes wording, not a score.
+ */
+async function editReviewContent(c: Context<AppEnv>, raw: unknown) {
+  const ctx = ctxOf(c);
+  const session = requirePermission(ctx.session, Permissions.ReviewsDelete);
+  const id = pathId(c.req.param('id'));
+  const body = parse(adminReviewContentSchema, raw);
+
+  const before = await ctx.db.first<{ title: string | null; body: string }>(
+    `SELECT "title", "body" FROM "product_reviews" WHERE "id" = ?`,
+    id,
+  );
+  if (!before) throw notFound('Review not found.');
+
+  await ctx.db.batch([
+    ctx.db.statement(
+      `UPDATE "product_reviews" SET "title" = ?, "body" = ?, "updatedAt" = ? WHERE "id" = ?`,
+      body.title ?? null,
+      body.body,
+      nowIso(),
+      id,
+    ),
+    auditStatement(ctx.db, session, ctx.ip, {
+      action: 'review.edit',
+      entityType: 'ProductReview',
+      entityId: id,
+      before,
+      after: { title: body.title ?? null, body: body.body },
+    }),
+  ]);
+  return c.json({ ok: true });
+}
+
 admin.patch('/reviews/:id', async (c) => {
   const ctx = ctxOf(c);
-  const session = requirePermission(ctx.session, Permissions.ReviewsModerate);
   const id = pathId(c.req.param('id'));
-  const body = parse(adminReviewModerationSchema, await readJson(c.req.raw));
+  const raw = await readJson(c.req.raw);
+
+  /*
+   * Two different edits arrive on this path: the moderation queue sends a
+   * `status`, and the review editor sends the `body` it rewrote. They need
+   * different permissions, so the shape decides which handler runs rather than
+   * one schema accepting both and the stricter check being skipped.
+   */
+  if (raw && typeof raw === 'object' && 'body' in raw) return editReviewContent(c, raw);
+
+  const session = requirePermission(ctx.session, Permissions.ReviewsModerate);
+  const body = parse(adminReviewModerationSchema, raw);
 
   const review = await ctx.db.first<{ productId: string; status: string }>(
     `SELECT "productId", "status" FROM "product_reviews" WHERE "id" = ?`,
@@ -922,6 +1149,86 @@ admin.post('/reviews/:id/reply', async (c) => {
     entityType: 'ProductReview',
     entityId: id,
   });
+  return c.json({ ok: true });
+});
+
+/**
+ * Withdrawing a merchant reply.
+ *
+ * The reply is public text on the product page, so removing it clears the
+ * attribution with it — leaving `adminReplyByUserId` set would keep naming an
+ * author for something no longer said.
+ */
+admin.delete('/reviews/:id/reply', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requirePermission(ctx.session, Permissions.ReviewsReply);
+  const id = pathId(c.req.param('id'));
+
+  const before = await ctx.db.first<{ adminReply: string | null }>(
+    `SELECT "adminReply" FROM "product_reviews" WHERE "id" = ?`,
+    id,
+  );
+  if (!before) throw notFound('Review not found.');
+
+  await ctx.db.batch([
+    ctx.db.statement(
+      `UPDATE "product_reviews"
+          SET "adminReply" = NULL, "adminReplyAt" = NULL, "adminReplyByUserId" = NULL, "updatedAt" = ?
+        WHERE "id" = ?`,
+      nowIso(),
+      id,
+    ),
+    auditStatement(ctx.db, session, ctx.ip, {
+      action: 'review.reply_withdraw',
+      entityType: 'ProductReview',
+      entityId: id,
+      before,
+    }),
+  ]);
+  return c.json({ ok: true });
+});
+
+/**
+ * Deleting a review outright.
+ *
+ * The rating is denormalised onto the product, so the row cannot simply go: the
+ * average and the count are recomputed in the same batch, or the product page
+ * would keep advertising a review that no longer exists.
+ */
+admin.delete('/reviews/:id', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requirePermission(ctx.session, Permissions.ReviewsDelete);
+  const id = pathId(c.req.param('id'));
+
+  const before = await ctx.db.first<{ productId: string; rating: number; body: string }>(
+    `SELECT "productId", "rating", "body" FROM "product_reviews" WHERE "id" = ?`,
+    id,
+  );
+  if (!before) throw notFound('Review not found.');
+
+  const now = nowIso();
+  await ctx.db.batch([
+    ctx.db.statement(`DELETE FROM "product_reviews" WHERE "id" = ?`, id),
+    ctx.db.statement(
+      `UPDATE "products"
+          SET "ratingSum" = (SELECT COALESCE(SUM("rating"), 0) FROM "product_reviews"
+                              WHERE "productId" = ? AND "status" = 'PUBLISHED'),
+              "reviewCount" = (SELECT COUNT(*) FROM "product_reviews"
+                                WHERE "productId" = ? AND "status" = 'PUBLISHED'),
+              "updatedAt" = ?
+        WHERE "id" = ?`,
+      before.productId,
+      before.productId,
+      now,
+      before.productId,
+    ),
+    auditStatement(ctx.db, session, ctx.ip, {
+      action: 'review.delete',
+      entityType: 'ProductReview',
+      entityId: id,
+      before,
+    }),
+  ]);
   return c.json({ ok: true });
 });
 
@@ -1024,13 +1331,18 @@ admin.patch('/coupons/:id', async (c) => {
 admin.get('/campaigns', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.CampaignsView);
+  const rows = await ctx.db.all<Record<string, unknown>>(
+    `SELECT c."id", c."title", c."slug", c."shortDescription", c."startsAt", c."endsAt",
+            c."status", c."position", c."isVisible",
+            (SELECT COUNT(*) FROM "campaign_products" cp WHERE cp."campaignId" = c."id") AS "productCount"
+       FROM "campaigns" c ORDER BY c."position", c."startsAt" DESC`,
+  );
   return c.json(
-    await ctx.db.all(
-      `SELECT c."id", c."title", c."slug", c."shortDescription", c."startsAt", c."endsAt",
-              c."status", c."position", c."isVisible",
-              (SELECT COUNT(*) FROM "campaign_products" cp WHERE cp."campaignId" = c."id") AS "productCount"
-         FROM "campaigns" c ORDER BY c."position", c."startsAt" DESC`,
-    ),
+    rows.map((row) => ({
+      ...row,
+      // See the customers listing: the panel reads `campaign._count.products`.
+      _count: { products: Number(row.productCount ?? 0) },
+    })),
   );
 });
 
@@ -1047,18 +1359,65 @@ admin.get('/promotions', async (c) => {
 
 // --- Returns and shipments ---------------------------------------------------
 
+/**
+ * The returns queue.
+ *
+ * Carries each request's lines, because the list totals the units being sent
+ * back (`request.items.reduce(…)`) — without them the page threw on render.
+ * Two queries for the whole page rather than one per request.
+ */
 admin.get('/returns', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.ReturnsView);
-  return c.json(
-    await ctx.db.all(
-      `SELECT r."id", r."rmaNumber", r."status", r."reason", r."customerNote", r."createdAt",
-              o."orderNumber", u."email" AS "customerEmail"
-         FROM "return_requests" r
-         JOIN "orders" o ON o."id" = r."orderId"
-         LEFT JOIN "users" u ON u."id" = r."userId"
-        ORDER BY r."createdAt" DESC LIMIT 100`,
+  const status = c.req.query('status');
+
+  const requests = await ctx.db.all<Record<string, unknown>>(
+    `SELECT r."id", r."rmaNumber", r."orderId", r."status", r."reason", r."customerNote",
+            r."createdAt", o."orderNumber", u."email" AS "customerEmail"
+       FROM "return_requests" r
+       JOIN "orders" o ON o."id" = r."orderId"
+       LEFT JOIN "users" u ON u."id" = r."userId"
+       ${status ? 'WHERE r."status" = ?' : ''}
+      ORDER BY r."createdAt" DESC LIMIT 100`,
+    ...(status ? [status] : []),
+  );
+
+  const ids = requests.map((row) => row.id as string);
+  const { sql: idList, bindings } = inClause(ids);
+  const [lines, refunds] = await Promise.all([
+    ctx.db.all<Record<string, unknown>>(
+      `SELECT ri."id", ri."returnRequestId", ri."orderItemId", ri."quantity",
+              ri."receivedQuantity", ri."restockedQuantity", ri."condition",
+              oi."name", oi."sku"
+         FROM "return_items" ri
+         JOIN "order_items" oi ON oi."id" = ri."orderItemId"
+        WHERE ri."returnRequestId" IN ${idList}`,
+      ...bindings,
     ),
+    ctx.db.all<Record<string, unknown>>(
+      `SELECT "id", "returnRequestId", "amountMinor", "status", "reason", "createdAt"
+         FROM "refunds" WHERE "returnRequestId" IN ${idList}`,
+      ...bindings,
+    ),
+  ]);
+
+  const group = <T extends Record<string, unknown>>(rows: T[]) => {
+    const map = new Map<string, T[]>();
+    for (const row of rows) {
+      const key = row.returnRequestId as string;
+      map.set(key, [...(map.get(key) ?? []), row]);
+    }
+    return map;
+  };
+  const linesBy = group(lines);
+  const refundsBy = group(refunds);
+
+  return c.json(
+    requests.map((request) => ({
+      ...request,
+      items: linesBy.get(request.id as string) ?? [],
+      refunds: refundsBy.get(request.id as string) ?? [],
+    })),
   );
 });
 
@@ -1149,12 +1508,59 @@ admin.put('/content/:key', async (c) => {
 
 // --- Settings ----------------------------------------------------------------
 
+/**
+ * Settings, as the flat object the panel edits.
+ *
+ * `readSettings` merges the stored rows over the defaults, so a key nobody has
+ * ever saved still comes back with the value the pricing code is actually
+ * using — which is the number the administrator needs to see in the field. The
+ * raw rows are no use to a form: it binds inputs to `reservationDurationMinutes`,
+ * not to `rows.find(r => r.key === …)`.
+ */
 admin.get('/settings', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.SettingsUpdate);
-  return c.json(
-    await ctx.db.all(`SELECT "key", "value", "updatedAt" FROM "site_settings" ORDER BY "key"`),
-  );
+  return c.json(await readSettings(ctx.db));
+});
+
+/**
+ * Saving the whole form at once.
+ *
+ * The panel PUTs the settings object it was given back, so every key arrives
+ * together and a partial save cannot leave shipping updated and tax not. Keys
+ * the schema does not model are rejected rather than stored, otherwise a typo
+ * would write a row `readSettings` silently ignores forever.
+ */
+admin.put('/settings', async (c) => {
+  const ctx = ctxOf(c);
+  const session = requirePermission(ctx.session, Permissions.SettingsUpdate);
+  const body = parse(adminSettingsBulkSchema, await readJson(c.req.raw));
+
+  const entries = Object.entries(body).filter(([, value]) => value !== undefined);
+  if (entries.length === 0) throw badRequest('No settings were supplied.');
+
+  const before = await readSettings(ctx.db);
+  const now = nowIso();
+  await ctx.db.batch([
+    ...entries.map(([key, value]) =>
+      ctx.db.statement(
+        `INSERT INTO "site_settings" ("key", "value", "updatedAt", "updatedByUserId") VALUES (?, ?, ?, ?)
+         ON CONFLICT ("key") DO UPDATE SET "value" = excluded."value", "updatedAt" = excluded."updatedAt", "updatedByUserId" = excluded."updatedByUserId"`,
+        key,
+        toJson(value),
+        now,
+        session.user.id,
+      ),
+    ),
+    auditStatement(ctx.db, session, ctx.ip, {
+      action: 'settings.update',
+      entityType: 'SiteSetting',
+      entityId: entries.map(([key]) => key).join(','),
+      before,
+      after: body,
+    }),
+  ]);
+  return c.json(await readSettings(ctx.db));
 });
 
 admin.put('/settings/:key', async (c) => {
