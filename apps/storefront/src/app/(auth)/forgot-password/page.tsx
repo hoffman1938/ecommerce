@@ -9,6 +9,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [resetUrl, setResetUrl] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   return (
     <div className="mx-auto max-w-sm py-8 lg:py-10">
@@ -37,6 +38,16 @@ export default function ForgotPasswordPage() {
                 address in the demo.
               </p>
             )
+          ) : message ? (
+            /*
+             * The API said what it actually did. The Cloudflare deployment has
+             * no email provider and answers with that; the local NestJS stack
+             * really does send, and answers accordingly. Rendering the server's
+             * own sentence is the only version that is true in both, which the
+             * hardcoded "check Mailpit" line below was not — there is no
+             * Mailpit in the deployed demo, and no mail was sent.
+             */
+            <p>{message}</p>
           ) : (
             <p>
               If that email is registered, a reset link is on its way. In local development, check
@@ -59,9 +70,12 @@ export default function ForgotPasswordPage() {
           onSubmit={async (e) => {
             e.preventDefault();
             const result = await api
-              .post<{ resetUrl: string | null }>('/auth/forgot-password', { email })
+              .post<{ resetUrl: string | null; message?: string }>('/auth/forgot-password', {
+                email,
+              })
               .catch(() => null);
             setResetUrl(result?.resetUrl ?? null);
+            setMessage(result?.message ?? null);
             setSent(true);
           }}
         >

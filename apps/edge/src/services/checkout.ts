@@ -27,6 +27,7 @@ import { Db, nowIso, toJson } from '../lib/sql';
 import { readSettings, shippingRulesFrom } from './settings';
 import { commitStatements } from './inventory';
 import { orderCountForCustomer, redemptionsByCustomer, resolveCoupon } from './coupons';
+import { notify } from './inbox';
 
 export interface CheckoutInput {
   email: string;
@@ -481,15 +482,16 @@ export async function placeDemoOrder(
 
   if (context.userId) {
     statements.push(
-      db.statement(
-        `INSERT INTO "notifications" ("id", "userId", "type", "title", "body", "createdAt")
-         VALUES (?, ?, 'ORDER_PLACED', ?, ?, ?)`,
-        newId(),
-        context.userId,
-        `Order ${orderNumber} confirmed`,
-        `We have received your demo order ${orderNumber}. No real payment was taken.`,
-        now,
-      ),
+      ...notify(db, {
+        userId: context.userId,
+        type: 'ORDER_PLACED',
+        title: `Order ${orderNumber} confirmed`,
+        body: `We have received your demo order ${orderNumber}. No real payment was taken.`,
+        email,
+        orderId,
+        template: 'order_confirmation',
+        at: now,
+      }),
     );
   }
 

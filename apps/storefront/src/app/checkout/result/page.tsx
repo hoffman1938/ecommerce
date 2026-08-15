@@ -11,6 +11,17 @@ import { useCurrentUser } from '@/lib/hooks';
 import { useI18n } from '@/lib/i18n';
 import { T } from '@/components/t';
 
+/**
+ * Whether the backend behind this build actually sends mail.
+ *
+ * Only the NestJS stack does, via Mailpit; it is the build that sets no
+ * NEXT_PUBLIC_BACKEND. The Worker has no provider by design and the bundled
+ * export has no backend at all, so both write the confirmation to the
+ * account's simulated mailbox instead. Declared by the build rather than
+ * inferred from the API's hostname, because the Worker runs on localhost too.
+ */
+const SENDS_REAL_EMAIL = !DEMO_MODE && !process.env.NEXT_PUBLIC_BACKEND;
+
 interface OrderStatusView {
   status: string;
   orderNumber: string;
@@ -116,21 +127,11 @@ function ResultInner() {
           </h1>
           {order.totalMinor != null ? (
             <p className="mt-2 text-ink-600">
-              We received your payment of {money(order.totalMinor)}. A confirmation email has been
-              sent.{' '}
-              {DEMO_MODE ? (
+              We received your payment of {money(order.totalMinor)}.{' '}
+              {SENDS_REAL_EMAIL ? (
                 <>
-                  {/* No mail leaves the sandbox, so point at the simulated
-                      mailbox rather than an SMTP catcher that is not running. */}
-                  Read it in your{' '}
-                  <Link href="/account/inbox" className="underline underline-offset-2">
-                    simulated inbox
-                  </Link>
-                  .
-                </>
-              ) : (
-                <>
-                  In local development it is captured by Mailpit at{' '}
+                  A confirmation email has been sent. In local development it is captured by Mailpit
+                  at{' '}
                   <a
                     className="underline"
                     href="http://localhost:8025"
@@ -140,6 +141,20 @@ function ResultInner() {
                     localhost:8025
                   </a>
                   .
+                </>
+              ) : (
+                <>
+                  {/*
+                    No mail provider here and no SMTP catcher running either, so
+                    the confirmation goes to the account's simulated mailbox.
+                    Claiming an email had been sent was simply untrue of this
+                    deployment, and it is the sentence a reviewer checks.
+                  */}
+                  Your confirmation is in your{' '}
+                  <Link href="/account/inbox" className="underline underline-offset-2">
+                    inbox
+                  </Link>
+                  . This environment sends no email.
                 </>
               )}
             </p>

@@ -1,12 +1,9 @@
 name: CI
 
-# NOTE: no pnpm-lock.yaml is committed, so `actions/setup-node` cannot use
-# `cache: pnpm` — it fails the job outright when the lockfile is missing, which
-# is what broke every job here. Dependency caching is therefore off.
-#
-# The real fix is to commit a lockfile: run `pnpm install` once and commit the
-# generated pnpm-lock.yaml, then restore `cache: pnpm` to each setup-node step
-# and switch the installs back to `--frozen-lockfile` for reproducible builds.
+# pnpm-lock.yaml is committed, so installs are `--frozen-lockfile` (a job fails
+# rather than silently resolving a different dependency graph than a developer
+# has) and `cache: pnpm` is on. The note that used to sit here said no lockfile
+# was committed; one is, and has been.
 
 on:
   push:
@@ -39,7 +36,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - name: Build shared packages
         run: pnpm -r --filter "./packages/**" build
@@ -77,7 +75,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
       - name: Migration validation (deploy against a clean database)
@@ -96,7 +95,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
       - run: pnpm --filter @outlet/api build
@@ -112,7 +112,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
       - run: pnpm --filter @outlet/worker build
@@ -128,7 +129,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
       - run: pnpm --filter @outlet/storefront build
@@ -148,7 +150,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm -r --filter "./packages/**" build
       - run: pnpm --filter @outlet/admin build

@@ -1041,18 +1041,42 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
 
     // Notification, so the customer's inbox is not empty either.
     if (status !== 'AWAITING_PAYMENT') {
+      const readable = status.toLowerCase().replace(/_/g, ' ');
+      const itemCount = `${lines.length} item${lines.length === 1 ? '' : 's'}`;
       emit(
         insert('notifications', {
           id: idFor('ntf', orderNumber),
           userId: userId(customer.email),
+          orderId: oid,
           type: 'ORDER_STATUS',
-          title: `Order ${orderNumber} is ${status.toLowerCase().replace(/_/g, ' ')}`,
-          body: `Your order ${orderNumber} (${lines.length} item${lines.length === 1 ? '' : 's'}) is now ${status.toLowerCase().replace(/_/g, ' ')}.`,
+          title: `Order ${orderNumber} is ${readable}`,
+          body: `Your order ${orderNumber} (${itemCount}) is now ${readable}.`,
           readAt: index % 3 === 0 ? daysAgo(base, Math.max(0, placedDaysAgo - 5)) : null,
           createdAt: daysAgo(base, Math.max(0, placedDaysAgo - 1)),
         }),
       );
       bump('notifications');
+
+      /*
+       * The message a real deployment would have emailed. Seeded alongside the
+       * notification so /account/inbox has history on a fresh database rather
+       * than being an empty screen a reviewer has to place an order to fill.
+       * Nothing is sent anywhere — see migrations/0002_inbox.sql.
+       */
+      emit(
+        insert('simulated_emails', {
+          id: idFor('eml', orderNumber),
+          userId: userId(customer.email),
+          orderId: oid,
+          to: customer.email,
+          subject: `Your order ${orderNumber} is ${readable}`,
+          body: `Hello ${customer.firstName}, your order ${orderNumber} (${itemCount}) is now ${readable}. No real payment was taken and no real email was sent — this is a demo environment.`,
+          template: 'order_status',
+          readAt: index % 3 === 0 ? daysAgo(base, Math.max(0, placedDaysAgo - 5)) : null,
+          sentAt: daysAgo(base, Math.max(0, placedDaysAgo - 1)),
+        }),
+      );
+      bump('simulated_emails');
     }
   }
 

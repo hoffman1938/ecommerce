@@ -29,6 +29,14 @@ export type ErrorCode =
   | 'RATE_LIMITED'
   | 'PAYLOAD_TOO_LARGE'
   | 'UNSUPPORTED_MEDIA_TYPE'
+  /*
+   * A feature this deployment deliberately does not have, because having it
+   * would mean paying somebody: sending email, taking a card. Distinct from
+   * NOT_FOUND so the front end can say "this demo does not do that" rather
+   * than "that page is missing", and distinct from INTERNAL so it is not
+   * counted as a fault. See SECURITY.md.
+   */
+  | 'FEATURE_UNAVAILABLE'
   | 'INTERNAL';
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
@@ -46,6 +54,7 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   RATE_LIMITED: 429,
   PAYLOAD_TOO_LARGE: 413,
   UNSUPPORTED_MEDIA_TYPE: 415,
+  FEATURE_UNAVAILABLE: 501,
   INTERNAL: 500,
 };
 

@@ -60,14 +60,28 @@ const DUMMY_HASH =
 
 const SIGN_IN_FAILED = 'That email and password combination is not recognised.';
 
+/**
+ * The current session, as `{ user }` — never the user object bare.
+ *
+ * Both front ends and the NestJS API implement that envelope: the storefront
+ * reads `data.user` for the header, and the admin panel reads
+ * `data.user.permissions` to decide whether the account may see the panel at
+ * all. Returning the user flat here type-checked on both sides and failed at
+ * runtime in the quietest possible way — `undefined.permissions` never threw
+ * because the check was `!me.user`, so a Super Admin was told the account had
+ * no admin permissions, and the storefront header showed everyone as signed
+ * out. Whatever this returns, it has to be the shape the two callers read.
+ */
 auth.get('/me', async (c) => {
   const { session } = ctxOf(c);
-  if (!session) return c.json(null);
+  if (!session) return c.json({ user: null });
   return c.json({
-    ...session.user,
-    roles: session.roles,
-    permissions: [...session.permissions],
-    isStaff: session.permissions.size > 0,
+    user: {
+      ...session.user,
+      roles: session.roles,
+      permissions: [...session.permissions],
+      isStaff: session.permissions.size > 0,
+    },
   });
 });
 
@@ -247,15 +261,34 @@ auth.post('/sessions/revoke-others', async (c) => {
  * take over that account, so it does not. The response is deliberately the
  * same whether or not the address exists.
  */
+const RESET_UNAVAILABLE =
+  'Password reset needs an email provider, which this demo environment deliberately does not have. Demo account passwords are documented in the README, and a signed-in customer can change theirs from Account → Password.';
+
 auth.post('/forgot-password', async (c) => {
   const ctx = ctxOf(c);
   await enforceRateLimit(ctx.env.RATE_LIMIT, 'passwordReset', ctx.ip);
   await readJson(c.req.raw).catch(() => ({}));
   return c.json({
     ok: true,
-    message:
-      'Password reset needs an email provider, which this demo environment deliberately does not have. Demo account passwords are documented in the README.',
+    message: RESET_UNAVAILABLE,
   });
+});
+
+/**
+ * The other half of a flow that does not exist here.
+ *
+ * A reset token only ever arrives in an email, and this deployment sends none,
+ * so no valid token can exist. The endpoint answers anyway — with the same
+ * explanation `/forgot-password` gives — because a 404 on a page somebody
+ * reached from the sign-in screen reads as a broken deployment rather than as
+ * a deliberately absent feature. Signed-in customers change their password at
+ * `/auth/change-password`, which does work.
+ */
+auth.post('/reset-password', async (c) => {
+  const ctx = ctxOf(c);
+  await enforceRateLimit(ctx.env.RATE_LIMIT, 'passwordReset', ctx.ip);
+  await readJson(c.req.raw).catch(() => ({}));
+  throw new ApiError('FEATURE_UNAVAILABLE', RESET_UNAVAILABLE);
 });
 
 export { auth as default };
