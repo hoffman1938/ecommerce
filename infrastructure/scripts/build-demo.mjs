@@ -24,7 +24,7 @@
  * thing that only surfaces when someone tries to reproduce a deploy locally.
  */
 import { execSync } from 'node:child_process';
-import { cpSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 const PACKAGES = [
@@ -187,6 +187,22 @@ run('pnpm --filter @outlet/admin build', { ...apiEnv, ADMIN_BASE_PATH: '/admin' 
 
 rmSync(ADMIN_NESTED, { recursive: true, force: true });
 cpSync(ADMIN_OUT, ADMIN_NESTED, { recursive: true });
+
+/*
+ * The RSC payload for the admin's own root route.
+ *
+ * Its sidebar links the dashboard as `/`, which under `basePath: '/admin'`
+ * the client prefetches as `/admin.txt`. `output: 'export'` writes that
+ * payload to `admin/index.txt` instead, so every admin page load logged a 404
+ * for a file the router was right to ask for. The HTML is unaffected — Pages
+ * resolves `/admin` to `admin/index.html` — so this is only ever a failed
+ * prefetch, but it is a 404 on every page and it is one copy to avoid.
+ */
+const ADMIN_ROOT_RSC = join(STOREFRONT_OUT, 'admin.txt');
+const nestedIndexRsc = join(ADMIN_NESTED, 'index.txt');
+if (existsSync(nestedIndexRsc)) {
+  cpSync(nestedIndexRsc, ADMIN_ROOT_RSC);
+}
 
 console.log(`\nStatic export written to ${STOREFRONT_OUT}`);
 console.log(`Admin panel nested at ${ADMIN_NESTED} (served from /admin)`);

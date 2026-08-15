@@ -170,6 +170,51 @@ describe('campaigns', () => {
     expect(status).toBe(422);
   });
 
+  /*
+   * The campaigns screen sends `activate`, not `publish`. The enum knew only
+   * `publish`, so the single action that puts a campaign live returned 422 —
+   * while Pause, End and Archive all worked, which made it look like a fault
+   * in particular campaigns rather than a missing word.
+   */
+  it('activates a campaign with the word the screen sends', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Activate Me',
+      slug: 'activate-me',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...window(),
+    });
+
+    const { status, body } = await admin.post(`/admin/campaigns/${created.body.id}/status`, {
+      action: 'activate',
+    });
+    expect(status).toBe(200);
+    expect(body.status).toBe('ACTIVE');
+    expect((await admin.get(`/admin/campaigns/${created.body.id}`)).body.status).toBe('ACTIVE');
+  });
+
+  it.each(['pause', 'end', 'archive', 'draft', 'publish'])('still accepts %s', async (action) => {
+    const created = await admin.post('/admin/campaigns', {
+      title: `Action ${action}`,
+      slug: `action-${action}`,
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...window(),
+    });
+    const { status } = await admin.post(`/admin/campaigns/${created.body.id}/status`, { action });
+    expect(status).toBe(200);
+  });
+
   it('publishes, then puts products in and takes them out', async () => {
     const created = await admin.post('/admin/campaigns', {
       title: 'Stocked',
