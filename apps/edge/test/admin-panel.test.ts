@@ -206,6 +206,102 @@ describe('campaigns', () => {
   });
 });
 
+describe('adding a product from the panel', () => {
+  /*
+   * The whole payload the new-product form submits, field for field. It sends
+   * `taxClass`, which the strict schema did not model, so every attempt to add
+   * a product came back "Unrecognized key(s) in object: 'taxClass'" — the
+   * panel could not create one at all. The earlier coverage missed it because
+   * the test wrote its own payload instead of copying the form's.
+   */
+  const formPayload = (overrides: Record<string, unknown> = {}) => ({
+    name: 'Aster Seamless Comfort Bra',
+    slug: 'aster-seamless-comfort-bra',
+    brandId: '',
+    categoryId: '',
+    shortDescription: 'A soft seamless everyday bra.',
+    description: '',
+    targetGroup: 'WOMEN',
+    materials: '82% nylon, 18% elastane',
+    careInstructions: '',
+    countryOfOrigin: '',
+    originalPriceMinor: 5900,
+    outletPriceMinor: 2900,
+    status: 'ACTIVE',
+    taxClass: 'STANDARD',
+    seoTitle: '',
+    seoDescription: '',
+    searchKeywords: '',
+    ...overrides,
+  });
+
+  it('creates a product into a subcategory that had none', async () => {
+    const [brand] = (await admin.get('/admin/brands')).body;
+    const tree = (await admin.get('/admin/categories')).body;
+    const flat = (n: any[]): any[] => n.flatMap((x) => [x, ...flat(x.children ?? [])]);
+    const bras = flat(tree).find((n: any) => n.slug === 'women-bras');
+    expect(bras.status).toBe('empty');
+
+    const created = await admin.post(
+      '/admin/products',
+      formPayload({ brandId: brand.id, categoryId: bras.id }),
+    );
+    expect(created.status).toBe(201);
+
+    const stored = await admin.get(`/admin/products/${created.body.id}`);
+    expect(stored.body.taxClass).toBe('STANDARD');
+    expect(stored.body.categoryId).toBe(bras.id);
+
+    /*
+     * A product with no variants is not sellable, so the category is still
+     * "empty" — correctly. Stock is what makes it real, and adding it is the
+     * second half of the job the panel does.
+     */
+    const variant = await admin.post(`/admin/products/${created.body.id}/variants`, {
+      sku: 'AST-BRA-BLACK-M',
+      size: 'M',
+      color: 'Black',
+      initialQuantity: 12,
+    });
+    expect(variant.status).toBe(201);
+
+    const after = flat((await admin.get('/admin/categories')).body).find(
+      (n: any) => n.slug === 'women-bras',
+    );
+    expect(after.productCount).toBeGreaterThan(0);
+    expect(after.status).toBe('active');
+
+    // And a shopper can now find it, in the category and by search.
+    const shopper = harness.client();
+    const listing = await shopper.get('/catalog/products?q=Seamless%20Comfort');
+    expect(listing.body.items.map((i: any) => i.slug)).toContain('aster-seamless-comfort-bra');
+
+    const detail = await shopper.get('/catalog/products/aster-seamless-comfort-bra');
+    expect(detail.status).toBe(200);
+    expect(detail.body.variants.some((v: any) => v.availableQuantity > 0)).toBe(true);
+  });
+
+  it('keeps a non-standard tax class through an edit', async () => {
+    const [brand] = (await admin.get('/admin/brands')).body;
+    const created = await admin.post(
+      '/admin/products',
+      formPayload({
+        name: 'Reduced Rate Item',
+        slug: 'reduced-rate-item',
+        brandId: brand.id,
+        categoryId: null,
+        taxClass: 'REDUCED',
+      }),
+    );
+    expect(created.status).toBe(201);
+    expect((await admin.get(`/admin/products/${created.body.id}`)).body.taxClass).toBe('REDUCED');
+
+    // A partial edit that never mentions tax must not reset it.
+    await admin.put(`/admin/products/${created.body.id}`, { status: 'DISABLED' });
+    expect((await admin.get(`/admin/products/${created.body.id}`)).body.taxClass).toBe('REDUCED');
+  });
+});
+
 describe('products', () => {
   /* The list view's status dropdown sends PUT with one field. */
   it('changes status from the list without resending the whole product', async () => {
@@ -585,6 +681,83 @@ describe('the counts the list views render', () => {
  * missing panel, it is a thrown render and a blank page. All four of these
  * screens were blank against this API while every list view worked.
  */
+/**
+ * Category visibility is a switch, not a side effect of stock.
+ *
+ * A category used to remove itself from the shop as soon as it had nothing
+ * available, so the menu rearranged itself as things sold out and an
+ * administrator could neither keep one on nor see from the shop why one had
+ * gone. Now `isActive` decides, and emptiness is reported to the admin as
+ * information.
+ */
+describe('category visibility', () => {
+  const findNode = (nodes: any[], slug: string): any => {
+    for (const node of nodes) {
+      if (node.slug === slug) return node;
+      const hit = findNode(node.children ?? [], slug);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  const flatten = (nodes: any[]): any[] => nodes.flatMap((n) => [n, ...flatten(n.children ?? [])]);
+
+  it('shows the admin every category, empty ones included', async () => {
+    const tree = (await admin.get('/admin/categories')).body;
+    const all = flatten(tree);
+    const empty = all.filter((n) => n.status === 'empty');
+
+    expect(all.length).toBeGreaterThan(100);
+    // The seed cannot fill 122 subcategories, so this is the interesting case.
+    expect(empty.length).toBeGreaterThan(0);
+    for (const node of empty) {
+      expect(node.isActive).toBe(true);
+      expect(node.isVisible).toBe(true);
+    }
+  });
+
+  it('shows an empty category in the shop too', async () => {
+    const shop = (await harness.client().get('/catalog/categories')).body;
+    const adminTree = (await admin.get('/admin/categories')).body;
+    const empty = flatten(adminTree).find((n: any) => n.status === 'empty');
+
+    expect(findNode(shop, empty.slug)).toBeTruthy();
+  });
+
+  it('hides it from the shop when an administrator switches it off', async () => {
+    const adminTree = (await admin.get('/admin/categories')).body;
+    const target = flatten(adminTree).find((n: any) => n.level === 'subcategory' && n.isActive);
+
+    expect(
+      (await admin.patch(`/admin/categories/${target.id}/visibility`, { isActive: false })).status,
+    ).toBe(200);
+
+    const shop = (await harness.client().get('/catalog/categories')).body;
+    expect(findNode(shop, target.slug)).toBeNull();
+
+    // And the admin still sees it, flagged as hidden rather than gone.
+    const after = flatten((await admin.get('/admin/categories')).body).find(
+      (n: any) => n.slug === target.slug,
+    );
+    expect(after.status).toBe('hidden');
+    expect(after.isVisible).toBe(false);
+
+    await admin.patch(`/admin/categories/${target.id}/visibility`, { isActive: true });
+  });
+
+  it('hides a whole branch when its department is switched off', async () => {
+    const adminTree = (await admin.get('/admin/categories')).body;
+    const department = adminTree.find((n: any) => n.slug === 'kids');
+
+    await admin.patch(`/admin/categories/${department.id}/visibility`, { isActive: false });
+    const shop = (await harness.client().get('/catalog/categories')).body;
+    expect(findNode(shop, 'kids')).toBeNull();
+    expect(findNode(shop, 'kids-t-shirts')).toBeNull();
+
+    await admin.patch(`/admin/categories/${department.id}/visibility`, { isActive: true });
+    expect(findNode((await harness.client().get('/catalog/categories')).body, 'kids')).toBeTruthy();
+  });
+});
+
 describe('the detail screens', () => {
   it('order detail carries refunds and the history the screen maps over', async () => {
     const [order] = (await admin.get('/admin/orders?page=1&pageSize=1')).body.items;
