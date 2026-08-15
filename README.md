@@ -211,12 +211,20 @@ in `packages/catalog/src/taxonomy.ts` and consumed by the Prisma seed, the API, 
 the admin panel alike. URLs read `/shop/women/clothing/dresses`; `/category/:slug` still resolves
 for older links.
 
-Nothing about the navigation is hardcoded in the front ends. A category reaches a customer only
-when it is active, its ancestors are active, and it holds at least one available product — so a
-subcategory that sells out drops off the menu on its own and reappears when stock is published,
-while one an administrator switched off stays off until they switch it back. **Catalog →
-Categories** in the admin panel shows the whole tree with those two states reported separately
-(`Hidden` vs `Empty`), product counts, ordering and a delete flow that will not let products be
+The tree mirrors the way a general fashion retailer organises one: four departments, fifteen
+categories and a hundred and twenty-two subcategories, from `women/clothing/dresses` down to
+`men/accessories/cufflinks`.
+
+Nothing about the navigation is hardcoded in the front ends. **A category reaches a customer when
+it is active and its ancestors are active — and nothing else.** Emptiness does not hide anything:
+a category with no stock stays on the menu and shows an empty listing, exactly as it would in a
+shop that has sold out of a line it still intends to carry. Visibility is a decision somebody
+makes, not a side effect of inventory.
+
+**Catalog → Categories** in the admin panel shows the whole tree — every row, including empty ones
+— with `Hidden` and `Empty` reported separately. `Hidden` means somebody switched it off; `Empty`
+is a note for whoever manages stock and changes nothing about what shoppers see. Each row carries
+product counts, ordering, a Hide/Unhide switch, and a delete flow that will not let products be
 orphaned. See [docs/architecture.md](docs/architecture.md#category-tree-and-visibility-documented-decision).
 
 Size guides come from a single transcribed dataset covering Men, Women, Kids and Unisex across

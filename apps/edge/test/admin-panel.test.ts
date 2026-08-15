@@ -585,6 +585,83 @@ describe('the counts the list views render', () => {
  * missing panel, it is a thrown render and a blank page. All four of these
  * screens were blank against this API while every list view worked.
  */
+/**
+ * Category visibility is a switch, not a side effect of stock.
+ *
+ * A category used to remove itself from the shop as soon as it had nothing
+ * available, so the menu rearranged itself as things sold out and an
+ * administrator could neither keep one on nor see from the shop why one had
+ * gone. Now `isActive` decides, and emptiness is reported to the admin as
+ * information.
+ */
+describe('category visibility', () => {
+  const findNode = (nodes: any[], slug: string): any => {
+    for (const node of nodes) {
+      if (node.slug === slug) return node;
+      const hit = findNode(node.children ?? [], slug);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  const flatten = (nodes: any[]): any[] => nodes.flatMap((n) => [n, ...flatten(n.children ?? [])]);
+
+  it('shows the admin every category, empty ones included', async () => {
+    const tree = (await admin.get('/admin/categories')).body;
+    const all = flatten(tree);
+    const empty = all.filter((n) => n.status === 'empty');
+
+    expect(all.length).toBeGreaterThan(100);
+    // The seed cannot fill 122 subcategories, so this is the interesting case.
+    expect(empty.length).toBeGreaterThan(0);
+    for (const node of empty) {
+      expect(node.isActive).toBe(true);
+      expect(node.isVisible).toBe(true);
+    }
+  });
+
+  it('shows an empty category in the shop too', async () => {
+    const shop = (await harness.client().get('/catalog/categories')).body;
+    const adminTree = (await admin.get('/admin/categories')).body;
+    const empty = flatten(adminTree).find((n: any) => n.status === 'empty');
+
+    expect(findNode(shop, empty.slug)).toBeTruthy();
+  });
+
+  it('hides it from the shop when an administrator switches it off', async () => {
+    const adminTree = (await admin.get('/admin/categories')).body;
+    const target = flatten(adminTree).find((n: any) => n.level === 'subcategory' && n.isActive);
+
+    expect(
+      (await admin.patch(`/admin/categories/${target.id}/visibility`, { isActive: false })).status,
+    ).toBe(200);
+
+    const shop = (await harness.client().get('/catalog/categories')).body;
+    expect(findNode(shop, target.slug)).toBeNull();
+
+    // And the admin still sees it, flagged as hidden rather than gone.
+    const after = flatten((await admin.get('/admin/categories')).body).find(
+      (n: any) => n.slug === target.slug,
+    );
+    expect(after.status).toBe('hidden');
+    expect(after.isVisible).toBe(false);
+
+    await admin.patch(`/admin/categories/${target.id}/visibility`, { isActive: true });
+  });
+
+  it('hides a whole branch when its department is switched off', async () => {
+    const adminTree = (await admin.get('/admin/categories')).body;
+    const department = adminTree.find((n: any) => n.slug === 'kids');
+
+    await admin.patch(`/admin/categories/${department.id}/visibility`, { isActive: false });
+    const shop = (await harness.client().get('/catalog/categories')).body;
+    expect(findNode(shop, 'kids')).toBeNull();
+    expect(findNode(shop, 'kids-t-shirts')).toBeNull();
+
+    await admin.patch(`/admin/categories/${department.id}/visibility`, { isActive: true });
+    expect(findNode((await harness.client().get('/catalog/categories')).body, 'kids')).toBeTruthy();
+  });
+});
+
 describe('the detail screens', () => {
   it('order detail carries refunds and the history the screen maps over', async () => {
     const [order] = (await admin.get('/admin/orders?page=1&pageSize=1')).body.items;

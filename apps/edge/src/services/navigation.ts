@@ -137,7 +137,17 @@ const hrefFor = (path: string[]): string => `/shop/${path.join('/')}`;
 /** Tile artwork, rendered by the media route when the bucket has no object. */
 const categoryImage = (slug: string): string => `/media/categories/${slug}.svg`;
 
-/** The customer-facing tree: active, with stock, ancestors included. */
+/**
+ * The customer-facing tree: whatever an administrator has left switched on.
+ *
+ * Visibility is `isActive` and nothing else. This used to also require stock —
+ * a category with no available products removed itself from the menu — which
+ * meant the navigation rearranged itself as things sold out and an
+ * administrator had no way to keep a category on the menu, nor any way to tell
+ * from the shop why one had gone. Emptiness is still *reported* in the admin
+ * tree, as information; it no longer decides anything. A category the shop
+ * should not show is one somebody switched off.
+ */
 export async function listCategories(db: Db): Promise<CategoryDto[]> {
   const roots = assembleTree(await readCategoryRows(db));
 
@@ -146,8 +156,6 @@ export async function listCategories(db: Db): Promise<CategoryDto[]> {
     const children = node.children
       .map(visible)
       .filter((child): child is CategoryDto => child !== null);
-    // A branch survives if it holds stock itself or if any child does.
-    if (node.subtreeProductCount === 0 && children.length === 0) return null;
     return {
       id: node.id,
       name: node.name,
@@ -176,8 +184,10 @@ export async function listCategoriesForAdmin(db: Db): Promise<AdminCategoryDto[]
   const map = (node: TreeNode, ancestorsActive: boolean): AdminCategoryDto => {
     const isActive = fromBool(node.isActive);
     const reachable = isActive && ancestorsActive;
-    // Hidden and empty are different problems with different fixes: one is
-    // undone by a switch, the other by publishing stock.
+    // Hidden and empty are different things and only one of them is a
+    // decision: `hidden` means somebody switched it off and the shop will not
+    // show it; `empty` means it is on the menu with nothing behind it yet,
+    // which is a note to whoever manages stock, not a reason to hide it.
     const status: AdminCategoryDto['status'] = !isActive
       ? 'hidden'
       : node.subtreeProductCount === 0
@@ -198,7 +208,10 @@ export async function listCategoriesForAdmin(db: Db): Promise<AdminCategoryDto[]
       description: node.description,
       isActive,
       status,
-      isVisible: reachable && node.subtreeProductCount > 0,
+      // Whether a shopper can reach it, which is now purely a question of
+      // switches — its own and its ancestors'. An empty category is still
+      // reachable; `status` says it has nothing in it.
+      isVisible: reachable,
       directProductCount: node.directProductCount,
       productCount: node.subtreeProductCount,
       totalProductCount: node.totalProductCount,
