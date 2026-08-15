@@ -966,12 +966,26 @@ adminManage.post('/campaigns/:id/status', async (c) => {
   const ctx = ctxOf(c);
   const session = requirePermission(ctx.session, Permissions.CampaignsPublish);
   const id = pathId(c.req.param('id'));
+  /*
+   * `activate` is the campaigns screen's word for it — the button says
+   * "Activate" because the status it produces is ACTIVE — and the enum only
+   * knew `publish`, so the one action that puts a campaign live was the one
+   * that 422'd. Pause, End and Archive all worked, which is why it read as a
+   * campaign-specific fault rather than a missing enum member.
+   *
+   * Both spellings are accepted rather than one being renamed: `publish` is
+   * what this API has always documented, and a demo's saved requests should
+   * not break to tidy a synonym.
+   */
   const body = parse(
-    z.object({ action: z.enum(['publish', 'pause', 'end', 'archive', 'draft']) }).strict(),
+    z
+      .object({ action: z.enum(['activate', 'publish', 'pause', 'end', 'archive', 'draft']) })
+      .strict(),
     await readJson(c.req.raw),
   );
 
   const STATUS = {
+    activate: 'ACTIVE',
     publish: 'ACTIVE',
     pause: 'PAUSED',
     end: 'ENDED',
