@@ -39,7 +39,7 @@ function originAllowed(origin: string | null, allowed: string[]): boolean {
  * possible policy is also the correct one: nothing may be loaded, nothing may
  * frame it, and no plugin content exists.
  */
-function securityHeaders(headers: Headers, isDevelopment: boolean): void {
+function securityHeaders(headers: Headers, isDevelopment: boolean, isMedia = false): void {
   headers.set(
     'Content-Security-Policy',
     "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
@@ -51,7 +51,24 @@ function securityHeaders(headers: Headers, isDevelopment: boolean): void {
     'Permissions-Policy',
     'accelerometer=(), camera=(), geolocation=(), microphone=(), payment=(), usb=()',
   );
-  headers.set('Cross-Origin-Resource-Policy', 'same-site');
+
+  /*
+   * Media is the one thing here another origin is *supposed* to embed.
+   *
+   * `same-site` is right for the JSON API — nothing should be able to pull a
+   * response into another site's page. It is wrong for images, and wrong for
+   * the same reason session cookies here need `SameSite=None`: the storefront
+   * is on `*.pages.dev` and this Worker on `*.workers.dev`, and both are
+   * public suffixes, so the two are cross-*site*, not merely cross-origin.
+   * Under `same-site` the browser fetched every product image successfully and
+   * then refused to render it — 200s in the network panel, blank tiles on the
+   * page, and no CORS error to go looking for.
+   *
+   * `cross-origin` on media only. These are public catalogue images; there is
+   * nothing in them to leak, and CORP is not what protects the API.
+   */
+  headers.set('Cross-Origin-Resource-Policy', isMedia ? 'cross-origin' : 'same-site');
+
   if (!isDevelopment) {
     headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
@@ -93,8 +110,11 @@ export const security: MiddlewareHandler<AppEnv> = async (c, next) => {
     headers.set('Access-Control-Allow-Credentials', 'true');
   }
   headers.append('Vary', 'Origin');
-  securityHeaders(headers, config.isDevelopment);
+  securityHeaders(headers, config.isDevelopment, isMediaPath(c.req.url));
 };
+
+/** Catalogue imagery, which other origins are meant to embed. */
+const isMediaPath = (url: string): boolean => new URL(url).pathname.startsWith('/media/');
 
 /**
  * The CSRF gate.

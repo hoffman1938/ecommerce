@@ -64,10 +64,77 @@ describe('browsing', () => {
     expect(body[2].level).toBe('subcategory');
   });
 
+  /**
+   * Image URLs have to be absolute.
+   *
+   * They are stored as `/media/<key>`, and the storefront puts them straight
+   * into `<img src>`. The pages are on `*.pages.dev` and this API is on
+   * `*.workers.dev`, so a relative path resolves against Pages, where nothing
+   * serves `/media` — every product image, category tile and campaign cover on
+   * the deployed site 404'd. Same-origin local testing never showed it.
+   */
+  it('returns media URLs a different origin can load', async () => {
+    const client = harness.client();
+    const listing = await client.get('/catalog/products?pageSize=3');
+
+    for (const item of listing.body.items) {
+      expect(item.imageUrl).toMatch(/^https?:\/\//);
+      expect(item.imageUrl).toContain('/media/');
+    }
+
+    // And the same for the surfaces that carry their own artwork.
+    const [categories, campaigns] = await Promise.all([
+      client.get('/catalog/categories'),
+      client.get('/campaigns'),
+    ]);
+    for (const row of [...categories.body, ...campaigns.body]) {
+      const url = row.imageUrl ?? row.coverImageUrl;
+      if (url) expect(url).toMatch(/^https?:\/\//);
+    }
+
+    // Nothing origin-relative survives anywhere in the payload.
+    expect(JSON.stringify(listing.body)).not.toContain('"/media/');
+  });
+
+  it('honours PUBLIC_MEDIA_BASE_URL when media moves to a CDN', async () => {
+    const cdn = await createHarness({ PUBLIC_MEDIA_BASE_URL: 'https://cdn.example.test/' });
+    try {
+      const listing = await cdn.client().get('/catalog/products?pageSize=1');
+      expect(listing.body.items[0].imageUrl).toMatch(/^https:\/\/cdn\.example\.test\/media\//);
+    } finally {
+      cdn.close();
+    }
+  });
+
+  /**
+   * The header that decides whether a fetched image is allowed to be *drawn*.
+   *
+   * `Cross-Origin-Resource-Policy: same-site` is correct for the JSON API and
+   * fatal for images here: pages.dev and workers.dev are separate sites, so the
+   * browser fetched every image with a 200 and then refused to render it. The
+   * page showed blank tiles with nothing in the console to chase.
+   */
+  it('lets another site embed catalogue images', async () => {
+    const client = harness.client();
+    const listing = await client.get('/catalog/products?pageSize=1');
+    const { pathname } = new URL(listing.body.items[0].imageUrl);
+    const { response } = await client.get(pathname);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cross-origin-resource-policy')).toBe('cross-origin');
+  });
+
+  it('still refuses to let another site embed an API response', async () => {
+    const { response } = await harness.client().get('/catalog/products?pageSize=1');
+    expect(response.headers.get('cross-origin-resource-policy')).toBe('same-site');
+  });
+
   it('renders product artwork when the bucket is empty', async () => {
     const client = harness.client();
     const listing = await client.get('/catalog/products?pageSize=1');
-    const { response } = await client.get(listing.body.items[0].imageUrl);
+    // The listing now hands out an absolute URL; the client takes a path.
+    const { pathname } = new URL(listing.body.items[0].imageUrl);
+    const { response } = await client.get(pathname);
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('image/svg+xml');
     expect(response.headers.get('x-media-source')).toBe('generated');

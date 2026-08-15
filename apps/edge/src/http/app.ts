@@ -33,6 +33,43 @@ export function createApp() {
     for (const cookie of c.get('ctx').setCookies) c.res.headers.append('set-cookie', cookie);
   });
 
+  /**
+   * Media URLs, made absolute on the way out.
+   *
+   * `product_images.url` is stored as `/media/<key>` — origin-relative, because
+   * the database should not hold a hostname. That works only while the pages
+   * and the API share an origin, and in this deployment they never do: the
+   * storefront is on `*.pages.dev` and this Worker is on `*.workers.dev`, so
+   * every one of those paths resolved against Pages and 404'd. Every product
+   * image, category tile and campaign cover on the site was missing.
+   *
+   * Rewriting here rather than at the eight places that select an image column
+   * is deliberate — those are easy to add a ninth to and forget. In JSON a
+   * stored value always appears as `"/media/…`, and the quote is what makes
+   * this exact: it can only match the start of a string, never a path
+   * mentioned inside a sentence.
+   *
+   * The base is `PUBLIC_MEDIA_BASE_URL` when set — that is the hook for
+   * serving R2 through a custom domain or a CDN later — and otherwise the
+   * origin this request arrived on, so it is correct on workers.dev, on a
+   * custom domain and on localhost without being configured at all.
+   */
+  app.use('*', async (c, next) => {
+    await next();
+
+    const contentType = c.res.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) return;
+
+    const base = c.get('ctx').config.mediaBaseUrl || new URL(c.req.url).origin;
+    const body = await c.res.clone().text();
+    if (!body.includes('"/media/')) return;
+
+    c.res = new Response(body.replaceAll('"/media/', `"${base}/media/`), {
+      status: c.res.status,
+      headers: c.res.headers,
+    });
+  });
+
   app.route('/', health);
   app.route('/', media);
   app.route('/', storefront);

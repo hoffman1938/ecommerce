@@ -151,6 +151,13 @@ interface DrawContext {
   view: ProductView;
   /** True when drawing the reverse of the garment. */
   back: boolean;
+  /**
+   * Identifies this product+colourway, so its creases fall in the same places
+   * on every build and differ from the next product's. Without it every
+   * garment in a grid would crease identically, which reads as a repeated
+   * texture rather than as cloth.
+   */
+  seed: string;
 }
 
 type Draw = (ctx: DrawContext) => string;
@@ -254,7 +261,113 @@ function fabricDefs(p: Palette): string {
     `<pattern id="weave" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">` +
     `<path d="M0 0 L0 8" stroke="#000000" stroke-opacity="0.05" stroke-width="3"/>` +
     `</pattern>` +
+    /*
+     * The three things below are what separate a product photograph from a
+     * coloured-in silhouette. Flat fills read as an icon no matter how correct
+     * the outline is, because cloth in front of a camera is never flat: it
+     * takes light across a curved surface, it creases, and it is recorded by a
+     * sensor that adds noise.
+     */
+    // Softens whatever is drawn through it — used for creases and occlusion,
+    // so neither lands as a hard vector line.
+    `<filter id="soften" x="-20%" y="-20%" width="140%" height="140%">` +
+    `<feGaussianBlur stdDeviation="9"/>` +
+    `</filter>` +
+    `<filter id="softenWide" x="-25%" y="-25%" width="150%" height="150%">` +
+    `<feGaussianBlur stdDeviation="22"/>` +
+    `</filter>` +
+    // Sensor grain. Perfectly smooth gradients are the strongest tell that an
+    // image was drawn rather than photographed; a little noise removes it.
+    `<filter id="grain" x="0" y="0" width="100%" height="100%">` +
+    `<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n"/>` +
+    `<feColorMatrix in="n" type="saturate" values="0"/>` +
+    `</filter>` +
     `</defs>`
+  );
+}
+
+/**
+ * A deterministic 0..1 stream from a string.
+ *
+ * Creases have to fall in the same places on every build: the seed is
+ * regenerated from this catalogue and compared byte for byte, and artwork that
+ * reshuffled itself each run would make that comparison meaningless.
+ */
+function rng(seed: string): () => number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return () => {
+    h ^= h << 13;
+    h ^= h >>> 17;
+    h ^= h << 5;
+    return ((h >>> 0) % 100000) / 100000;
+  };
+}
+
+/**
+ * Creases, clipped to the garment.
+ *
+ * Real cloth gathers: at the elbow, where a sleeve meets the body, across the
+ * hem where it has been folded. Each one is a soft dark arc with a lighter
+ * crest just off it, which is how a fold actually reads — a shadow on one side
+ * of a raised edge and a highlight on the other.
+ */
+function creases(clip: string, seed: string, count = 9): string {
+  const next = rng(seed);
+  let out = `<g clip-path="url(#silhouette)" filter="url(#soften)">`;
+  for (let i = 0; i < count; i += 1) {
+    // Hanging cloth creases down its length, not across it. The arcs run
+    // steeply, lean a little, and stay short — a crease that spanned the whole
+    // width read as a smear rather than a fold.
+    const x = 300 + next() * 400;
+    const y = 300 + next() * 300;
+    const len = 120 + next() * 220;
+    const bow = (next() - 0.5) * 90;
+    const lean = (next() - 0.5) * 46;
+    const dark = (0.055 + next() * 0.055).toFixed(3);
+    const light = (0.03 + next() * 0.035).toFixed(3);
+    out +=
+      `<path d="M${x} ${y} Q${x + bow} ${y + len / 2} ${x + lean} ${y + len}" ` +
+      `fill="none" stroke="#000000" stroke-opacity="${dark}" ` +
+      `stroke-width="${(7 + next() * 10).toFixed(1)}" stroke-linecap="round"/>` +
+      `<path d="M${x + 9} ${y} Q${x + bow + 9} ${y + len / 2} ${x + lean + 9} ${y + len}" ` +
+      `fill="none" stroke="#ffffff" stroke-opacity="${light}" ` +
+      `stroke-width="${(5 + next() * 7).toFixed(1)}" stroke-linecap="round"/>`;
+  }
+  return `${out}</g>`;
+}
+
+/**
+ * Ambient occlusion along the silhouette.
+ *
+ * Light does not reach the turn of a surface, so every edge of a real garment
+ * is fractionally darker than its middle. Drawing the outline as a wide,
+ * heavily blurred stroke clipped to its own shape puts that darkening inside
+ * the form — which is what stops the silhouette reading as a flat cutout.
+ */
+function occlusion(clip: string): string {
+  return (
+    `<g clip-path="url(#silhouette)" filter="url(#softenWide)">` +
+    `<path d="${clip}" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="34"/>` +
+    `</g>`
+  );
+}
+
+/**
+ * Sensor grain over the finished frame.
+ *
+ * Last, and over the ground as well as the product, because noise in a
+ * photograph is a property of the camera and not of the subject. Kept faint —
+ * enough to break up the perfectly smooth gradients that give vector art away,
+ * not enough to read as texture.
+ */
+function grain(): string {
+  return (
+    `<rect width="${CANVAS_W}" height="${CANVAS_H}" filter="url(#grain)" ` +
+    `opacity="0.05" style="mix-blend-mode:multiply"/>`
   );
 }
 
@@ -275,11 +388,16 @@ function studio(): string {
  * entirely. It is drawn in a darkened tone of the fabric rather than in black,
  * which is the difference between a product shot and a coloured-in icon.
  */
-function woven(body: string, clip: string, p: Palette): string {
+function woven(body: string, clip: string, p: Palette, seed = 'outlet'): string {
   return (
+    // Registered once per drawing so creases and occlusion can both clip to the
+    // silhouette without either one being told the path again.
+    `<clipPath id="silhouette"><path d="${clip}"/></clipPath>` +
     body +
     `<path d="${clip}" fill="url(#weave)"/>` +
     `<path d="${clip}" fill="url(#fold)" opacity="0.5"/>` +
+    creases(clip, seed) +
+    occlusion(clip) +
     `<path d="${clip}" fill="none" stroke="${p.line}" stroke-width="${p.pale ? 3 : 2}" ` +
     `stroke-linejoin="round" opacity="${p.pale ? 0.5 : 0.3}"/>`
   );
@@ -309,7 +427,7 @@ const TEE_BACK =
   'M352 292 L444 250 Q500 286 556 250 L648 292 L742 372 L676 448 L648 418 L648 770 ' +
   'Q500 794 352 770 L352 418 L324 448 L258 372 Z';
 
-const drawTee: Draw = ({ p, back }) => {
+const drawTee: Draw = ({ p, back, seed }) => {
   const body = back ? TEE_BACK : TEE_BODY;
   return woven(
     `<path d="${body}" fill="url(#body)"/>` +
@@ -333,6 +451,7 @@ const drawTee: Draw = ({ p, back }) => {
       stitch('M668 430 L642 404', p, 2, '6 5', 0.4),
     body,
     p,
+    seed,
   );
 };
 
@@ -340,7 +459,7 @@ const POLO_BODY =
   'M352 292 L440 250 L500 320 L560 250 L648 292 L742 372 L676 448 L648 418 L648 770 ' +
   'Q500 794 352 770 L352 418 L324 448 L258 372 Z';
 
-const drawPolo: Draw = ({ p, back }) =>
+const drawPolo: Draw = ({ p, back, seed }) =>
   woven(
     `<path d="${POLO_BODY}" fill="url(#body)"/>` +
       `<path d="M352 292 L258 372 L324 448 L352 418 Z" fill="${p.light}" opacity="0.5"/>` +
@@ -365,13 +484,14 @@ const drawPolo: Draw = ({ p, back }) =>
       stitch('M356 752 Q500 774 644 752', p),
     POLO_BODY,
     p,
+    seed,
   );
 
 const HOODIE_BODY =
   'M318 316 L420 262 Q500 312 580 262 L682 316 L772 386 L810 646 L716 666 L662 452 ' +
   'L662 800 Q500 822 338 800 L338 452 L284 666 L190 646 L228 386 Z';
 
-const drawHoodie: Draw = ({ p, back }) =>
+const drawHoodie: Draw = ({ p, back, seed }) =>
   woven(
     `<path d="${HOODIE_BODY}" fill="url(#body)"/>` +
       // Raglan sleeves: the near one lit, the far one in shadow.
@@ -403,13 +523,14 @@ const drawHoodie: Draw = ({ p, back }) =>
       stitch('M658 452 L658 756', p, 2, '6 6', 0.3),
     HOODIE_BODY,
     p,
+    seed,
   );
 
 const JACKET_BODY =
   'M318 316 L424 260 L500 316 L576 260 L682 316 L772 386 L810 646 L716 666 L662 452 ' +
   'L662 800 L338 800 L338 452 L284 666 L190 646 L228 386 Z';
 
-const drawJacket: Draw = ({ p, back }) =>
+const drawJacket: Draw = ({ p, back, seed }) =>
   woven(
     `<path d="${JACKET_BODY}" fill="url(#body)"/>` +
       `<path d="M318 316 L228 386 L190 646 L284 666 L338 452 L338 380 Z" fill="${p.light}" opacity="0.4"/>` +
@@ -438,12 +559,13 @@ const drawJacket: Draw = ({ p, back }) =>
       ribbing(720, 618, 84, 36, p, 9),
     JACKET_BODY,
     p,
+    seed,
   );
 
 const PANTS_BODY =
   'M362 250 L638 250 L660 336 L648 820 L534 820 L500 494 L466 820 L352 820 L340 336 Z';
 
-const drawPants: Draw = ({ p, back }) =>
+const drawPants: Draw = ({ p, back, seed }) =>
   woven(
     `<path d="${PANTS_BODY}" fill="url(#body)"/>` +
       // Inner leg edges fall away from the light.
@@ -469,12 +591,13 @@ const drawPants: Draw = ({ p, back }) =>
       stitch('M538 812 L644 812', p, 2, '7 6', 0.35),
     PANTS_BODY,
     p,
+    seed,
   );
 
 const SHORTS_BODY =
   'M356 280 L644 280 L666 356 L654 640 L534 640 L500 470 L466 640 L346 640 L334 356 Z';
 
-const drawShorts: Draw = ({ p, back }) =>
+const drawShorts: Draw = ({ p, back, seed }) =>
   woven(
     `<path d="${SHORTS_BODY}" fill="url(#body)"/>` +
       `<path d="M500 470 L534 640 L572 640 L522 470 Z" fill="${p.deep}" opacity="0.32"/>` +
@@ -490,6 +613,7 @@ const drawShorts: Draw = ({ p, back }) =>
       stitch('M534 630 L660 630', p, 2, '7 6', 0.35),
     SHORTS_BODY,
     p,
+    seed,
   );
 
 /*
@@ -584,7 +708,7 @@ const drawBoot: Draw = ({ p, back }) =>
 const BACKPACK_BODY =
   'M292 400 Q292 268 500 268 Q708 268 708 400 L708 796 Q708 838 656 838 L344 838 Q292 838 292 796 Z';
 
-const drawBackpack: Draw = ({ p, back }) =>
+const drawBackpack: Draw = ({ p, back, seed }) =>
   woven(
     // Shoulder straps sit behind the body from the front and in front of it
     // from the back, which is the only thing that tells the two views apart.
@@ -618,12 +742,13 @@ const drawBackpack: Draw = ({ p, back }) =>
       seam('M292 400 Q292 268 500 268 Q708 268 708 400', p, 3, 0.3),
     BACKPACK_BODY,
     p,
+    seed,
   );
 
 const SHOULDER_BAG_BODY =
   'M262 420 L738 420 Q762 420 760 448 L730 762 Q726 796 690 796 L310 796 Q274 796 270 762 L240 448 Q238 420 262 420 Z';
 
-const drawShoulderBag: Draw = ({ p, back }) =>
+const drawShoulderBag: Draw = ({ p, back, seed }) =>
   woven(
     `<path d="M318 420 Q318 232 500 232 Q682 232 682 420" fill="none" stroke="${p.deep}" stroke-width="26" stroke-linecap="round"/>` +
       `<path d="${SHOULDER_BAG_BODY}" fill="url(#body)"/>` +
@@ -639,11 +764,12 @@ const drawShoulderBag: Draw = ({ p, back }) =>
       stitch('M286 776 L714 776', p),
     SHOULDER_BAG_BODY,
     p,
+    seed,
   );
 
 const CAP_CROWN = 'M258 566 Q250 330 500 330 Q750 330 742 566 Z';
 
-const drawCap: Draw = ({ p, back }) =>
+const drawCap: Draw = ({ p, back, seed }) =>
   woven(
     `<path d="${CAP_CROWN}" fill="url(#body)"/>` +
       `<path d="M258 566 Q250 330 500 330 L500 566 Z" fill="${p.light}" opacity="0.3"/>` +
@@ -668,6 +794,7 @@ const drawCap: Draw = ({ p, back }) =>
       stitch('M300 600 Q600 596 836 626', p, 2.4, '9 8', 0.5),
     CAP_CROWN,
     p,
+    seed,
   );
 
 const BELT_STRAP =
@@ -842,7 +969,14 @@ export function productArtworkSvg(input: ProductArtworkInput): string {
   const draw = SHAPES[input.shape] ?? SHAPES.tee;
   const framing = FRAMING[input.shape] ?? FRAMING.tee;
   const [scale, focusX, focusY] = framing[view];
-  const body = draw({ p: palette, view, back: view === 'back' });
+  const body = draw({
+    p: palette,
+    view,
+    back: view === 'back',
+    // Product and colourway, so two colourways of one garment crease alike
+    // (they are the same cut) while two different products do not.
+    seed: `${input.productName}|${input.color}`,
+  });
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS_W}" height="${CANVAS_H}" ` +
@@ -855,6 +989,7 @@ export function productArtworkSvg(input: ProductArtworkInput): string {
     `<g clip-path="inset(0)"><g transform="${shapeTransform(scale, focusX, focusY)}">` +
     body +
     `</g></g>` +
+    grain() +
     `</svg>`
   );
 }
@@ -912,7 +1047,7 @@ export function campaignArtworkSvg(seed: string, items: CampaignArtworkItem[] = 
       return (
         `<g opacity="${slot.opacity}" transform="translate(${W * slot.x} ${H * slot.y}) ` +
         `scale(${slot.scale}) translate(-500 -500)">` +
-        draw({ p: paletteFor(item.color), view: 'front', back: false }) +
+        draw({ p: paletteFor(item.color), view: 'front', back: false, seed: `${seed}|${index}` }) +
         `</g>`
       );
     })
@@ -1049,7 +1184,7 @@ export function categoryArtworkSvg(categorySlug: string, categoryName: string): 
       return (
         `<g opacity="${layer.opacity}" transform="translate(${width * layer.x} ${height * layer.y}) ` +
         `scale(${layer.scale}) translate(-500 -500)">` +
-        draw({ p: palette, view: 'front', back: false }) +
+        draw({ p: palette, view: 'front', back: false, seed: `${categorySlug}|${index}` }) +
         `</g>`
       );
     })
