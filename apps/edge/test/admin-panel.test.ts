@@ -206,6 +206,102 @@ describe('campaigns', () => {
   });
 });
 
+describe('adding a product from the panel', () => {
+  /*
+   * The whole payload the new-product form submits, field for field. It sends
+   * `taxClass`, which the strict schema did not model, so every attempt to add
+   * a product came back "Unrecognized key(s) in object: 'taxClass'" — the
+   * panel could not create one at all. The earlier coverage missed it because
+   * the test wrote its own payload instead of copying the form's.
+   */
+  const formPayload = (overrides: Record<string, unknown> = {}) => ({
+    name: 'Aster Seamless Comfort Bra',
+    slug: 'aster-seamless-comfort-bra',
+    brandId: '',
+    categoryId: '',
+    shortDescription: 'A soft seamless everyday bra.',
+    description: '',
+    targetGroup: 'WOMEN',
+    materials: '82% nylon, 18% elastane',
+    careInstructions: '',
+    countryOfOrigin: '',
+    originalPriceMinor: 5900,
+    outletPriceMinor: 2900,
+    status: 'ACTIVE',
+    taxClass: 'STANDARD',
+    seoTitle: '',
+    seoDescription: '',
+    searchKeywords: '',
+    ...overrides,
+  });
+
+  it('creates a product into a subcategory that had none', async () => {
+    const [brand] = (await admin.get('/admin/brands')).body;
+    const tree = (await admin.get('/admin/categories')).body;
+    const flat = (n: any[]): any[] => n.flatMap((x) => [x, ...flat(x.children ?? [])]);
+    const bras = flat(tree).find((n: any) => n.slug === 'women-bras');
+    expect(bras.status).toBe('empty');
+
+    const created = await admin.post(
+      '/admin/products',
+      formPayload({ brandId: brand.id, categoryId: bras.id }),
+    );
+    expect(created.status).toBe(201);
+
+    const stored = await admin.get(`/admin/products/${created.body.id}`);
+    expect(stored.body.taxClass).toBe('STANDARD');
+    expect(stored.body.categoryId).toBe(bras.id);
+
+    /*
+     * A product with no variants is not sellable, so the category is still
+     * "empty" — correctly. Stock is what makes it real, and adding it is the
+     * second half of the job the panel does.
+     */
+    const variant = await admin.post(`/admin/products/${created.body.id}/variants`, {
+      sku: 'AST-BRA-BLACK-M',
+      size: 'M',
+      color: 'Black',
+      initialQuantity: 12,
+    });
+    expect(variant.status).toBe(201);
+
+    const after = flat((await admin.get('/admin/categories')).body).find(
+      (n: any) => n.slug === 'women-bras',
+    );
+    expect(after.productCount).toBeGreaterThan(0);
+    expect(after.status).toBe('active');
+
+    // And a shopper can now find it, in the category and by search.
+    const shopper = harness.client();
+    const listing = await shopper.get('/catalog/products?q=Seamless%20Comfort');
+    expect(listing.body.items.map((i: any) => i.slug)).toContain('aster-seamless-comfort-bra');
+
+    const detail = await shopper.get('/catalog/products/aster-seamless-comfort-bra');
+    expect(detail.status).toBe(200);
+    expect(detail.body.variants.some((v: any) => v.availableQuantity > 0)).toBe(true);
+  });
+
+  it('keeps a non-standard tax class through an edit', async () => {
+    const [brand] = (await admin.get('/admin/brands')).body;
+    const created = await admin.post(
+      '/admin/products',
+      formPayload({
+        name: 'Reduced Rate Item',
+        slug: 'reduced-rate-item',
+        brandId: brand.id,
+        categoryId: null,
+        taxClass: 'REDUCED',
+      }),
+    );
+    expect(created.status).toBe(201);
+    expect((await admin.get(`/admin/products/${created.body.id}`)).body.taxClass).toBe('REDUCED');
+
+    // A partial edit that never mentions tax must not reset it.
+    await admin.put(`/admin/products/${created.body.id}`, { status: 'DISABLED' });
+    expect((await admin.get(`/admin/products/${created.body.id}`)).body.taxClass).toBe('REDUCED');
+  });
+});
+
 describe('products', () => {
   /* The list view's status dropdown sends PUT with one field. */
   it('changes status from the list without resending the whole product', async () => {

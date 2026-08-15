@@ -189,6 +189,15 @@ export const adminProductFields = z
     originalPriceMinor: z.number().int().min(0).max(100_000_00),
     outletPriceMinor: z.number().int().min(0).max(100_000_00),
     status: z.enum(['DRAFT', 'ACTIVE', 'DISABLED', 'ARCHIVED']),
+    /*
+     * Which VAT rate the line attracts. The column has carried it since the
+     * first migration and the product form has always had the control, but the
+     * schema never modelled it — and being `.strict()`, it rejected the whole
+     * request. Creating a product from the admin panel was a 422 saying
+     * "Unrecognized key(s) in object: 'taxClass'", which is to say the panel
+     * could not add a product at all.
+     */
+    taxClass: z.enum(['STANDARD', 'REDUCED', 'ZERO']).default('STANDARD'),
     seoTitle: z.string().trim().max(200).nullish(),
     seoDescription: z.string().trim().max(400).nullish(),
     searchKeywords: z.string().trim().max(500).nullish(),

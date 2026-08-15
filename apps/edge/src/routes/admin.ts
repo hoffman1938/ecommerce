@@ -369,9 +369,9 @@ admin.post('/products', async (c) => {
       `INSERT INTO "products"
          ("id", "name", "slug", "brandId", "categoryId", "shortDescription", "description",
           "targetGroup", "materials", "careInstructions", "countryOfOrigin",
-          "originalPriceMinor", "outletPriceMinor", "status", "seoTitle", "seoDescription",
-          "searchKeywords", "publishedFrom")
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          "originalPriceMinor", "outletPriceMinor", "status", "taxClass", "seoTitle",
+          "seoDescription", "searchKeywords", "publishedFrom")
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       body.name,
       body.slug,
@@ -386,6 +386,7 @@ admin.post('/products', async (c) => {
       body.originalPriceMinor,
       body.outletPriceMinor,
       body.status,
+      body.taxClass,
       body.seoTitle ?? null,
       body.seoDescription ?? null,
       body.searchKeywords ?? null,
@@ -438,6 +439,7 @@ const updateProduct = async (c: Context<AppEnv>) => {
     originalPriceMinor: before.originalPriceMinor,
     outletPriceMinor: before.outletPriceMinor,
     status: before.status,
+    taxClass: before.taxClass,
     seoTitle: before.seoTitle,
     seoDescription: before.seoDescription,
     searchKeywords: before.searchKeywords,
@@ -450,7 +452,8 @@ const updateProduct = async (c: Context<AppEnv>) => {
           SET "name" = ?, "slug" = ?, "brandId" = ?, "categoryId" = ?, "shortDescription" = ?,
               "description" = ?, "targetGroup" = ?, "materials" = ?, "careInstructions" = ?,
               "countryOfOrigin" = ?, "originalPriceMinor" = ?, "outletPriceMinor" = ?,
-              "status" = ?, "seoTitle" = ?, "seoDescription" = ?, "searchKeywords" = ?,
+              "status" = ?, "taxClass" = ?, "seoTitle" = ?, "seoDescription" = ?,
+              "searchKeywords" = ?,
               "publishedFrom" = CASE WHEN ? = 'ACTIVE' THEN COALESCE("publishedFrom", ?) ELSE "publishedFrom" END,
               "version" = "version" + 1, "updatedAt" = ?
         WHERE "id" = ?`,
@@ -467,6 +470,7 @@ const updateProduct = async (c: Context<AppEnv>) => {
       body.originalPriceMinor,
       body.outletPriceMinor,
       body.status,
+      body.taxClass,
       body.seoTitle ?? null,
       body.seoDescription ?? null,
       body.searchKeywords ?? null,
