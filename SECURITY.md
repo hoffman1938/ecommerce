@@ -113,12 +113,33 @@ to skip a security check.
 
 ### Authentication
 
-- Passwords are hashed with PBKDF2-HMAC-SHA256, 600,000 iterations, 16-byte
-  random salt — OWASP's guidance for this KDF. argon2 and bcrypt are native
-  modules and cannot run on Workers; PBKDF2 via Web Crypto is the platform's
-  standard answer. The stored form is self-describing, and a correct password
-  verified against weaker parameters is re-hashed in place, so the cost can be
-  raised later without stranding accounts.
+- Passwords are hashed with PBKDF2-HMAC-SHA256, **100,000 iterations**, 16-byte
+  random salt. argon2 and bcrypt are native modules and cannot run on Workers;
+  PBKDF2 via Web Crypto is the platform's standard answer. The stored form is
+  self-describing, and a correct password verified against weaker parameters is
+  re-hashed in place, so the cost can be raised later without stranding
+  accounts.
+
+  **This is below OWASP's 600,000 for PBKDF2-HMAC-SHA256, and it is a platform
+  ceiling rather than a choice.** workerd refuses anything higher —
+  `NotSupportedError: Pbkdf2 failed: iteration counts above 100000 are not
+supported`. Accepting the limit is not free: it lowers the cost of an offline
+  attack against a stolen hash by roughly 6×. What makes it tolerable here is
+  that the hashes protect synthetic accounts on a demo database, and that
+  everything else about the sign-in path — per-account lockout, per-IP and
+  per-address rate limiting, opaque session tokens stored only as HMACs —
+  constrains an online attacker independently of the KDF cost. A deployment
+  holding real accounts should not run PBKDF2 on this runtime at that count;
+  it should hash somewhere that can afford the work.
+
+  The mismatch previously went the other way and broke authentication outright:
+  the code asked for 600,000, workerd threw, `verifyPassword` caught the error
+  and returned `false`, and every sign-in on the deployed API was rejected as a
+  wrong password while registration returned 500. Node's Web Crypto has no such
+  cap, so the entire test suite passed throughout. `security.test.ts` now
+  asserts the parameters directly, standing in for a runtime the tests do not
+  execute on.
+
 - A session is an opaque 256-bit token in an `HttpOnly` cookie. Only an HMAC of
   it is stored, so a database dump yields no usable session.
 - Sign-in always creates a new session row and never reuses an incoming

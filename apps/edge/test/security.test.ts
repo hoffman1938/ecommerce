@@ -10,6 +10,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createHarness, setCookieHeaders, type TestHarness } from './helpers/app';
 import { TEST_ADMIN_PASSWORD, TEST_CUSTOMER_PASSWORD } from './helpers/d1';
+import {
+  MAX_WORKERD_ITERATIONS,
+  hashPassword,
+  iterationsWithinPlatformLimit,
+} from '../src/auth/password';
 
 let harness: TestHarness;
 
@@ -54,6 +59,37 @@ async function firstInStockVariant(client = harness.client()) {
 }
 
 describe('authentication', () => {
+  /*
+   * These tests run on Node, whose Web Crypto will happily do 600,000 PBKDF2
+   * iterations. workerd will not: it refuses anything above 100,000 with a
+   * NotSupportedError. That difference hid a total authentication outage in
+   * the deployed Worker — `hashPassword` threw, so registration returned 500,
+   * and `verifyPassword` caught the same error and returned false, so every
+   * sign-in was rejected as a wrong password. Nothing here failed, because
+   * nothing here runs on the runtime that enforces the cap.
+   *
+   * So the parameters are asserted directly, as a stand-in for the platform.
+   */
+  it('hashes within the iteration limit workerd will actually run', async () => {
+    expect(iterationsWithinPlatformLimit()).toBe(true);
+
+    const hash = await hashPassword('a-long-enough-password');
+    const iterations = Number.parseInt(hash.split('$')[2], 10);
+    expect(iterations).toBeGreaterThan(0);
+    expect(iterations).toBeLessThanOrEqual(MAX_WORKERD_ITERATIONS);
+  });
+
+  it('seeds hashes the Worker can verify', async () => {
+    // The seed derives its own hashes in Node; if it used parameters workerd
+    // rejects, every demo account would be unable to sign in.
+    const stored = await harness.database.d1
+      .prepare(`SELECT "passwordHash" FROM "users" WHERE "email" = ?`)
+      .bind('admin@demo.local')
+      .first<{ passwordHash: string }>();
+    const iterations = Number.parseInt(String(stored?.passwordHash).split('$')[2], 10);
+    expect(iterations).toBeLessThanOrEqual(MAX_WORKERD_ITERATIONS);
+  });
+
   it('rejects a wrong password with the same message as an unknown account', async () => {
     const client = harness.client();
     const wrongPassword = await client.post('/auth/login', {

@@ -6,11 +6,22 @@
  * give is Web Crypto's PBKDF2, which is a standard, well-analysed KDF and the
  * accepted choice on this runtime.
  *
- * Parameters follow OWASP's PBKDF2-HMAC-SHA256 guidance (600,000 iterations).
- * That is a real cost on every login — deliberately, since it is the same cost
- * an attacker pays per guess — and it fits inside a Worker's CPU budget
- * comfortably because it runs once per sign-in, not per request; sessions are
- * validated by a cheap HMAC afterwards.
+ * The iteration count is 100,000, which is the most workerd will do:
+ *
+ *   NotSupportedError: Pbkdf2 failed: iteration counts above 100000 are not
+ *   supported (requested 600000).
+ *
+ * This is a hard platform cap, not a tuning choice. It is below OWASP's 600,000
+ * for PBKDF2-HMAC-SHA256, and that gap is a documented limitation of running on
+ * this runtime — see SECURITY.md.
+ *
+ * The cap deserves care because of *how* exceeding it failed: `hashPassword`
+ * threw, so registration returned 500, and `verifyPassword` caught the same
+ * error and returned false, so every sign-in was rejected as a wrong password.
+ * The deployed API could not authenticate anybody, and said nothing about why.
+ * Node's Web Crypto has no such cap, so the whole test suite passed against
+ * 600,000. `iterationsWithinPlatformLimit` below exists to be asserted in a
+ * test, since the runtime that enforces this is not the one the tests run on.
  *
  * Stored form (self-describing, so the parameters can be raised later without
  * invalidating existing hashes):
@@ -20,7 +31,13 @@
 
 const ALGORITHM = 'pbkdf2';
 const DIGEST = 'sha256';
-const ITERATIONS = 600_000;
+
+/** workerd refuses anything above this. */
+export const MAX_WORKERD_ITERATIONS = 100_000;
+const ITERATIONS = 100_000;
+
+/** Asserted by the test suite; the runtime that enforces it is not Node. */
+export const iterationsWithinPlatformLimit = (): boolean => ITERATIONS <= MAX_WORKERD_ITERATIONS;
 const SALT_BYTES = 16;
 const KEY_BITS = 256;
 

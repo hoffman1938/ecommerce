@@ -55,8 +55,15 @@ export const auth = new Hono<AppEnv>();
  * takes the full PBKDF2 cost — which is a reliable oracle for which addresses
  * have accounts. Verifying against this constant makes both paths cost the same.
  */
+/*
+ * The iteration count has to match the one real hashes carry, and has to be
+ * one workerd will actually run. At 600,000 this constant did the opposite of
+ * its job: the derivation threw immediately, `verifyPassword` caught it and
+ * returned false, and the unknown-account path became the *fast* one — the
+ * timing oracle this exists to close.
+ */
 const DUMMY_HASH =
-  'pbkdf2$sha256$600000$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+  'pbkdf2$sha256$100000$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
 
 const SIGN_IN_FAILED = 'That email and password combination is not recognised.';
 
