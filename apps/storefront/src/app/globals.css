@@ -28,7 +28,20 @@
     --ink-200: 226 225 221;
     --ink-300: 198 197 192;
     --ink-400: 162 161 155;
-    --ink-500: 123 122 116;
+    /*
+     * Muted body text, darkened from `123 122 116`.
+     *
+     * That value measured 4.30:1 on white — under WCAG AA's 4.5:1 for normal
+     * text, and it is the colour secondary copy uses everywhere: eyebrow
+     * labels, helper text, the language switcher, "Sign out". 118 117 111 is
+     * 4.62:1, the smallest step that clears the bar.
+     *
+     * This is a deliberate exception to the rule that light mode does not move
+     * (see the dark-theme notes below). The rule exists so a dark-mode change
+     * cannot quietly restyle light; it is not a reason to keep a contrast
+     * failure. Nothing else in the ramp changes.
+     */
+    --ink-500: 118 117 111;
     --ink-600: 90 89 84;
     --ink-700: 66 65 61;
     --ink-800: 41 41 39;
@@ -51,7 +64,9 @@
 
     --content: 13 13 12;
     --content-secondary: 90 89 84;
-    --content-muted: 123 122 116;
+    /* Tracks --ink-500 for the same reason: 123 122 116 was 4.30:1 on white,
+       and this is the semantic name the newer components reach for. */
+    --content-muted: 118 117 111;
     --content-disabled: 198 197 192;
     --content-inverse: 255 255 255;
 
@@ -236,7 +251,9 @@
 
   body {
     @apply bg-surface font-sans text-base text-ink-800 antialiased;
-    font-feature-settings: 'cv05' 1, 'ss01' 1;
+    font-feature-settings:
+      'cv05' 1,
+      'ss01' 1;
     text-rendering: optimizeLegibility;
   }
 
@@ -429,9 +446,19 @@
   }
   /* ink-400 rather than content-muted so the light theme keeps the exact
      struck grey it had; in dark the two resolve to the same value anyway. */
+  /**
+   * The struck original price.
+   *
+   * `ink-400` is the muted step and measured 2.59:1 on white — far under AA,
+   * and this is not decoration: the price a thing used to cost is half of what
+   * makes the current one a discount. `ink-500` is the same visual role one
+   * step down and clears 4.5:1, so the hierarchy survives and the number stays
+   * readable. The strike itself stays lighter than the digits, which is what
+   * keeps it reading as struck rather than as two prices.
+   */
   .price-was {
-    @apply font-normal text-ink-400 line-through;
-    text-decoration-color: rgb(var(--ink-400) / 0.6);
+    @apply font-normal text-ink-500 line-through;
+    text-decoration-color: rgb(var(--ink-400) / 0.8);
   }
 
   /**

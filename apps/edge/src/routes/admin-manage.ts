@@ -933,16 +933,33 @@ adminManage.get('/campaigns/:id', async (c) => {
   const campaign = await ctx.db.first(`SELECT * FROM "campaigns" WHERE "id" = ?`, id);
   if (!campaign) throw notFound('Campaign not found.');
 
-  const products = await ctx.db.all(
+  const products = await ctx.db.all<Record<string, unknown>>(
     `SELECT cp."id", cp."productId", cp."campaignPriceMinor", cp."maxQuantityPerOrder",
             cp."quantityLimit", cp."soldQuantity", cp."position",
-            p."name" AS "productName", p."slug" AS "productSlug", p."outletPriceMinor"
+            p."name" AS "productName", p."slug" AS "productSlug", p."outletPriceMinor",
+            b."id" AS "brandId", b."name" AS "brandName"
        FROM "campaign_products" cp
        JOIN "products" p ON p."id" = cp."productId"
+       JOIN "brands" b ON b."id" = p."brandId"
       WHERE cp."campaignId" = ? ORDER BY cp."position"`,
     id,
   );
-  return c.json({ ...campaign, products });
+
+  return c.json({
+    ...campaign,
+    // The editor renders `cp.product.brand.name` and `cp.product.name`; flat
+    // columns left it reading a property of undefined and blanked the screen.
+    products: products.map((row) => ({
+      ...row,
+      product: {
+        id: row.productId,
+        name: row.productName,
+        slug: row.productSlug,
+        outletPriceMinor: row.outletPriceMinor,
+        brand: { id: row.brandId, name: row.brandName },
+      },
+    })),
+  });
 });
 
 adminManage.post('/campaigns/:id/status', async (c) => {
@@ -1072,15 +1089,28 @@ adminManage.get('/returns/:id', async (c) => {
   );
   if (!request) throw notFound('Return not found.');
 
-  const items = await ctx.db.all(
-    `SELECT ri."id", ri."orderItemId", ri."quantity", ri."receivedQuantity", ri."restockedQuantity",
-            ri."condition", ri."reason", oi."name", oi."sku", oi."unitPriceMinor"
-       FROM "return_items" ri
-       JOIN "order_items" oi ON oi."id" = ri."orderItemId"
-      WHERE ri."returnRequestId" = ?`,
-    id,
-  );
-  return c.json({ ...request, items });
+  const [items, refunds] = await Promise.all([
+    ctx.db.all(
+      `SELECT ri."id", ri."orderItemId", ri."quantity", ri."receivedQuantity", ri."restockedQuantity",
+              ri."condition", ri."reason", oi."name", oi."sku", oi."unitPriceMinor"
+         FROM "return_items" ri
+         JOIN "order_items" oi ON oi."id" = ri."orderItemId"
+        WHERE ri."returnRequestId" = ?`,
+      id,
+    ),
+    /*
+     * The refund this return produced, if it has got that far. The screen
+     * shows it beneath the lines and reads `request.refunds` unguarded, so
+     * leaving it out threw during render — including on returns that have no
+     * refund yet, which is most of them.
+     */
+    ctx.db.all(
+      `SELECT "id", "amountMinor", "status", "reason", "createdAt"
+         FROM "refunds" WHERE "returnRequestId" = ? ORDER BY "createdAt" DESC`,
+      id,
+    ),
+  ]);
+  return c.json({ ...request, items, refunds });
 });
 
 adminManage.post('/returns/:id/decision', async (c) => {
@@ -1139,6 +1169,18 @@ adminManage.post('/returns/:id/receive', async (c) => {
               returnItemId: z.string().trim().max(64),
               receivedQuantity: z.number().int().min(0).max(1000),
               condition: z.enum(['UNINSPECTED', 'RESELLABLE', 'DAMAGED']),
+              /*
+               * Whether a resellable unit goes straight back on the shelf.
+               * The panel sends it per line and the schema is strict, so
+               * omitting it here rejected the whole request — receiving a
+               * return was impossible from the only UI that does it.
+               *
+               * It is a separate decision from condition: an item can come
+               * back saleable and still need cleaning or repackaging before
+               * it is offered again. Defaults to true, which is what the
+               * panel's own default checkbox sends.
+               */
+              restock: z.boolean().default(true),
             }),
           )
           .min(1)
@@ -1170,11 +1212,13 @@ adminManage.post('/returns/:id/receive', async (c) => {
     );
 
     /*
-     * Only resellable units go back on the shelf. A damaged return is stock
-     * that exists and cannot be sold, which is what damagedQuantity is for —
-     * restocking it would oversell the next customer.
+     * Only resellable units the operator has asked to restock go back on the
+     * shelf. A damaged return is stock that exists and cannot be sold, which
+     * is what damagedQuantity is for — restocking it would oversell the next
+     * customer. A resellable unit held back with `restock: false` is counted
+     * as returned but not made available, so the shelf count stays honest.
      */
-    if (item.condition === 'RESELLABLE' && item.receivedQuantity > 0) {
+    if (item.condition === 'RESELLABLE' && item.restock && item.receivedQuantity > 0) {
       statements.push(
         ctx.db.statement(
           `UPDATE "inventory_balances"

@@ -232,6 +232,15 @@ export const adminOrderStatusSchema = z
       'RETURNED',
     ]),
     note: z.string().trim().max(500).nullish(),
+    /*
+     * The dispatch fields. The order screen sends both alongside the status —
+     * they are the carrier and consignment number typed in when an order is
+     * marked SHIPPED — and this schema is strict, so omitting them rejected
+     * the whole request. Marking anything shipped was a 422, and the
+     * `shipments` table it should have written to stayed empty.
+     */
+    trackingNumber: z.string().trim().max(80).nullish(),
+    carrier: z.string().trim().max(60).nullish(),
   })
   .strict();
 

@@ -151,6 +151,27 @@ for (const name of PACKAGES) {
   run(`pnpm --filter ${name} build`);
 }
 
+/*
+ * Drop Next's fetch cache before an API-backed export.
+ *
+ * `serverGet` fetches with `force-cache` during an export — it has to, because
+ * `no-store` opts the route into dynamic rendering and `output: 'export'` then
+ * omits the page entirely. The cost is that Next persists those responses in
+ * .next/cache/fetch-cache and reuses them on the next build, so an export can
+ * bake in a snapshot of an API that has since changed. That is exactly what
+ * happened after the media URLs were made absolute: the API served the new
+ * shape, the rebuild kept emitting the old one, and the pages shipped with
+ * image paths that 404.
+ *
+ * A fresh CI container never has this cache, which is what makes it dangerous:
+ * it is invisible in the environment that deploys and wrong in the one that
+ * verifies. Only the fetch cache goes — the webpack and SWC caches are what
+ * make rebuilds quick, and they are not snapshots of anything external.
+ */
+for (const app of ['storefront', 'admin']) {
+  rmSync(join('apps', app, '.next', 'cache', 'fetch-cache'), { recursive: true, force: true });
+}
+
 run('pnpm --filter @outlet/storefront build', apiEnv);
 
 /*
