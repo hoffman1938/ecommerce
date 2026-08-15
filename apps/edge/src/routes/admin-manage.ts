@@ -15,7 +15,7 @@ import { ctxOf } from '../http/context';
 import { admin } from './admin';
 import { ApiError, conflict, notFound } from '../lib/errors';
 import { newId } from '../lib/ids';
-import { Db, bool, fromBool, inClause, nowIso, toJson } from '../lib/sql';
+import { Db, bool, fromBool, nowIso, toJson } from '../lib/sql';
 import { auditStatement, requirePermission, writeAudit } from '../auth/rbac';
 import { adjustStock, release } from '../services/inventory';
 import { notify } from '../services/inbox';

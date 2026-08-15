@@ -32,8 +32,11 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = join(HERE, '..');
 export const SEED_SQL_PATH = join(APP_ROOT, '.seed', 'seed.sql');
 
-// Must match apps/edge/src/auth/password.ts exactly.
-const ITERATIONS = 600_000;
+// Must match apps/edge/src/auth/password.ts exactly. 100,000 is workerd's
+// ceiling for PBKDF2 — it rejects anything higher, and a hash seeded above it
+// is one the Worker can never verify, so every seeded account would be locked
+// out with "that email and password combination is not recognised".
+const ITERATIONS = 100_000;
 const KEY_BYTES = 32;
 const SALT_BYTES = 16;
 
