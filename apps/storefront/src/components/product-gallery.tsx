@@ -93,7 +93,10 @@ export function ProductGallery({
                   setActiveIndex(index);
                   setViewerOpen(true);
                 }}
-                aria-label={t('ui.openImageOfFullScreen', { index: index + 1, total: images.length })}
+                aria-label={t('ui.openImageOfFullScreen', {
+                  index: index + 1,
+                  total: images.length,
+                })}
                 className="media-well relative aspect-[4/5] w-full shrink-0 snap-center"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -128,7 +128,8 @@ function TrackingTimeline({ shipment }: { shipment: ShipmentDto }) {
           <T id="ui.tracking" />
         </h3>
         <p data-numeric className="text-xs text-ink-500">
-          {shipment.carrier ?? t('ui.carrier')} · {shipment.trackingNumber ?? t('ui.trackingPending')}
+          {shipment.carrier ?? t('ui.carrier')} ·{' '}
+          {shipment.trackingNumber ?? t('ui.trackingPending')}
         </p>
       </div>
 

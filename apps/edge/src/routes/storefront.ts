@@ -843,10 +843,7 @@ storefront.post('/account/returns', async (c) => {
     }),
   ]);
 
-  return c.json(
-    { id: returnId, rmaNumber: rmaNumber, status: 'REQUESTED' },
-    201,
-  );
+  return c.json({ id: returnId, rmaNumber: rmaNumber, status: 'REQUESTED' }, 201);
 });
 
 // --- Notifications -----------------------------------------------------------
