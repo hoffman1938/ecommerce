@@ -205,6 +205,38 @@ describe('campaigns', () => {
     expect(saved.status).toBe(200);
   });
 
+  /*
+   * An administrator must not be able to take their own keys away.
+   *
+   * Refusing only an empty list caught the loudest case and not the likeliest:
+   * swapping Super Admin for Order Manager leaves a role, no
+   * `admin_users.manage`, and no way to give it back, because the screen that
+   * grants roles is the screen just lost. Recovering needs direct database
+   * access, which is not a reasonable price for a mis-click.
+   */
+  it('refuses to let an administrator demote themselves out of user management', async () => {
+    const me = (await admin.get('/auth/me')).body.user;
+
+    // A real role, just not one that can hand the keys back.
+    const demote = await admin.post(`/admin/users/${me.id}/roles`, {
+      roleNames: ['Order Manager'],
+    });
+    expect(demote.status).toBe(400);
+
+    const emptied = await admin.post(`/admin/users/${me.id}/roles`, { roleNames: [] });
+    expect(emptied.status).toBe(400);
+
+    // Still an administrator afterwards.
+    expect((await admin.get('/auth/me')).body.user.permissions).toContain('admin_users.manage');
+
+    // Someone else may still be demoted freely.
+    const other = (await admin.get('/admin/users')).body.find((u: any) => u.id !== me.id);
+    const changed = await admin.post(`/admin/users/${other.id}/roles`, {
+      roleNames: ['Order Manager'],
+    });
+    expect(changed.status).toBe(200);
+  });
+
   it('hands the coupons screen booleans it can send straight back', async () => {
     const [coupon] = (await admin.get('/admin/coupons')).body;
     expect(typeof coupon.isActive).toBe('boolean');

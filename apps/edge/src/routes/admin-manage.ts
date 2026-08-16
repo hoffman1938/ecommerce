@@ -792,10 +792,31 @@ adminManage.post('/users/:id/roles', async (c) => {
     await readJson(c.req.raw),
   );
 
-  // Removing your own last role is how an administrator locks themselves out
-  // of the panel with no way back in.
-  if (id === session.user.id && body.roleNames.length === 0) {
-    throw new ApiError('BAD_REQUEST', 'You cannot remove your own last role.');
+  /*
+   * You cannot take your own keys away.
+   *
+   * The old guard only refused an empty role list, which is the loudest way to
+   * lock yourself out and not the likeliest. Swapping Super Admin for, say,
+   * Order Manager leaves you with a role, no `admin_users.manage`, and no way
+   * to give it back — the screen that grants roles is the screen you just lost.
+   * Recovering from that needs direct database access, which is not a thing an
+   * administrator should need for a mis-click.
+   *
+   * Someone else may still be demoted freely; this is only about the account
+   * making the request.
+   */
+  if (id === session.user.id) {
+    const retained = new Set(
+      body.roleNames.flatMap(
+        (name) => ROLE_DEFINITIONS[name as keyof typeof ROLE_DEFINITIONS] ?? [],
+      ),
+    );
+    if (!retained.has(Permissions.AdminUsersManage)) {
+      throw new ApiError(
+        'BAD_REQUEST',
+        'You cannot remove your own ability to manage admin users. Ask another administrator to change your roles.',
+      );
+    }
   }
 
   const known = new Set(Object.keys(ROLE_DEFINITIONS));
