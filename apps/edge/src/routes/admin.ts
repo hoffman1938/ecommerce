@@ -54,6 +54,73 @@ import {
 
 export const admin = new Hono<AppEnv>();
 
+/**
+ * Columns the schema declares as `INTEGER … CHECK (x IN (0, 1))`.
+ *
+ * SQLite has no boolean type, so every one of these comes back from D1 as 0 or
+ * 1. That is invisible until the panel writes a record back: it loads a
+ * campaign, hands `isVisible: 1` to a form, and posts it to a schema that says
+ * `z.boolean()` — which rejects it. Saving a campaign returned 422 for exactly
+ * this reason, and because the save failed, the status the editor had chosen
+ * never reached the database and the campaign stayed invisible on the
+ * storefront. The Activate button on the coupons screen passes
+ * `firstOrderOnly` straight back the same way.
+ */
+const BOOLEAN_COLUMNS = new Set([
+  'firstOrderOnly',
+  'freeShipping',
+  'isActive',
+  'isDefaultBilling',
+  'isDefaultShipping',
+  'isEmailVerified',
+  'isEnabled',
+  'isFeatured',
+  'isSystem',
+  'isVerifiedPurchase',
+  'isVisible',
+  'newsletterOptIn',
+  'notifyCampaigns',
+  'notifyOrderUpdates',
+  'savedForLater',
+]);
+
+function withBooleans(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withBooleans);
+  if (!value || typeof value !== 'object') return value;
+  const out: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    // Only 0 and 1 are rewritten. Anything else with one of these names is not
+    // the column this is here for, and is left exactly as the handler sent it.
+    out[key] =
+      BOOLEAN_COLUMNS.has(key) && (entry === 0 || entry === 1) ? entry === 1 : withBooleans(entry);
+  }
+  return out;
+}
+
+/**
+ * Normalises those columns on the way out, for every admin response.
+ *
+ * Done once here rather than per handler because the panel round-trips almost
+ * everything it reads, so any endpoint that forgets is a save button that
+ * fails — and the failure surfaces as a 422 on an unrelated-looking field
+ * rather than as anything pointing at the column.
+ */
+admin.use('*', async (c, next) => {
+  await next();
+  if (!c.res.headers.get('content-type')?.includes('application/json')) return;
+  const body = await c.res.clone().text();
+  if (!body) return;
+  try {
+    const normalised = withBooleans(JSON.parse(body));
+    c.res = new Response(JSON.stringify(normalised), {
+      status: c.res.status,
+      headers: c.res.headers,
+    });
+  } catch {
+    // Not JSON after all — leave the response untouched.
+  }
+});
+
 // --- Dashboard ---------------------------------------------------------------
 
 admin.get('/dashboard', async (c) => {
@@ -1606,8 +1673,19 @@ admin.put('/content/:key', async (c) => {
   const pathKey = pathSlug(c.req.param('key'), 'page key');
   const raw = await readJson(c.req.raw);
 
+  /*
+   * `updatedAt` is accepted and ignored rather than rejected.
+   *
+   * The Content screen edits the page object this API just gave it and posts
+   * the whole thing back, and every page carries an `updatedAt` the server
+   * itself added. Under `.strict()` that made Save return 422 on a field the
+   * editor never touched and cannot see — the panel's own type declares only
+   * key/title/body, but a spread copies whatever the response actually held.
+   * The column stays server-owned: the write below always stamps `nowIso()`.
+   */
   const collectionSchema = adminContentSchema.extend({
     key: z.string().trim().min(1).max(64),
+    updatedAt: z.string().nullish(),
   });
   const body =
     pathKey === PAGES_COLLECTION
@@ -1789,8 +1867,31 @@ admin.get('/audit-logs', async (c) => {
     bindings.push(query.entityType);
   }
   if (query.action) {
-    clauses.push(`"action" = ?`);
-    bindings.push(query.action);
+    // Exact by default, but a partial word is what an operator actually types,
+    // so `action` also matches a prefix segment like `campaign.`.
+    clauses.push(`("action" = ? OR LOWER("action") LIKE ?)`);
+    bindings.push(query.action, `${query.action.toLowerCase()}%`);
+  }
+
+  /*
+   * Free text across every column the row actually records.
+   *
+   * The screen only offered an exact `action`, which meant you had to know the
+   * verb before you could look for it — an order number, an email or an id
+   * found nothing. Searching a log you cannot search is the same as not having
+   * one, so `q` spans the actor, the verb, the entity, its id and the reason,
+   * and `entityId` is what makes "find everything that touched this order"
+   * work.
+   */
+  const q = (query.q ?? '').trim().toLowerCase();
+  if (q) {
+    const like = `%${q}%`;
+    clauses.push(
+      `(LOWER("action") LIKE ? OR LOWER("entityType") LIKE ? OR LOWER(COALESCE("entityId", '')) LIKE ?
+        OR LOWER(COALESCE("actorEmail", '')) LIKE ? OR LOWER(COALESCE("reason", '')) LIKE ?
+        OR LOWER("actorType") LIKE ?)`,
+    );
+    bindings.push(like, like, like, like, like, like);
   }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 

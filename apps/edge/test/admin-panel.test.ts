@@ -108,6 +108,121 @@ describe('campaigns', () => {
     expect(listed.body.map((c: any) => c.slug)).toContain('midseason-clearance');
   });
 
+  /*
+   * Whatever the panel reads, it must be able to write back.
+   *
+   * The campaign editor loads a campaign, puts the fields in a form and posts
+   * them again on Save — so the read has to produce values the write schema
+   * accepts. It did not: `isVisible` is `INTEGER … CHECK (x IN (0,1))` in
+   * SQLite, arrived as `1`, and the schema wants `z.boolean()`. Every Save
+   * returned 422, and because Save failed the status chosen in the editor never
+   * reached the database, so the campaign stayed off the storefront. The whole
+   * bug is invisible to a test that only posts hand-written payloads, which is
+   * why this one feeds the API its own output.
+   */
+  it('accepts its own campaign back unchanged', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Round Trip',
+      slug: 'round-trip',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...openWindow(),
+    });
+    expect(created.status).toBe(201);
+
+    const loaded = (await admin.get(`/admin/campaigns/${created.body.id}`)).body;
+    expect(typeof loaded.isVisible).toBe('boolean');
+
+    // Exactly the fields apps/admin/src/components/campaign-form.tsx sends.
+    const saved = await admin.put(`/admin/campaigns/${created.body.id}`, {
+      title: loaded.title,
+      slug: loaded.slug,
+      shortDescription: loaded.shortDescription,
+      description: loaded.description,
+      startsAt: loaded.startsAt,
+      endsAt: loaded.endsAt,
+      status: 'ACTIVE',
+      position: loaded.position,
+      isVisible: loaded.isVisible,
+      seoTitle: loaded.seoTitle,
+      seoDescription: loaded.seoDescription,
+    });
+    expect(saved.status).toBe(200);
+
+    // And the change the editor made actually stuck.
+    expect((await admin.get(`/admin/campaigns/${created.body.id}`)).body.status).toBe('ACTIVE');
+  });
+
+  /*
+   * The upload endpoint's own answer has to be acceptable to the next call.
+   *
+   * `POST /admin/uploads` returns `/media/<key>`, and the media middleware
+   * rewrites every `"/media/…` in a JSON response to an absolute URL so the
+   * storefront on another origin can load it. The panel posts that value
+   * straight to `/images`, which required the relative form and returned 400 —
+   * "Images must be uploaded first" — for a file that had just been uploaded.
+   */
+  it('attaches an image posted back in the absolute form it was given', async () => {
+    const [product] = (await admin.get('/admin/products?page=1&pageSize=1')).body.items;
+    const absolute = 'https://outlet-demo-api.example.workers.dev/media/products/example.png';
+
+    const added = await admin.post(`/admin/products/${product.id}/images`, {
+      url: absolute,
+      objectKey: 'products/example.png',
+      altText: product.name,
+    });
+    expect(added.status).toBe(201);
+    // Clients always see the absolute form — the media middleware rewrites it
+    // on the way out so another origin can load the file.
+    expect(added.body.url).toMatch(/^https?:\/\/.*\/media\/products\/example\.png$/);
+
+    // The row itself holds no hostname, so it keeps working across origins.
+    const stored = harness.database.sqlite
+      .prepare(`SELECT "url" FROM "product_images" WHERE "objectKey" = ?`)
+      .get('products/example.png') as { url: string };
+    expect(stored.url).toBe('/media/products/example.png');
+
+    const reloaded = await admin.get(`/admin/products/${product.id}`);
+    expect(
+      reloaded.body.images.some((i: any) => i.url.endsWith('/media/products/example.png')),
+    ).toBe(true);
+  });
+
+  it('saves a content page posted back exactly as it was read', async () => {
+    const pages = (await admin.get('/admin/content/pages')).body;
+    expect(Array.isArray(pages)).toBe(true);
+    const page = pages[0];
+    // The screen edits a spread of this object; it carries the server's own
+    // `updatedAt` whether the panel's type mentions it or not.
+    expect(page.updatedAt).toBeTruthy();
+
+    const saved = await admin.put('/admin/content/pages', { ...page, title: `${page.title} ` });
+    expect(saved.status).toBe(200);
+  });
+
+  it('hands the coupons screen booleans it can send straight back', async () => {
+    const [coupon] = (await admin.get('/admin/coupons')).body;
+    expect(typeof coupon.isActive).toBe('boolean');
+    expect(typeof coupon.firstOrderOnly).toBe('boolean');
+
+    // The Activate/Deactivate button passes these through untouched.
+    const { status } = await admin.put(`/admin/coupons/${coupon.id}`, {
+      code: coupon.code,
+      type: coupon.type,
+      value: coupon.value,
+      minOrderMinor: coupon.minOrderMinor,
+      maxDiscountMinor: coupon.maxDiscountMinor,
+      firstOrderOnly: coupon.firstOrderOnly,
+      isActive: !coupon.isActive,
+    });
+    expect(status).toBe(200);
+  });
+
   it('edits a campaign from the campaign editor', async () => {
     const created = await admin.post('/admin/campaigns', {
       title: 'Renamed Later',
@@ -1053,5 +1168,47 @@ describe('every screen the panel loads', () => {
   it.each(screens)('%s loads', async (_name, path) => {
     const { status } = await admin.get(path);
     expect(status).toBe(200);
+  });
+
+  /*
+   * A log you cannot search is the same as not having one.
+   *
+   * The screen offered an exact `action` and nothing else, so you had to know
+   * the verb before you could look anything up: an order id, a customer email
+   * or a half-remembered word all returned the whole table. `q` spans every
+   * column the row records, and the entity id is what makes "show me
+   * everything that touched this order" work at all.
+   */
+  it('finds an audit entry by any recorded field', async () => {
+    // Produce an entry with a known actor, action and entity.
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Searchable',
+      slug: 'searchable-campaign',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...openWindow(),
+    });
+    expect(created.status).toBe(201);
+
+    const find = async (q: string) =>
+      (await admin.get(`/admin/audit-logs?page=1&pageSize=50&q=${encodeURIComponent(q)}`)).body;
+
+    // By the entity's own id — the case the screen could not do at all.
+    const byId = await find(created.body.id);
+    expect(byId.total).toBeGreaterThan(0);
+    expect(byId.items.every((r: any) => r.entityId === created.body.id)).toBe(true);
+
+    // By a fragment of the action, by entity type, and by the actor's email.
+    expect((await find('campaign.crea')).total).toBeGreaterThan(0);
+    expect((await find('Campaign')).total).toBeGreaterThan(0);
+    expect((await find('admin@demo.local')).total).toBeGreaterThan(0);
+
+    // A word that appears nowhere returns nothing rather than everything.
+    expect((await find('zzzz-no-such-thing')).total).toBe(0);
   });
 });

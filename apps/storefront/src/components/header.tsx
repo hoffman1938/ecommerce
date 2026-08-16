@@ -33,6 +33,7 @@ import { LocaleSwitcher } from './locale-switcher';
 import { ThemeToggle } from './theme';
 import { CartDrawer } from './cart-drawer';
 import { T } from '@/components/t';
+import { CategoryName } from '@/components/category-name';
 
 /**
  * Shown in every category panel — real destinations, not invented ones.
@@ -303,7 +304,9 @@ function SearchForm({
                         onSelect={() => go(`/category/${category.slug}`)}
                         onHover={() => setHighlighted(index)}
                       >
-                        <span className="truncate">{category.name}</span>
+                        <span className="truncate">
+                          <CategoryName slug={category.slug} name={category.name} />
+                        </span>
                       </SuggestionRow>
                     );
                   })}

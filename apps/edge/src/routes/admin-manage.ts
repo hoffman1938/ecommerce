@@ -354,10 +354,24 @@ adminManage.post('/products/:id/images', async (c) => {
     await readJson(c.req.raw),
   );
 
-  // Only a path this API serves, never an arbitrary remote URL: an <img> whose
-  // src an administrator can set to any origin is a tracking pixel waiting to
-  // happen, and on a page with a strict CSP it would simply not load.
-  if (!body.url.startsWith('/media/')) {
+  /*
+   * Only a path this API serves, never an arbitrary remote URL: an <img> whose
+   * src an administrator can set to any origin is a tracking pixel waiting to
+   * happen, and on a page with a strict CSP it would simply not load.
+   *
+   * Accepts the absolute form as well as the stored one, because this API is
+   * what hands out the absolute form: `POST /admin/uploads` returns
+   * `/media/<key>`, and the media middleware in http/app.ts rewrites every
+   * `"/media/…` in a JSON response to `<origin>/media/…` so the storefront on
+   * pages.dev can load it. The panel posted that value straight back and was
+   * told to upload the file it had just uploaded — a 400 on the one path that
+   * was working exactly as designed.
+   *
+   * The relative form is what gets stored, so the database still holds no
+   * hostname and the same row keeps working across origins.
+   */
+  const storedUrl = body.url.replace(/^https?:\/\/[^/]+(?=\/media\/)/, '');
+  if (!storedUrl.startsWith('/media/')) {
     throw new ApiError(
       'BAD_REQUEST',
       'Images must be uploaded first; the URL has to be a /media/ path.',
@@ -376,7 +390,7 @@ adminManage.post('/products/:id/images', async (c) => {
       id,
       productId,
       body.variantId ?? null,
-      body.url,
+      storedUrl,
       body.objectKey ?? null,
       body.altText ?? null,
       position,
@@ -385,10 +399,10 @@ adminManage.post('/products/:id/images', async (c) => {
       action: 'product.image_add',
       entityType: 'ProductImage',
       entityId: id,
-      after: body,
+      after: { ...body, url: storedUrl },
     }),
   ]);
-  return c.json({ id, ...body, position }, 201);
+  return c.json({ id, ...body, url: storedUrl, position }, 201);
 });
 
 adminManage.delete('/products/:id/images/:imageId', async (c) => {

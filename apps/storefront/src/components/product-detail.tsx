@@ -9,7 +9,9 @@
  */
 
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import type { ProductDetailDto, ProductListItemDto } from '@outlet/types';
+import { CategoryName } from '@/components/category-name';
 import { ProductDetailTop } from '@/components/product-detail-top';
 import { ProductReviews } from '@/components/product-reviews';
 import { ProductGrid } from '@/components/product-card';
@@ -19,12 +21,17 @@ import { breadcrumbJsonLd, productJsonLd } from '@/lib/structured-data';
 import { T } from '@/components/t';
 import { Breadcrumb } from '@/components/breadcrumb';
 /** Specification rows, rendered only for the fields a product actually has. */
-function specs(product: ProductDetailDto): Array<[string, string]> {
-  const rows: Array<[string, string]> = [];
+function specs(product: ProductDetailDto): Array<[string, ReactNode]> {
+  const rows: Array<[string, ReactNode]> = [];
   if (product.materials) rows.push(['ui.materials', product.materials]);
   if (product.careInstructions) rows.push(['ui.care', product.careInstructions]);
   if (product.countryOfOrigin) rows.push(['ui.madeIn', product.countryOfOrigin]);
-  if (product.category) rows.push(['ui.category', product.category.name]);
+  if (product.category) {
+    rows.push([
+      'ui.category',
+      <CategoryName key="cat" slug={product.category.slug} name={product.category.name} />,
+    ]);
+  }
   rows.push(['ui.article', product.variants[0]?.sku.split('-').slice(0, 3).join('-') ?? '—']);
   return rows;
 }
@@ -98,7 +105,7 @@ export function ProductDetail({ product, related }: ProductDetailProps) {
                   href={`/category/${product.category.slug}`}
                   className="transition-colors hover:text-ink-950"
                 >
-                  {product.category.name}
+                  <CategoryName slug={product.category.slug} name={product.category.name} />
                 </Link>
               </li>
             </>
