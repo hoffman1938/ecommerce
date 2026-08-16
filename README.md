@@ -295,6 +295,8 @@ and administrator journeys against both.
 
 ## Documentation
 
+- [ABOUT.md](ABOUT.md) — what this project is, what it demonstrates and its limits
+
 - [SECURITY.md](SECURITY.md) — how secrets are handled, what the demo deliberately lacks,
   and the security properties with the tests that hold them up
 - [infrastructure/cloudflare/d1-and-r2.md](infrastructure/cloudflare/d1-and-r2.md) — deploying
@@ -306,5 +308,3 @@ and administrator journeys against both.
 - [docs/deployment.md](docs/deployment.md) — production strategies for the NestJS stack
 - [infrastructure/cloudflare/](infrastructure/cloudflare/) — Pages build notes, env vars, R2
   migration, Turnstile, CORS/custom domains
-
-The original product specification is preserved in [mainPrompt.txt](mainPrompt.txt).
