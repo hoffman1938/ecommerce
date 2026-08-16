@@ -8,6 +8,8 @@
  * resolution so `ORDER BY id` roughly tracks insertion order.
  */
 
+import type { Db } from './sql';
+
 const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
 
 function randomBlock(length: number): string {
@@ -39,13 +41,47 @@ export function base64Url(bytes: Uint8Array): string {
  * Sequential, human-quotable reference numbers.
  *
  * A customer reads these out; `OUT-100001` survives a phone call in a way a
- * cuid does not. The counter comes from the current row count, which is
- * adequate here because order creation is serialised through one D1 batch.
+ * cuid does not.
  */
+const REFERENCE_BASE = 100000;
+
 export function formatOrderNumber(sequence: number): string {
-  return `OUT-${100000 + sequence}`;
+  return `OUT-${REFERENCE_BASE + sequence}`;
 }
 
 export function formatRmaNumber(sequence: number): string {
-  return `RMA-${100000 + sequence}`;
+  return `RMA-${REFERENCE_BASE + sequence}`;
+}
+
+/**
+ * The sequence number that follows the highest reference already issued.
+ *
+ * These used to be numbered from `COUNT(*)`, which is the same thing only
+ * while the series has no gaps — and it has them. The seed plans a fixed list
+ * of orders and silently drops any it cannot stock, so the table can hold
+ * `OUT-100004` while containing three rows; the next checkout then computed
+ * `OUT-100004` again and died on the UNIQUE index as a 500 at the moment of
+ * payment. Deleting any row would have done the same thing.
+ *
+ * Reading the maximum is correct whatever the history, and stays correct if
+ * rows are removed. The comparison is lexicographic, which agrees with numeric
+ * order for as long as the suffix is six digits — 899,999 references away.
+ */
+function sequenceAfter(highest: string | null | undefined, prefix: string): number {
+  const suffix = Number(highest?.slice(prefix.length + 1));
+  return Number.isFinite(suffix) && suffix > REFERENCE_BASE ? suffix - REFERENCE_BASE + 1 : 1;
+}
+
+export async function nextOrderNumber(db: Db): Promise<string> {
+  const row = await db.first<{ highest: string | null }>(
+    `SELECT MAX("orderNumber") AS "highest" FROM "orders" WHERE "orderNumber" LIKE 'OUT-%'`,
+  );
+  return formatOrderNumber(sequenceAfter(row?.highest, 'OUT'));
+}
+
+export async function nextRmaNumber(db: Db): Promise<string> {
+  const row = await db.first<{ highest: string | null }>(
+    `SELECT MAX("rmaNumber") AS "highest" FROM "return_requests" WHERE "rmaNumber" LIKE 'RMA-%'`,
+  );
+  return formatRmaNumber(sequenceAfter(row?.highest, 'RMA'));
 }

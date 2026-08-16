@@ -16,7 +16,7 @@ import { ctxOf } from '../http/context';
 import { ApiError, notFound } from '../lib/errors';
 import { enforceRateLimit } from '../http/rate-limit';
 import { Db, fromBool, nowIso } from '../lib/sql';
-import { formatRmaNumber, newId } from '../lib/ids';
+import { newId, nextRmaNumber } from '../lib/ids';
 import {
   getProductBySlug,
   listProducts,
@@ -793,7 +793,7 @@ storefront.post('/account/returns', async (c) => {
     }
   }
 
-  const sequence = await ctx.db.count(`SELECT COUNT(*) AS "c" FROM "return_requests"`);
+  const rmaNumber = await nextRmaNumber(ctx.db);
   const returnId = newId();
   const now = nowIso();
 
@@ -802,7 +802,7 @@ storefront.post('/account/returns', async (c) => {
       `INSERT INTO "return_requests" ("id", "rmaNumber", "orderId", "userId", "status", "reason", "customerNote")
        VALUES (?, ?, ?, ?, 'REQUESTED', ?, ?)`,
       returnId,
-      formatRmaNumber(sequence + 1),
+      rmaNumber,
       order.id,
       session.user.id,
       body.reason,
@@ -844,7 +844,7 @@ storefront.post('/account/returns', async (c) => {
   ]);
 
   return c.json(
-    { id: returnId, rmaNumber: formatRmaNumber(sequence + 1), status: 'REQUESTED' },
+    { id: returnId, rmaNumber: rmaNumber, status: 'REQUESTED' },
     201,
   );
 });

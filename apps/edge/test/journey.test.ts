@@ -163,6 +163,31 @@ describe('cart', () => {
     expect((await stranger.get('/cart')).body.itemCount).toBe(0);
   });
 
+  it('keeps a topped-up item as one line rather than listing it twice', async () => {
+    const client = harness.client();
+    const { variant } = await inStockVariant(client);
+
+    // Each add takes its own reservation for the units it contributes, so this
+    // line ends up with two live holds. It is still one item in the bag: the
+    // regression this guards is the cart reading back once per reservation,
+    // showing the same shoe twice at full quantity with the subtotal doubled.
+    await client.post('/cart/items', { variantId: variant.id, quantity: 1 });
+    const topped = await client.post('/cart/items', { variantId: variant.id, quantity: 1 });
+
+    expect(topped.body.items).toHaveLength(1);
+    expect(topped.body.items[0].quantity).toBe(2);
+    expect(topped.body.itemCount).toBe(2);
+    expect(topped.body.subtotalMinor).toBe(variant.priceMinor * 2);
+
+    // And on a fresh read, which is the path the drawer actually uses.
+    const reread = await client.get('/cart');
+    expect(reread.body.items).toHaveLength(1);
+    expect(reread.body.itemCount).toBe(2);
+    expect(reread.body.subtotalMinor).toBe(variant.priceMinor * 2);
+    // The countdown still has a hold to show.
+    expect(reread.body.items[0].reservation).not.toBeNull();
+  });
+
   it('holds stock while the item is in the cart', async () => {
     const client = harness.client();
     const { product, variant } = await inStockVariant(client);

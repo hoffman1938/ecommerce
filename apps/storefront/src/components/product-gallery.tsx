@@ -93,7 +93,7 @@ export function ProductGallery({
                   setActiveIndex(index);
                   setViewerOpen(true);
                 }}
-                aria-label={`Open image ${index + 1} of ${images.length} full screen`}
+                aria-label={t('ui.openImageOfFullScreen', { index: index + 1, total: images.length })}
                 className="media-well relative aspect-[4/5] w-full shrink-0 snap-center"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -121,7 +121,7 @@ export function ProductGallery({
                 key={image.id}
                 type="button"
                 onClick={() => step(index - activeIndex)}
-                aria-label={`Show image ${index + 1}`}
+                aria-label={t('ui.showImage', { index: index + 1 })}
                 aria-current={index === activeIndex}
                 // The painted dot stays 6px; `before` extends the *hit* area to
                 // a thumb-sized 24px without moving anything, so the pager is
@@ -147,7 +147,7 @@ export function ProductGallery({
                   type="button"
                   onClick={() => setActiveIndex(index)}
                   onMouseEnter={() => setActiveIndex(index)}
-                  aria-label={`View image ${index + 1} of ${images.length}`}
+                  aria-label={t('ui.viewImageOf', { index: index + 1, total: images.length })}
                   aria-current={index === activeIndex}
                   className={cx(
                     'media-well block aspect-[4/5] w-full rounded-xs transition duration-150',

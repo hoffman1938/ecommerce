@@ -6,8 +6,10 @@ import { useQuery } from '@tanstack/react-query';
 import type { OrderDto } from '@outlet/types';
 import { api, ApiError } from '@/lib/api';
 import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 function NewReturnInner() {
+  const { t } = useI18n();
   const params = useSearchParams();
   const router = useRouter();
   const orderId = params.get('orderId') ?? '';
@@ -53,7 +55,7 @@ function NewReturnInner() {
         onSubmit={async (e) => {
           e.preventDefault();
           if (selectedItems.length === 0) {
-            setError('Select at least one item to return.');
+            setError(t('ui.selectAtLeastOneItem'));
             return;
           }
           setError(null);
@@ -94,7 +96,9 @@ function NewReturnInner() {
         </div>
 
         <label className="block text-sm">
-          <span className="mb-1 block font-medium">Reason</span>
+          <span className="mb-1 block font-medium">
+            <T id="ui.reason" />
+          </span>
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value)}

@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { cx } from '@outlet/ui';
+import { useI18n } from '@/lib/i18n';
 
 const STORAGE_KEY = 'outlet-theme';
 
 /**
- * Runs before first paint to set data-theme, so a dark-mode visitor never sees
- * a white flash on load. It has to be an inline blocking script: any React
+ * Runs before first paint to set data-theme, so a visitor who chose dark never
+ * sees a white flash on load. It has to be an inline blocking script: any React
  * effect runs after hydration, which is far too late.
+ *
+ * Light is the default, and the operating system does not get a vote. The
+ * catalogue photography, the campaign artwork and the whole editorial palette
+ * are composed against white; dark is a deliberate accommodation on top of
+ * that, not an equal alternative to be picked by a setting the shop cannot see.
+ * A visitor who wants it still gets it from the toggle, and that choice sticks.
  *
  * Kept deliberately tiny and dependency-free — it is parsed on every page load.
  */
@@ -16,7 +23,7 @@ export function ThemeScript() {
   // Also marks the document as JS-capable. Scroll-reveal keys its hidden
   // state off that class, so if scripting is unavailable nothing is ever
   // hidden waiting for an observer that will not run.
-  const script = `(function(){var e=document.documentElement;e.classList.add('js');try{var s=localStorage.getItem('${STORAGE_KEY}');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;e.setAttribute('data-theme',s||(d?'dark':'light'));}catch(x){e.setAttribute('data-theme','light');}})();`;
+  const script = `(function(){var e=document.documentElement;e.classList.add('js');try{var s=localStorage.getItem('${STORAGE_KEY}');e.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(x){e.setAttribute('data-theme','light');}})();`;
   return <script dangerouslySetInnerHTML={{ __html: script }} />;
 }
 
@@ -55,6 +62,7 @@ function MoonIcon({ className }: { className?: string }) {
 }
 
 export function ThemeToggle({ className }: { className?: string }) {
+  const { t } = useI18n();
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
 
   // Read what ThemeScript already applied rather than recomputing it, so the
@@ -81,7 +89,11 @@ export function ThemeToggle({ className }: { className?: string }) {
       onClick={toggle}
       // Until the effect runs we do not know the theme; label it neutrally
       // rather than claiming the wrong one to a screen reader.
-      aria-label={theme ? `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme` : 'Switch theme'}
+      aria-label={
+        theme
+          ? t(theme === 'dark' ? 'ui.switchToLightTheme' : 'ui.switchToDarkTheme')
+          : t('ui.switchTheme')
+      }
       className={cx(
         'inline-flex h-10 w-10 items-center justify-center rounded transition-colors duration-150',
         'text-ink-600 hover:bg-ink-100 hover:text-ink-950',

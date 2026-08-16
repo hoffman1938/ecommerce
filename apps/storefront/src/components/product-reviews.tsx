@@ -70,8 +70,7 @@ export function ProductReviews({
           <T id="ui.reviews" />
         </h2>
         <p className="mt-3 max-w-md text-sm text-ink-600">
-          No reviews yet. This is a recent addition to the outlet — check the size and materials in
-          the details above, and our 30-day returns apply either way.
+          <T id="ui.noReviewsYet" />
         </p>
       </section>
     );
@@ -92,7 +91,9 @@ export function ProductReviews({
             <span data-numeric className="text-4xl font-bold tracking-[-0.03em] text-ink-950">
               {ratingAverage.toFixed(1)}
             </span>
-            <span className="text-sm text-ink-500">out of 5</span>
+            <span className="text-sm text-ink-500">
+              <T id="ui.outOfFive" />
+            </span>
           </div>
           <StarRating value={ratingAverage} size="lg" className="mt-2" />
           <p data-numeric className="mt-2 text-sm text-ink-600">

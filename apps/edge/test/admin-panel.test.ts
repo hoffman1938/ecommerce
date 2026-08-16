@@ -75,6 +75,12 @@ const window = () => ({
   endsAt: new Date(Date.now() + 4_200_000).toISOString(),
 });
 
+/** A window that is open right now, for a campaign that should read as live. */
+const openWindow = () => ({
+  startsAt: new Date(Date.now() - 3_600_000).toISOString(),
+  endsAt: new Date(Date.now() + 3_600_000).toISOString(),
+});
+
 describe('campaigns', () => {
   /*
    * The screen this covers had no endpoint at all: the panel shipped a
@@ -198,6 +204,88 @@ describe('campaigns', () => {
     expect((await admin.get(`/admin/campaigns/${created.body.id}`)).body.status).toBe('ACTIVE');
   });
 
+  /*
+   * The panel's side of this worked all along: the campaign saved, activated,
+   * and read back ACTIVE from every admin screen. It simply never reached a
+   * shopper, because the home page asks for `?status=active` and the storefront
+   * query compared that lowercase word against a column storing `ACTIVE`. The
+   * publisher had no way to see the difference — which is why the check has to
+   * cross the boundary rather than stop at the admin API.
+   */
+  it('shows a published campaign on the storefront the home page reads', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Live On The Home Page',
+      slug: 'live-on-the-home-page',
+      shortDescription: 'Running right now.',
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...openWindow(),
+    });
+    expect(
+      (await admin.post(`/admin/campaigns/${created.body.id}/status`, { action: 'activate' }))
+        .status,
+    ).toBe(200);
+
+    // Exactly the two calls CampaignSections makes.
+    const shopper = harness.client();
+    const live = await shopper.get('/campaigns?status=active');
+    const upcoming = await shopper.get('/campaigns?status=upcoming');
+
+    expect(live.body.map((c: any) => c.slug)).toContain('live-on-the-home-page');
+    // Running, so it is not also advertised as coming soon.
+    expect(upcoming.body.map((c: any) => c.slug)).not.toContain('live-on-the-home-page');
+  });
+
+  it('files a campaign activated ahead of its start date under upcoming', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Opens Shortly',
+      slug: 'opens-shortly',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      // Starts in ten minutes.
+      ...window(),
+    });
+    await admin.post(`/admin/campaigns/${created.body.id}/status`, { action: 'activate' });
+
+    const shopper = harness.client();
+    const live = await shopper.get('/campaigns?status=active');
+    const upcoming = await shopper.get('/campaigns?status=upcoming');
+
+    // ACTIVE, but it discounts nothing until Friday, so it is not "live".
+    expect(live.body.map((c: any) => c.slug)).not.toContain('opens-shortly');
+    expect(upcoming.body.map((c: any) => c.slug)).toContain('opens-shortly');
+  });
+
+  it('keeps a hidden campaign off the storefront', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Not For Shoppers',
+      slug: 'not-for-shoppers',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: false,
+      seoTitle: null,
+      seoDescription: null,
+      ...openWindow(),
+    });
+    await admin.post(`/admin/campaigns/${created.body.id}/status`, { action: 'activate' });
+
+    const shopper = harness.client();
+    expect((await shopper.get('/campaigns?status=active')).body.map((c: any) => c.slug)).not.toContain(
+      'not-for-shoppers',
+    );
+  });
+
   it.each(['pause', 'end', 'archive', 'draft', 'publish'])('still accepts %s', async (action) => {
     const created = await admin.post('/admin/campaigns', {
       title: `Action ${action}`,
@@ -284,8 +372,31 @@ describe('adding a product from the panel', () => {
     const [brand] = (await admin.get('/admin/brands')).body;
     const tree = (await admin.get('/admin/categories')).body;
     const flat = (n: any[]): any[] => n.flatMap((x) => [x, ...flat(x.children ?? [])]);
-    const bras = flat(tree).find((n: any) => n.slug === 'women-bras');
-    expect(bras.status).toBe('empty');
+
+    /*
+     * The empty subcategory is created here rather than taken from the seed.
+     * This used to reach for `women-bras` on the strength of the catalogue not
+     * stocking it; now that every shipped subcategory has products, the only
+     * genuinely empty one is a category an administrator has just added — which
+     * is the case the panel actually has to handle anyway.
+     */
+    const parent = flat(tree).find((n: any) => n.level === 'category' && n.isActive);
+    const bras = (
+      await admin.post('/admin/categories', {
+        name: 'Bralettes',
+        slug: 'women-bralettes',
+        pathSegment: 'bralettes',
+        parentId: parent.id,
+        targetGroup: parent.targetGroup,
+        sizeChartGroup: null,
+        description: null,
+        position: 98,
+        isActive: true,
+      })
+    ).body;
+    expect(
+      flat((await admin.get('/admin/categories')).body).find((n: any) => n.id === bras.id).status,
+    ).toBe('empty');
 
     const created = await admin.post(
       '/admin/products',
@@ -311,7 +422,7 @@ describe('adding a product from the panel', () => {
     expect(variant.status).toBe(201);
 
     const after = flat((await admin.get('/admin/categories')).body).find(
-      (n: any) => n.slug === 'women-bras',
+      (n: any) => n.id === bras.id,
     );
     expect(after.productCount).toBeGreaterThan(0);
     expect(after.status).toBe('active');
@@ -746,13 +857,44 @@ describe('category visibility', () => {
   };
   const flatten = (nodes: any[]): any[] => nodes.flatMap((n) => [n, ...flatten(n.children ?? [])]);
 
+  /*
+   * The empty category is made here rather than borrowed from the seed.
+   *
+   * These cases used to pick whichever seeded subcategory happened to have no
+   * products, which held only while the catalogue was too small to fill its own
+   * taxonomy. Stocking every subcategory left them with nothing to select and
+   * they failed — not because empty categories had stopped working, but because
+   * the fixture had evaporated. A category an administrator has just created is
+   * the real subject anyway: it is empty for exactly as long as it takes to put
+   * the first product in, and it has to be visible in that window or there is
+   * nowhere to put one.
+   */
+  const createEmptySubcategory = async (slug: string) => {
+    const tree = (await admin.get('/admin/categories')).body;
+    const parent = flatten(tree).find((n: any) => n.level === 'category' && n.isActive);
+    const { status, body } = await admin.post('/admin/categories', {
+      name: 'Just Added',
+      slug,
+      pathSegment: slug,
+      parentId: parent.id,
+      targetGroup: parent.targetGroup,
+      sizeChartGroup: null,
+      description: null,
+      position: 99,
+      isActive: true,
+    });
+    expect(status).toBe(201);
+    return body;
+  };
+
   it('shows the admin every category, empty ones included', async () => {
+    await createEmptySubcategory('freshly-created-empty');
+
     const tree = (await admin.get('/admin/categories')).body;
     const all = flatten(tree);
     const empty = all.filter((n) => n.status === 'empty');
 
     expect(all.length).toBeGreaterThan(100);
-    // The seed cannot fill 122 subcategories, so this is the interesting case.
     expect(empty.length).toBeGreaterThan(0);
     for (const node of empty) {
       expect(node.isActive).toBe(true);
@@ -761,11 +903,33 @@ describe('category visibility', () => {
   });
 
   it('shows an empty category in the shop too', async () => {
+    const created = await createEmptySubcategory('empty-but-shoppable');
+
     const shop = (await harness.client().get('/catalog/categories')).body;
     const adminTree = (await admin.get('/admin/categories')).body;
-    const empty = flatten(adminTree).find((n: any) => n.status === 'empty');
+    const listed = flatten(adminTree).find((n: any) => n.slug === created.slug);
 
-    expect(findNode(shop, empty.slug)).toBeTruthy();
+    expect(listed.status).toBe('empty');
+    expect(findNode(shop, created.slug)).toBeTruthy();
+  });
+
+  /*
+   * Every shipped subcategory has stock behind it.
+   *
+   * The taxonomy is navigation the shop publishes, and a link to an empty grid
+   * is a dead end a visitor has to back out of. Emptiness is legitimate only
+   * while an administrator is mid-way through adding something, which is what
+   * the two cases above cover.
+   */
+  it('leaves no shipped subcategory without products', async () => {
+    const tree = (await admin.get('/admin/categories')).body;
+    const shipped = flatten(tree).filter(
+      (n: any) => n.level === 'subcategory' && !n.slug.startsWith('freshly-'),
+    );
+
+    const bare = shipped.filter((n: any) => n.status === 'empty' && n.name !== 'Just Added');
+    expect(bare.map((n: any) => n.slug)).toEqual([]);
+    expect(shipped.length).toBeGreaterThan(100);
   });
 
   it('hides it from the shop when an administrator switches it off', async () => {

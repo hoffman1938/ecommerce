@@ -44,7 +44,9 @@ export function InboxView() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">Notifications</h1>
+        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950">
+          <T id="account.notifications" />
+        </h1>
         {tab === 'notifications' && (notifications.data?.unreadCount ?? 0) > 0 ? (
           <Button
             variant="secondary"

@@ -22,8 +22,7 @@ export default function ForgotPasswordPage() {
             resetUrl ? (
               <>
                 <p>
-                  The demo has no mail server, so the reset link is shown here instead of being
-                  emailed.
+                  <T id="ui.demoResetLinkShown" />
                 </p>
                 <Link
                   href={resetUrl}
@@ -34,8 +33,7 @@ export default function ForgotPasswordPage() {
               </>
             ) : (
               <p>
-                If that email is registered, a reset link would be sent. No account matches this
-                address in the demo.
+                <T id="ui.demoNoAccountMatches" />
               </p>
             )
           ) : message ? (

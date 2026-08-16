@@ -282,15 +282,46 @@ export async function resolveCategoryPath(
 
 // --- Campaigns ---------------------------------------------------------------
 
+/**
+ * Campaigns, keyed by what a shopper is asking to see.
+ *
+ * `?status=` carries the storefront's vocabulary — `active` and `upcoming` —
+ * not the column's. Binding it straight into `"status" = ?` compared those
+ * against a column that stores `ACTIVE`, and SQLite compares text
+ * case-sensitively; `upcoming` was not a status this schema has ever had. Both
+ * matched nothing, so every campaign section on the site rendered its empty
+ * state and a promotion published from the admin panel appeared nowhere.
+ *
+ * The window is checked alongside the status because "live" has to mean live.
+ * A campaign that is ACTIVE but does not open until Friday discounts nothing
+ * — `currentPriceForVariant` requires the window — so it belongs with the
+ * upcoming ones rather than in the running list, and one that has already
+ * closed is not news.
+ */
 export async function listCampaigns(db: Db, status?: string): Promise<CampaignDto[]> {
-  const clauses = [`"isVisible" = 1`];
+  const now = nowIso();
+  const clauses = [`c."isVisible" = 1`];
   const bindings: string[] = [];
-  if (status) {
-    clauses.push(`"status" = ?`);
-    bindings.push(status);
+  const view = (status ?? '').trim().toLowerCase();
+
+  if (view === 'active' || view === 'live') {
+    clauses.push(`c."status" = 'ACTIVE'`, `c."startsAt" <= ?`, `c."endsAt" > ?`);
+    bindings.push(now, now);
+  } else if (view === 'upcoming' || view === 'scheduled') {
+    // Either explicitly scheduled, or activated ahead of its own start date.
+    clauses.push(`(c."status" = 'SCHEDULED' OR (c."status" = 'ACTIVE' AND c."startsAt" > ?))`);
+    clauses.push(`c."endsAt" > ?`);
+    bindings.push(now, now);
+  } else if (view) {
+    // A database status asked for by name, e.g. `?status=ended`. Upper-cased
+    // so it matches the column's own spelling rather than silently returning
+    // nothing the way the raw binding did.
+    clauses.push(`c."status" = ?`);
+    bindings.push(view.toUpperCase());
   } else {
     // Default view is what a shopper can act on: running or about to run.
-    clauses.push(`"status" IN ('ACTIVE', 'SCHEDULED')`);
+    clauses.push(`c."status" IN ('ACTIVE', 'SCHEDULED')`, `c."endsAt" > ?`);
+    bindings.push(now);
   }
 
   const rows = await db.all<CampaignDto & { productCount: number }>(
