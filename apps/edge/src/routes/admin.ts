@@ -1673,8 +1673,19 @@ admin.put('/content/:key', async (c) => {
   const pathKey = pathSlug(c.req.param('key'), 'page key');
   const raw = await readJson(c.req.raw);
 
+  /*
+   * `updatedAt` is accepted and ignored rather than rejected.
+   *
+   * The Content screen edits the page object this API just gave it and posts
+   * the whole thing back, and every page carries an `updatedAt` the server
+   * itself added. Under `.strict()` that made Save return 422 on a field the
+   * editor never touched and cannot see — the panel's own type declares only
+   * key/title/body, but a spread copies whatever the response actually held.
+   * The column stays server-owned: the write below always stamps `nowIso()`.
+   */
   const collectionSchema = adminContentSchema.extend({
     key: z.string().trim().min(1).max(64),
+    updatedAt: z.string().nullish(),
   });
   const body =
     pathKey === PAGES_COLLECTION

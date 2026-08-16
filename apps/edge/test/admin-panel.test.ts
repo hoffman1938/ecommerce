@@ -158,6 +158,53 @@ describe('campaigns', () => {
     expect((await admin.get(`/admin/campaigns/${created.body.id}`)).body.status).toBe('ACTIVE');
   });
 
+  /*
+   * The upload endpoint's own answer has to be acceptable to the next call.
+   *
+   * `POST /admin/uploads` returns `/media/<key>`, and the media middleware
+   * rewrites every `"/media/…` in a JSON response to an absolute URL so the
+   * storefront on another origin can load it. The panel posts that value
+   * straight to `/images`, which required the relative form and returned 400 —
+   * "Images must be uploaded first" — for a file that had just been uploaded.
+   */
+  it('attaches an image posted back in the absolute form it was given', async () => {
+    const [product] = (await admin.get('/admin/products?page=1&pageSize=1')).body.items;
+    const absolute = 'https://outlet-demo-api.example.workers.dev/media/products/example.png';
+
+    const added = await admin.post(`/admin/products/${product.id}/images`, {
+      url: absolute,
+      objectKey: 'products/example.png',
+      altText: product.name,
+    });
+    expect(added.status).toBe(201);
+    // Clients always see the absolute form — the media middleware rewrites it
+    // on the way out so another origin can load the file.
+    expect(added.body.url).toMatch(/^https?:\/\/.*\/media\/products\/example\.png$/);
+
+    // The row itself holds no hostname, so it keeps working across origins.
+    const stored = harness.database.sqlite
+      .prepare(`SELECT "url" FROM "product_images" WHERE "objectKey" = ?`)
+      .get('products/example.png') as { url: string };
+    expect(stored.url).toBe('/media/products/example.png');
+
+    const reloaded = await admin.get(`/admin/products/${product.id}`);
+    expect(
+      reloaded.body.images.some((i: any) => i.url.endsWith('/media/products/example.png')),
+    ).toBe(true);
+  });
+
+  it('saves a content page posted back exactly as it was read', async () => {
+    const pages = (await admin.get('/admin/content/pages')).body;
+    expect(Array.isArray(pages)).toBe(true);
+    const page = pages[0];
+    // The screen edits a spread of this object; it carries the server's own
+    // `updatedAt` whether the panel's type mentions it or not.
+    expect(page.updatedAt).toBeTruthy();
+
+    const saved = await admin.put('/admin/content/pages', { ...page, title: `${page.title} ` });
+    expect(saved.status).toBe(200);
+  });
+
   it('hands the coupons screen booleans it can send straight back', async () => {
     const [coupon] = (await admin.get('/admin/coupons')).body;
     expect(typeof coupon.isActive).toBe('boolean');
