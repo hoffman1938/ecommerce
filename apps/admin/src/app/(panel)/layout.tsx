@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAdminUser, hasPermission } from '@/lib/hooks';
 import { api, DEMO_MODE } from '@/lib/api';
@@ -32,6 +32,11 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [navOpen, setNavOpen] = useState(false);
+
+  // Following a link on a phone should reveal the page, not leave the drawer
+  // covering it.
+  useEffect(() => setNavOpen(false), [pathname]);
 
   useEffect(() => {
     if (!isLoading && (!me?.user || me.user.permissions.length === 0)) {
@@ -50,7 +55,22 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-56 shrink-0 border-r border-gray-200 bg-white">
+      {/* Backdrop for the drawer. Only rendered below `lg`, where the sidebar
+          is not a column but an overlay. */}
+      {navOpen ? (
+        <button
+          type="button"
+          aria-label={t('ui.closeMenu')}
+          onClick={() => setNavOpen(false)}
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+        />
+      ) : null}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-56 shrink-0 overflow-y-auto border-r border-gray-200 bg-white transition-transform lg:static lg:translate-x-0 ${
+          navOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="border-b border-gray-100 px-4 py-4">
           <p className="font-black">
             OUTLET<span className="text-red-600">.</span>
@@ -84,9 +104,24 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
           </button>
         </nav>
       </aside>
-      <main className="flex-1 overflow-x-auto">
+      <main className="min-w-0 flex-1">
+        <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setNavOpen(true)}
+            aria-label={t('nav.openMenu')}
+            aria-expanded={navOpen}
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+          >
+            ☰
+          </button>
+          <span className="font-black">
+            OUTLET<span className="text-red-600">.</span>
+            <T id="ui.admin" />
+          </span>
+        </div>
         <DemoBanner />
-        <div className="p-6">{children}</div>
+        <div className="p-4 sm:p-6">{children}</div>
       </main>
     </div>
   );

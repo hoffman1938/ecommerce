@@ -49,7 +49,7 @@ export default function ReservationsPage() {
           </button>
         ))}
       </div>
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
             <tr>

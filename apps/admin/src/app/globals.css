@@ -89,7 +89,13 @@ body {
 }
 
 .admin-table {
-  @apply w-full border-collapse text-sm;
+  /*
+   * A floor width, so a narrow screen scrolls the table sideways instead of
+   * crushing every column into two characters. The wrappers are
+   * `overflow-x-auto` for the same reason — they used to be `overflow-hidden`,
+   * which simply cut the right-hand columns off with no way to reach them.
+   */
+  @apply w-full min-w-[38rem] border-collapse text-sm;
 }
 .admin-table th {
   @apply border-b border-gray-200 px-3 py-2 text-left text-xs font-semibold uppercase text-gray-500;

@@ -70,7 +70,7 @@ export default function InventoryPage() {
         className="mb-4 w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
             <tr>
@@ -232,7 +232,7 @@ export default function InventoryPage() {
       ) : null}
 
       {showMovements ? (
-        <section className="mt-8 overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <section className="mt-8 overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <h2 className="border-b border-gray-100 px-4 py-3 font-semibold">
             <T id="ui.recentMovements" />
           </h2>

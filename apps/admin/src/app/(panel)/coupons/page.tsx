@@ -140,7 +140,7 @@ export default function CouponsPage() {
         {error ? <p className="w-full text-sm text-red-600">{error}</p> : null}
       </form>
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
             <tr>

@@ -101,7 +101,7 @@ export default function AdminProductsPage() {
         className="mb-4 w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
             <tr>

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@outlet/ui';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 import { T } from '@/components/t';
+import { RoleEditor, type RoleEditorTarget } from '@/components/role-editor';
 
 interface AdminUserRow {
   id: string;
@@ -25,6 +26,7 @@ interface RoleRow {
 export default function AdminUsersPage() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<RoleEditorTarget | null>(null);
   const { data: users } = useQuery({
     queryKey: ['admin-users'],
     queryFn: () => api.get<AdminUserRow[]>('/admin/users'),
@@ -41,7 +43,7 @@ export default function AdminUsersPage() {
       </h1>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <section className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
             <tr>
@@ -67,26 +69,15 @@ export default function AdminUsersPage() {
                 <td className="text-right">
                   <button
                     type="button"
-                    onClick={async () => {
-                      const roleNames = window.prompt(
-                        `Comma-separated roles for ${user.email}:\n${(roles ?? []).map((r) => r.name).join(', ')}`,
-                        user.roles.join(', '),
-                      );
-                      if (roleNames === null) return;
-                      setError(null);
-                      try {
-                        await api.post(`/admin/users/${user.id}/roles`, {
-                          roleNames: roleNames
-                            .split(',')
-                            .map((r) => r.trim())
-                            .filter(Boolean),
-                        });
-                        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-                      } catch (err) {
-                        setError(err instanceof ApiError ? err.message : 'Role change failed.');
-                      }
-                    }}
-                    className="text-xs text-gray-500 underline"
+                    onClick={() =>
+                      setEditing({
+                        id: user.id,
+                        email: user.email,
+                        name: `${user.firstName} ${user.lastName}`.trim(),
+                        roles: user.roles,
+                      })
+                    }
+                    className="text-xs font-medium text-gray-700 underline hover:text-gray-900"
                   >
                     <T id="ui.editRoles" />
                   </button>
@@ -110,6 +101,18 @@ export default function AdminUsersPage() {
           ))}
         </div>
       </section>
+
+      {editing ? (
+        <RoleEditor
+          target={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setError(null);
+            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

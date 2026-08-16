@@ -464,7 +464,7 @@ export default function ReviewsPage() {
         </Alert>
       ) : null}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         {listQuery.isLoading ? (
           <div className="space-y-3 p-4">
             {Array.from({ length: 6 }).map((_, index) => (

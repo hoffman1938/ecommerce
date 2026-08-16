@@ -119,7 +119,7 @@ export default function AdminCategoriesPage() {
         <strong>Empty</strong> is today’s stock and fixes itself.
       </p>
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
             <tr>

@@ -174,7 +174,7 @@ export default function AuditLogsPage() {
       <p className="mb-4 text-xs text-gray-500">
         <T id="ui.searchLogsHint" />
       </p>
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         <table className="admin-table">
           <thead>
             <tr>
