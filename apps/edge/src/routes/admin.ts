@@ -1911,8 +1911,61 @@ admin.get('/audit-logs', async (c) => {
     (page - 1) * pageSize,
   );
   // `before`/`after` and the actor's IP are held but not listed: the index is
-  // a timeline, and the payloads can contain customer detail.
+  // a timeline, and the payloads can contain customer detail. They are one
+  // click away on the entry itself, below.
   return c.json({ items, total, page, pageSize, totalPages });
+});
+
+/**
+ * One entry, with what actually changed.
+ *
+ * The list answers "who did what, when" and stops there, which makes it a
+ * record that something happened rather than a record of what happened. The
+ * payloads that answer the real question — which fields moved, and from what
+ * to what — were written on every mutation and never readable.
+ *
+ * Served per entry rather than folded into the list on purpose: a page of 50
+ * carries fifty full entity snapshots, and those can hold a customer's address
+ * or email. Opening one is a deliberate act by someone who already holds
+ * `audit_logs.view`, and it is itself the narrower surface.
+ */
+admin.get('/audit-logs/:id', async (c) => {
+  const ctx = ctxOf(c);
+  requirePermission(ctx.session, Permissions.AuditLogsView);
+  const id = pathId(c.req.param('id'));
+
+  const row = await ctx.db.first<{
+    id: string;
+    actorEmail: string | null;
+    actorType: string;
+    action: string;
+    entityType: string;
+    entityId: string | null;
+    before: string | null;
+    after: string | null;
+    reason: string | null;
+    ip: string | null;
+    createdAt: string;
+  }>(
+    `SELECT "id", "actorEmail", "actorType", "action", "entityType", "entityId",
+            "before", "after", "reason", "ip", "createdAt"
+       FROM "audit_logs" WHERE "id" = ?`,
+    id,
+  );
+  if (!row) throw notFound('Audit entry not found.');
+
+  // Stored as JSON text; handed over parsed so the panel does not re-parse
+  // strings that the column already guarantees are valid JSON.
+  const decode = (value: string | null): unknown => {
+    if (value === null) return null;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  };
+
+  return c.json({ ...row, before: decode(row.before), after: decode(row.after) });
 });
 
 // --- Media upload ------------------------------------------------------------

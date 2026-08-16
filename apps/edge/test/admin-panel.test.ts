@@ -1211,4 +1211,62 @@ describe('every screen the panel loads', () => {
     // A word that appears nowhere returns nothing rather than everything.
     expect((await find('zzzz-no-such-thing')).total).toBe(0);
   });
+
+  /*
+   * The list says something happened; the entry says what.
+   *
+   * `before`/`after` were written on every mutation and never readable, so the
+   * screen could report that a campaign was edited without being able to show
+   * which field moved — a record that something happened rather than a record
+   * of what happened.
+   */
+  it('shows what an entry actually changed', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Before Rename',
+      slug: 'before-rename',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...openWindow(),
+    });
+    const loaded = (await admin.get(`/admin/campaigns/${created.body.id}`)).body;
+    await admin.put(`/admin/campaigns/${created.body.id}`, {
+      title: 'After Rename',
+      slug: loaded.slug,
+      shortDescription: loaded.shortDescription,
+      description: loaded.description,
+      startsAt: loaded.startsAt,
+      endsAt: loaded.endsAt,
+      status: loaded.status,
+      position: loaded.position,
+      isVisible: loaded.isVisible,
+      seoTitle: loaded.seoTitle,
+      seoDescription: loaded.seoDescription,
+    });
+
+    const entry = (
+      await admin.get(
+        `/admin/audit-logs?page=1&pageSize=50&q=${encodeURIComponent(created.body.id)}`,
+      )
+    ).body.items.find((r: any) => r.action === 'campaign.update');
+    expect(entry).toBeTruthy();
+
+    const detail = await admin.get(`/admin/audit-logs/${entry.id}`);
+    expect(detail.status).toBe(200);
+    // Parsed, not handed over as JSON text the panel would have to re-parse.
+    expect(detail.body.before.title).toBe('Before Rename');
+    expect(detail.body.after.title).toBe('After Rename');
+    // Everything else on the record stayed put, which is what makes the one
+    // changed field findable.
+    expect(detail.body.before.slug).toBe(detail.body.after.slug);
+  });
+
+  it('refuses an audit entry that does not exist', async () => {
+    const { status } = await admin.get('/admin/audit-logs/aud_nonexistent');
+    expect(status).toBe(404);
+  });
 });
