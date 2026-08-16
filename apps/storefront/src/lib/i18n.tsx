@@ -49,10 +49,22 @@ export const LOCALE_CURRENCY: Record<Locale, { code: string; rateFromBase: numbe
  * disambiguating "US$42.76", which is the correct thing for a British reader
  * looking at a foreign currency and the wrong thing for a shop whose prices
  * simply are dollars.
+ *
+ * **Georgian is deliberately not `ka-GE`.** This app is a static export, so
+ * every price and date is formatted twice — once in the build, once in the
+ * visitor's browser — and the two must produce byte-identical text or React
+ * throws away the server HTML and re-renders from scratch (the #418/#423/#425
+ * hydration errors). `ka-GE` is present in some ICU builds and absent from
+ * others, and when it is absent Intl does not fail, it silently formats in
+ * English. Asking for it therefore makes the output depend on *where* the code
+ * runs, which is the one thing hydration cannot tolerate. `en-GB` is in every
+ * ICU build, orders day before month exactly as Georgian does, and renders GEL
+ * as ₾265.44 — what the shop already shows. The Georgian *words* come from the
+ * tables below rather than from Intl, so nothing is lost by not asking for it.
  */
 export const INTL_LOCALE: Record<Locale, string> = {
   en: 'en-US',
-  ka: 'ka-GE',
+  ka: 'en-GB',
   ru: 'ru-RU',
 };
 
@@ -104,24 +116,20 @@ const KA_WEEKDAYS_LONG = [
 ];
 const KA_WEEKDAYS_SHORT = ['კვი', 'ორშ', 'სამ', 'ოთხ', 'ხუთ', 'პარ', 'შაბ'];
 
-/** Whether the engine has real data for a tag, rather than silently using English. */
-function intlHasLocale(tag: string): boolean {
-  try {
-    return Intl.DateTimeFormat.supportedLocalesOf([tag]).length > 0;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Georgian dates assembled by hand.
  *
  * `en-GB` supplies the skeleton because it orders day before month exactly as
  * Georgian does, so only the words have to be replaced — the separators,
  * numerals and time parts the caller asked for all survive untouched.
+ *
+ * Used unconditionally for Georgian rather than only when the engine lacks
+ * `ka` data. Checking first was the obvious thing to write and was wrong: it
+ * made the rendered text depend on which ICU build was running, so the static
+ * export and the browser disagreed and hydration failed.
  */
 function formatGeorgian(date: Date, options: Intl.DateTimeFormatOptions): string {
-  const formatter = new Intl.DateTimeFormat('en-GB', options);
+  const formatter = new Intl.DateTimeFormat(INTL_LOCALE.ka, options);
   const wantsLongMonth = formatter.resolvedOptions().month === 'long';
   const wantsLongWeekday = formatter.resolvedOptions().weekday === 'long';
 
@@ -225,9 +233,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     (iso: string | Date, opts?: Intl.DateTimeFormatOptions) => {
       const date = typeof iso === 'string' ? new Date(iso) : iso;
       const options = opts ?? { dateStyle: 'medium', timeStyle: 'short' };
-      if (locale === 'ka' && !intlHasLocale(INTL_LOCALE.ka)) {
-        return formatGeorgian(date, options);
-      }
+      if (locale === 'ka') return formatGeorgian(date, options);
       return new Intl.DateTimeFormat(INTL_LOCALE[locale], options).format(date);
     },
     [locale],
