@@ -54,6 +54,73 @@ import {
 
 export const admin = new Hono<AppEnv>();
 
+/**
+ * Columns the schema declares as `INTEGER … CHECK (x IN (0, 1))`.
+ *
+ * SQLite has no boolean type, so every one of these comes back from D1 as 0 or
+ * 1. That is invisible until the panel writes a record back: it loads a
+ * campaign, hands `isVisible: 1` to a form, and posts it to a schema that says
+ * `z.boolean()` — which rejects it. Saving a campaign returned 422 for exactly
+ * this reason, and because the save failed, the status the editor had chosen
+ * never reached the database and the campaign stayed invisible on the
+ * storefront. The Activate button on the coupons screen passes
+ * `firstOrderOnly` straight back the same way.
+ */
+const BOOLEAN_COLUMNS = new Set([
+  'firstOrderOnly',
+  'freeShipping',
+  'isActive',
+  'isDefaultBilling',
+  'isDefaultShipping',
+  'isEmailVerified',
+  'isEnabled',
+  'isFeatured',
+  'isSystem',
+  'isVerifiedPurchase',
+  'isVisible',
+  'newsletterOptIn',
+  'notifyCampaigns',
+  'notifyOrderUpdates',
+  'savedForLater',
+]);
+
+function withBooleans(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withBooleans);
+  if (!value || typeof value !== 'object') return value;
+  const out: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    // Only 0 and 1 are rewritten. Anything else with one of these names is not
+    // the column this is here for, and is left exactly as the handler sent it.
+    out[key] =
+      BOOLEAN_COLUMNS.has(key) && (entry === 0 || entry === 1) ? entry === 1 : withBooleans(entry);
+  }
+  return out;
+}
+
+/**
+ * Normalises those columns on the way out, for every admin response.
+ *
+ * Done once here rather than per handler because the panel round-trips almost
+ * everything it reads, so any endpoint that forgets is a save button that
+ * fails — and the failure surfaces as a 422 on an unrelated-looking field
+ * rather than as anything pointing at the column.
+ */
+admin.use('*', async (c, next) => {
+  await next();
+  if (!c.res.headers.get('content-type')?.includes('application/json')) return;
+  const body = await c.res.clone().text();
+  if (!body) return;
+  try {
+    const normalised = withBooleans(JSON.parse(body));
+    c.res = new Response(JSON.stringify(normalised), {
+      status: c.res.status,
+      headers: c.res.headers,
+    });
+  } catch {
+    // Not JSON after all — leave the response untouched.
+  }
+});
+
 // --- Dashboard ---------------------------------------------------------------
 
 admin.get('/dashboard', async (c) => {

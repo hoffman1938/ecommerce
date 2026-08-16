@@ -108,6 +108,74 @@ describe('campaigns', () => {
     expect(listed.body.map((c: any) => c.slug)).toContain('midseason-clearance');
   });
 
+  /*
+   * Whatever the panel reads, it must be able to write back.
+   *
+   * The campaign editor loads a campaign, puts the fields in a form and posts
+   * them again on Save — so the read has to produce values the write schema
+   * accepts. It did not: `isVisible` is `INTEGER … CHECK (x IN (0,1))` in
+   * SQLite, arrived as `1`, and the schema wants `z.boolean()`. Every Save
+   * returned 422, and because Save failed the status chosen in the editor never
+   * reached the database, so the campaign stayed off the storefront. The whole
+   * bug is invisible to a test that only posts hand-written payloads, which is
+   * why this one feeds the API its own output.
+   */
+  it('accepts its own campaign back unchanged', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Round Trip',
+      slug: 'round-trip',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...openWindow(),
+    });
+    expect(created.status).toBe(201);
+
+    const loaded = (await admin.get(`/admin/campaigns/${created.body.id}`)).body;
+    expect(typeof loaded.isVisible).toBe('boolean');
+
+    // Exactly the fields apps/admin/src/components/campaign-form.tsx sends.
+    const saved = await admin.put(`/admin/campaigns/${created.body.id}`, {
+      title: loaded.title,
+      slug: loaded.slug,
+      shortDescription: loaded.shortDescription,
+      description: loaded.description,
+      startsAt: loaded.startsAt,
+      endsAt: loaded.endsAt,
+      status: 'ACTIVE',
+      position: loaded.position,
+      isVisible: loaded.isVisible,
+      seoTitle: loaded.seoTitle,
+      seoDescription: loaded.seoDescription,
+    });
+    expect(saved.status).toBe(200);
+
+    // And the change the editor made actually stuck.
+    expect((await admin.get(`/admin/campaigns/${created.body.id}`)).body.status).toBe('ACTIVE');
+  });
+
+  it('hands the coupons screen booleans it can send straight back', async () => {
+    const [coupon] = (await admin.get('/admin/coupons')).body;
+    expect(typeof coupon.isActive).toBe('boolean');
+    expect(typeof coupon.firstOrderOnly).toBe('boolean');
+
+    // The Activate/Deactivate button passes these through untouched.
+    const { status } = await admin.put(`/admin/coupons/${coupon.id}`, {
+      code: coupon.code,
+      type: coupon.type,
+      value: coupon.value,
+      minOrderMinor: coupon.minOrderMinor,
+      maxDiscountMinor: coupon.maxDiscountMinor,
+      firstOrderOnly: coupon.firstOrderOnly,
+      isActive: !coupon.isActive,
+    });
+    expect(status).toBe(200);
+  });
+
   it('edits a campaign from the campaign editor', async () => {
     const created = await admin.post('/admin/campaigns', {
       title: 'Renamed Later',
