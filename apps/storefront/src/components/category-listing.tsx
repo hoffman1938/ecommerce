@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Fragment } from 'react';
 import type { CategoryDto } from '@outlet/types';
 import { EmptyState, cx } from '@outlet/ui';
-import { flattenCategories, useCategoryTree } from '@/lib/categories';
+import { flattenCategories, useCategoryLabel, useCategoryTree } from '@/lib/categories';
 import { useI18n } from '@/lib/i18n';
 import { Breadcrumb } from './breadcrumb';
 import { ProductListing } from './product-listing';
@@ -26,6 +26,7 @@ import { T } from '@/components/t';
  */
 export function CategoryListing({ path, slug }: { path?: string[]; slug?: string }) {
   const { t } = useI18n();
+  const label = useCategoryLabel();
   const { data: tree, isPending } = useCategoryTree();
 
   const trail = resolveTrail(tree ?? [], { path, slug });
@@ -65,7 +66,7 @@ export function CategoryListing({ path, slug }: { path?: string[]; slug?: string
 
   return (
     <ProductListing
-      title={node.name}
+      title={label(node)}
       basePath={node.href}
       fixedFilters={{ category: node.slug }}
       audience={node.targetGroup}
@@ -105,6 +106,7 @@ function resolveTrail(
 }
 
 function CategoryTrail({ trail }: { trail: CategoryDto[] }) {
+  const label = useCategoryLabel();
   return (
     <Breadcrumb className="mb-4 text-xs text-ink-500">
       <ol className="flex flex-wrap items-center gap-1.5">
@@ -118,10 +120,10 @@ function CategoryTrail({ trail }: { trail: CategoryDto[] }) {
             <li aria-hidden="true">/</li>
             <li>
               {index === trail.length - 1 ? (
-                <span className="text-ink-800">{node.name}</span>
+                <span className="text-ink-800">{label(node)}</span>
               ) : (
                 <Link href={node.href} className="transition-colors hover:text-ink-950">
-                  {node.name}
+                  {label(node)}
                 </Link>
               )}
             </li>
@@ -140,6 +142,7 @@ function CategoryTrail({ trail }: { trail: CategoryDto[] }) {
  * them.
  */
 function CategoryChips({ node, tree }: { node: CategoryDto; tree: CategoryDto[] }) {
+  const label = useCategoryLabel();
   const siblings =
     node.children.length > 0
       ? node.children
@@ -150,7 +153,7 @@ function CategoryChips({ node, tree }: { node: CategoryDto; tree: CategoryDto[] 
 
   return (
     <nav
-      aria-label={node.name}
+      aria-label={label(node)}
       className="scrollbar-none -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0"
     >
       {siblings.map((child) => (
@@ -165,7 +168,7 @@ function CategoryChips({ node, tree }: { node: CategoryDto; tree: CategoryDto[] 
               : 'text-ink-800 ring-1 ring-inset ring-ink-300 hover:bg-ink-50 hover:text-ink-950 dark:bg-surface-card dark:text-content-secondary dark:ring-line-strong dark:hover:bg-surface-hover dark:hover:text-ink-950',
           )}
         >
-          {child.name}
+          {label(child)}
           <span data-numeric className="ml-1.5 text-xs opacity-60">
             {child.productCount}
           </span>

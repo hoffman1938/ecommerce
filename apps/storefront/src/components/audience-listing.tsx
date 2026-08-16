@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { CategoryDto } from '@outlet/types';
 import { EmptyState, cx } from '@outlet/ui';
 import { audienceBySlug } from '@/lib/audience';
-import { departmentFor, useCategoryTree } from '@/lib/categories';
+import { departmentFor, useCategoryLabel, useCategoryTree } from '@/lib/categories';
 import { useI18n } from '@/lib/i18n';
 import { ProductListing } from './product-listing';
 
@@ -53,17 +53,18 @@ export function AudienceListing({ slug }: { slug: string }) {
  * "Clothing" first adds a page load to every journey.
  */
 function DepartmentNav({ department }: { department: CategoryDto }) {
+  const label = useCategoryLabel();
   if (department.children.length === 0) return null;
 
   return (
-    <nav aria-label={department.name} className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <nav aria-label={label(department)} className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {department.children.map((category) => (
         <div key={category.id}>
           <Link
             href={category.href}
             className="text-sm font-semibold text-ink-950 transition-colors hover:text-accent"
           >
-            {category.name}
+            {label(category)}
             <span data-numeric className="ml-1.5 text-xs font-normal text-ink-500">
               {category.productCount}
             </span>
@@ -79,7 +80,7 @@ function DepartmentNav({ department }: { department: CategoryDto }) {
                       'dark:text-content-secondary dark:hover:text-ink-950',
                     )}
                   >
-                    {child.name}
+                    {label(child)}
                   </Link>
                 </li>
               ))}

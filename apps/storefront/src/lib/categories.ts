@@ -82,6 +82,32 @@ function camelCase(segment: string): string {
   return segment.replace(/-([a-z0-9])/g, (_, char: string) => char.toUpperCase());
 }
 
+const DEPARTMENT_SLUGS = ['women', 'men', 'kids', 'unisex'];
+
+/**
+ * The same vocabulary, for callers holding only a slug.
+ *
+ * A product's own category and the search suggestions arrive as `{ name, slug }`
+ * without the tree node, so the URL fragment has to be recovered from the slug:
+ * category slugs are department-prefixed (`women-heels`) so they can be unique,
+ * but a heel is a heel whoever it is for — the same resolution the artwork
+ * generator uses to pick a tile. Without this these surfaces printed the English
+ * name from the database while the category page beside them was translated.
+ */
+export function useCategorySlugLabel(): (category: { name: string; slug: string }) => string {
+  const { t } = useI18n();
+  return useCallback(
+    (category: { name: string; slug: string }) => {
+      const key = DEPARTMENT_SLUGS.includes(category.slug)
+        ? `audience.${category.slug}`
+        : `categories.${camelCase(category.slug.replace(/^(?:women|men|kids|unisex)-/, ''))}`;
+      const translated = t(key);
+      return translated === key ? category.name : translated;
+    },
+    [t],
+  );
+}
+
 /**
  * A label that survives leaving its department behind.
  *
