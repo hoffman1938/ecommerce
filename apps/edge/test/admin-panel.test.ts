@@ -1169,4 +1169,46 @@ describe('every screen the panel loads', () => {
     const { status } = await admin.get(path);
     expect(status).toBe(200);
   });
+
+  /*
+   * A log you cannot search is the same as not having one.
+   *
+   * The screen offered an exact `action` and nothing else, so you had to know
+   * the verb before you could look anything up: an order id, a customer email
+   * or a half-remembered word all returned the whole table. `q` spans every
+   * column the row records, and the entity id is what makes "show me
+   * everything that touched this order" work at all.
+   */
+  it('finds an audit entry by any recorded field', async () => {
+    // Produce an entry with a known actor, action and entity.
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Searchable',
+      slug: 'searchable-campaign',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...openWindow(),
+    });
+    expect(created.status).toBe(201);
+
+    const find = async (q: string) =>
+      (await admin.get(`/admin/audit-logs?page=1&pageSize=50&q=${encodeURIComponent(q)}`)).body;
+
+    // By the entity's own id — the case the screen could not do at all.
+    const byId = await find(created.body.id);
+    expect(byId.total).toBeGreaterThan(0);
+    expect(byId.items.every((r: any) => r.entityId === created.body.id)).toBe(true);
+
+    // By a fragment of the action, by entity type, and by the actor's email.
+    expect((await find('campaign.crea')).total).toBeGreaterThan(0);
+    expect((await find('Campaign')).total).toBeGreaterThan(0);
+    expect((await find('admin@demo.local')).total).toBeGreaterThan(0);
+
+    // A word that appears nowhere returns nothing rather than everything.
+    expect((await find('zzzz-no-such-thing')).total).toBe(0);
+  });
 });

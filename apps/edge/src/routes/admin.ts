@@ -1867,8 +1867,31 @@ admin.get('/audit-logs', async (c) => {
     bindings.push(query.entityType);
   }
   if (query.action) {
-    clauses.push(`"action" = ?`);
-    bindings.push(query.action);
+    // Exact by default, but a partial word is what an operator actually types,
+    // so `action` also matches a prefix segment like `campaign.`.
+    clauses.push(`("action" = ? OR LOWER("action") LIKE ?)`);
+    bindings.push(query.action, `${query.action.toLowerCase()}%`);
+  }
+
+  /*
+   * Free text across every column the row actually records.
+   *
+   * The screen only offered an exact `action`, which meant you had to know the
+   * verb before you could look for it — an order number, an email or an id
+   * found nothing. Searching a log you cannot search is the same as not having
+   * one, so `q` spans the actor, the verb, the entity, its id and the reason,
+   * and `entityId` is what makes "find everything that touched this order"
+   * work.
+   */
+  const q = (query.q ?? '').trim().toLowerCase();
+  if (q) {
+    const like = `%${q}%`;
+    clauses.push(
+      `(LOWER("action") LIKE ? OR LOWER("entityType") LIKE ? OR LOWER(COALESCE("entityId", '')) LIKE ?
+        OR LOWER(COALESCE("actorEmail", '')) LIKE ? OR LOWER(COALESCE("reason", '')) LIKE ?
+        OR LOWER("actorType") LIKE ?)`,
+    );
+    bindings.push(like, like, like, like, like, like);
   }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
