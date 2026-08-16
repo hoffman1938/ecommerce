@@ -320,10 +320,47 @@ const ADMIN_ORDER_SORTS = {
   total_asc: `"totalMinor" ASC`,
 } as const;
 
+/**
+ * Statuses that represent money actually taken.
+ *
+ * A cancelled order still has a total on it, so counting every row would
+ * report revenue the shop never received. This is the same set the dashboard
+ * counts, kept identical on purpose: two screens disagreeing about what "sold"
+ * means is worse than either definition being arguable.
+ */
+export const SOLD_STATUSES = [
+  'PAID',
+  'PROCESSING',
+  'PACKED',
+  'SHIPPED',
+  'DELIVERED',
+  'RETURN_REQUESTED',
+  'PARTIALLY_RETURNED',
+] as const;
+
+export interface OrderSummary {
+  /** Every status present in the filtered set, with its own count and money. */
+  byStatus: Array<{ status: string; count: number; totalMinor: number }>;
+  /** Everything matching the filter, cancelled orders included. */
+  totalMinor: number;
+  count: number;
+  /** Only the statuses above — what the shop actually took. */
+  soldMinor: number;
+  soldCount: number;
+}
+
 export async function listOrdersForAdmin(
   db: Db,
-  params: { q?: string; status?: string; page?: string; pageSize?: string; sort?: string },
-): Promise<Paginated<OrderDto>> {
+  params: {
+    q?: string;
+    status?: string;
+    page?: string;
+    pageSize?: string;
+    sort?: string;
+    from?: string;
+    to?: string;
+  },
+): Promise<Paginated<OrderDto> & { summary: OrderSummary }> {
   const clauses: string[] = [];
   const bindings: SqlValue[] = [];
 
@@ -337,6 +374,22 @@ export async function listOrdersForAdmin(
     const needle = `%${params.q.trim().toLowerCase()}%`;
     clauses.push(`(LOWER("orderNumber") LIKE ? OR LOWER("email") LIKE ?)`);
     bindings.push(needle, needle);
+  }
+  /*
+   * Placed between two dates, inclusive of both.
+   *
+   * `to` is compared against the end of that day rather than its midnight, so
+   * asking for the 1st to the 3rd includes everything ordered on the 3rd —
+   * otherwise a day-long report silently drops its last day. Timestamps are
+   * ISO text, which sorts correctly as text, so this is a plain comparison.
+   */
+  if (params.from) {
+    clauses.push(`"createdAt" >= ?`);
+    bindings.push(params.from);
+  }
+  if (params.to) {
+    clauses.push(`"createdAt" <= ?`);
+    bindings.push(`${params.to}T23:59:59.999Z`);
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
@@ -354,6 +407,37 @@ export async function listOrdersForAdmin(
     (page - 1) * pageSize,
   );
 
+  /*
+   * Totals for the whole filtered set, not the page.
+   *
+   * The screen shows 25 rows; summing those in the browser would answer "what
+   * do these 25 come to", which is not the question anyone is asking of an
+   * orders report. One GROUP BY covers every status present, and the sold
+   * figures are derived from it rather than queried again.
+   */
+  const grouped = await db.all<{ status: string; count: number; totalMinor: number }>(
+    `SELECT "status", COUNT(*) AS "count", COALESCE(SUM("totalMinor"), 0) AS "totalMinor"
+       FROM "orders" ${where} GROUP BY "status" ORDER BY "status"`,
+    ...bindings,
+  );
+
+  const sold = new Set<string>(SOLD_STATUSES);
+  const summary: OrderSummary = {
+    byStatus: grouped.map((row) => ({
+      status: row.status,
+      count: Number(row.count),
+      totalMinor: Number(row.totalMinor),
+    })),
+    count: grouped.reduce((sum, row) => sum + Number(row.count), 0),
+    totalMinor: grouped.reduce((sum, row) => sum + Number(row.totalMinor), 0),
+    soldCount: grouped
+      .filter((row) => sold.has(row.status))
+      .reduce((sum, row) => sum + Number(row.count), 0),
+    soldMinor: grouped
+      .filter((row) => sold.has(row.status))
+      .reduce((sum, row) => sum + Number(row.totalMinor), 0),
+  };
+
   const ids = rows.map((row) => row.id);
   const [items, relations] = await Promise.all([itemsFor(db, ids), relationsFor(db, ids)]);
   const viewer: OrderViewer = { userId: null, isStaff: true };
@@ -363,6 +447,7 @@ export async function listOrdersForAdmin(
     page,
     pageSize,
     totalPages,
+    summary,
   };
 }
 

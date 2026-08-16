@@ -1269,4 +1269,88 @@ describe('every screen the panel loads', () => {
     const { status } = await admin.get('/admin/audit-logs/aud_nonexistent');
     expect(status).toBe(404);
   });
+
+  /*
+   * Totals describe the filter, not the page.
+   *
+   * The orders screen shows 25 rows; summing those in the browser answers
+   * "what do these 25 come to", which is not what anyone asks of an orders
+   * report. The figures therefore come from the query, and "sold" has to
+   * exclude cancelled orders — they carry a total the shop never received.
+   */
+  it('totals orders by status across everything the filter matches', async () => {
+    const all = (await admin.get('/admin/orders?page=1&pageSize=5')).body;
+
+    // A page of five, but the summary covers every order there is.
+    expect(all.items).toHaveLength(5);
+    expect(all.summary.count).toBe(all.total);
+    expect(all.summary.count).toBeGreaterThan(5);
+
+    // Per-status buckets add up to the whole.
+    const summed = all.summary.byStatus.reduce(
+      (acc: { count: number; total: number }, row: any) => ({
+        count: acc.count + row.count,
+        total: acc.total + row.totalMinor,
+      }),
+      { count: 0, total: 0 },
+    );
+    expect(summed.count).toBe(all.summary.count);
+    expect(summed.total).toBe(all.summary.totalMinor);
+
+    // Sold is exactly the money-taken statuses. Cancelled and returned orders
+    // carry a total the shop never kept, and an order awaiting payment carries
+    // one it has not received yet — all three are out.
+    const cancelled = all.summary.byStatus.find((r: any) => r.status === 'CANCELLED');
+    expect(cancelled).toBeTruthy();
+    expect(all.summary.soldMinor).toBe(soldFrom(all.summary));
+    expect(all.summary.soldMinor).toBeLessThan(all.summary.totalMinor);
+    for (const excluded of ['CANCELLED', 'RETURNED', 'AWAITING_PAYMENT']) {
+      const row = all.summary.byStatus.find((r: any) => r.status === excluded);
+      if (row)
+        expect(all.summary.soldMinor).toBeLessThanOrEqual(all.summary.totalMinor - row.totalMinor);
+    }
+
+    // Filtering narrows the summary with it.
+    const paid = (await admin.get('/admin/orders?page=1&pageSize=5&status=PAID')).body;
+    expect(paid.summary.byStatus.every((r: any) => r.status === 'PAID')).toBe(true);
+    expect(paid.summary.soldMinor).toBe(paid.summary.totalMinor);
+  });
+
+  it('filters orders by the date they were placed, including the end day', async () => {
+    const all = (await admin.get('/admin/orders?page=1&pageSize=100')).body;
+    const newest = all.items[0];
+    const day = newest.placedAt.slice(0, 10);
+
+    // A single-day window must include orders placed later that same day,
+    // which a naive `<= midnight` comparison silently drops.
+    const sameDay = (await admin.get(`/admin/orders?page=1&pageSize=100&from=${day}&to=${day}`))
+      .body;
+    expect(sameDay.summary.count).toBeGreaterThan(0);
+    expect(sameDay.items.some((o: any) => o.id === newest.id)).toBe(true);
+    expect(sameDay.items.every((o: any) => o.placedAt.slice(0, 10) === day)).toBe(true);
+
+    // A window that ends before the shop existed matches nothing.
+    const none = (await admin.get('/admin/orders?page=1&pageSize=100&to=2000-01-01')).body;
+    expect(none.summary.count).toBe(0);
+    expect(none.summary.soldMinor).toBe(0);
+  });
 });
+
+/**
+ * Money the shop actually took, computed here rather than imported, so the
+ * test states the rule independently of the code under test.
+ */
+function soldFrom(summary: { byStatus: Array<{ status: string; totalMinor: number }> }): number {
+  const taken = new Set([
+    'PAID',
+    'PROCESSING',
+    'PACKED',
+    'SHIPPED',
+    'DELIVERED',
+    'RETURN_REQUESTED',
+    'PARTIALLY_RETURNED',
+  ]);
+  return summary.byStatus
+    .filter((row) => taken.has(row.status))
+    .reduce((sum, row) => sum + row.totalMinor, 0);
+}
