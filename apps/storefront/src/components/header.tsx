@@ -34,12 +34,17 @@ import { ThemeToggle } from './theme';
 import { CartDrawer } from './cart-drawer';
 import { T } from '@/components/t';
 
-/** Shown in every category panel — real destinations, not invented ones. */
+/**
+ * Shown in every category panel — real destinations, not invented ones.
+ *
+ * Held as keys rather than words: this list is module-level, so a literal
+ * label here is fixed at import time and stayed English in every language.
+ */
 const QUICK_LINKS = [
-  { label: 'New arrivals', href: '/products?sort=newest' },
-  { label: 'Biggest discounts', href: '/products?sort=discount' },
-  { label: 'Best rated', href: '/products?sort=rating' },
-  { label: 'In stock only', href: '/products?inStock=true' },
+  { key: 'nav.newArrivals', href: '/products?sort=newest' },
+  { key: 'nav.biggestDiscounts', href: '/products?sort=discount' },
+  { key: 'nav.bestRated', href: '/products?sort=rating' },
+  { key: 'nav.inStockOnly', href: '/products?inStock=true' },
 ];
 
 function Wordmark({ className }: { className?: string }) {
@@ -739,7 +744,7 @@ function DepartmentPanel({
                   onClick={onNavigate}
                   className="text-ink-800 transition-colors hover:text-ink-950 dark:text-content-secondary dark:hover:text-ink-950"
                 >
-                  {link.label}
+                  <T id={link.key} />
                 </Link>
               </li>
             ))}

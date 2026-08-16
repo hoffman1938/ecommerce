@@ -49,7 +49,7 @@ export function FreeShippingBar({
               <span data-numeric className="font-semibold text-ink-950">
                 {money(progress.remainingMinor)}
               </span>{' '}
-              away from free standard delivery
+              <T id="ui.moreUnlockFreeShipping" />
             </span>
           </>
         )}

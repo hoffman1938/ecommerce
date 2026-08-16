@@ -22,7 +22,7 @@
 import type { AddressDto, ShippingMethod } from '@outlet/types';
 import { computeCartTotals } from '@outlet/domain';
 import { ApiError } from '../lib/errors';
-import { formatOrderNumber, newId } from '../lib/ids';
+import { newId, nextOrderNumber } from '../lib/ids';
 import { Db, nowIso, toJson } from '../lib/sql';
 import { readSettings, shippingRulesFrom } from './settings';
 import { commitStatements } from './inventory';
@@ -342,8 +342,7 @@ export async function placeDemoOrder(
   const orderId = newId();
   const paymentId = newId();
   const now = nowIso();
-  const sequence = await db.count(`SELECT COUNT(*) AS "c" FROM "orders"`);
-  const orderNumber = formatOrderNumber(sequence + 1);
+  const orderNumber = await nextOrderNumber(db);
 
   const statements: D1PreparedStatement[] = [];
 

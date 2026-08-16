@@ -532,7 +532,7 @@ export function ImageViewer({
                 type="button"
                 data-active={itemIndex === index}
                 onClick={() => select(itemIndex)}
-                aria-label={`Show image ${itemIndex + 1}`}
+                aria-label={t('ui.showImage', { index: itemIndex + 1 })}
                 aria-current={itemIndex === index}
                 className={cx(
                   'h-14 w-14 shrink-0 overflow-hidden rounded-xs bg-white/5 transition sm:h-16 sm:w-16',

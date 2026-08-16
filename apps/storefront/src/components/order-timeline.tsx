@@ -3,6 +3,7 @@
 import type { OrderDto, ShipmentDto } from '@outlet/types';
 import { cx } from '@outlet/ui';
 import { T } from '@/components/t';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Order progress and carrier tracking.
@@ -16,24 +17,32 @@ import { T } from '@/components/t';
  * wants to know what is coming, not just what has happened.
  */
 
+/** Keys, not words: this array is module-level, so a label here never re-reads the locale. */
 const ORDER_STAGES = [
-  { status: 'PAID', label: 'Payment confirmed' },
-  { status: 'PROCESSING', label: 'Processing' },
-  { status: 'PACKED', label: 'Packed' },
-  { status: 'SHIPPED', label: 'Shipped' },
-  { status: 'DELIVERED', label: 'Delivered' },
+  { status: 'PAID', label: 'ui.orderStagePaid' },
+  { status: 'PROCESSING', label: 'ui.orderStageProcessing' },
+  { status: 'PACKED', label: 'ui.orderStagePacked' },
+  { status: 'SHIPPED', label: 'ui.orderStageShipped' },
+  { status: 'DELIVERED', label: 'ui.orderStageDelivered' },
 ] as const;
 
-function formatStamp(iso: string): string {
-  return new Date(iso).toLocaleString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+/**
+ * Timestamp parts, formatted through the active locale.
+ *
+ * Was `toLocaleString('en-GB', …)`, which printed an English month under
+ * Georgian copy no matter what the switcher said.
+ */
+const STAMP_FORMAT: Intl.DateTimeFormatOptions = {
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+};
 
 export function OrderTimeline({ order }: { order: OrderDto }) {
+  const { t, formatDate } = useI18n();
+  const formatStamp = (iso: string) => formatDate(iso, STAMP_FORMAT);
+
   // Cancelled orders never complete the ladder, so showing the remaining
   // stages as "still to come" would be a lie.
   if (order.status === 'CANCELLED') {
@@ -88,7 +97,7 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
                 aria-hidden="true"
               />
               <p className={cx('text-sm font-medium', done ? 'text-ink-950' : 'text-ink-400')}>
-                {stage.label}
+                {t(stage.label)}
               </p>
               {at ? (
                 <p data-numeric className="text-xs text-ink-500">
@@ -110,12 +119,16 @@ export function OrderTimeline({ order }: { order: OrderDto }) {
 }
 
 function TrackingTimeline({ shipment }: { shipment: ShipmentDto }) {
+  const { t, formatDate } = useI18n();
+  const formatStamp = (iso: string) => formatDate(iso, STAMP_FORMAT);
   return (
     <div className="mt-6 border-t border-line pt-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-ink-950">Tracking</h3>
+        <h3 className="text-sm font-semibold text-ink-950">
+          <T id="ui.tracking" />
+        </h3>
         <p data-numeric className="text-xs text-ink-500">
-          {shipment.carrier ?? 'Carrier'} · {shipment.trackingNumber ?? 'pending'}
+          {shipment.carrier ?? t('ui.carrier')} · {shipment.trackingNumber ?? t('ui.trackingPending')}
         </p>
       </div>
 

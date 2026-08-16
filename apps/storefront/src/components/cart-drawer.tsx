@@ -23,7 +23,8 @@ import { T } from '@/components/t';
  * check out.
  */
 export function CartDrawer({ onClose }: { onClose: () => void }) {
-  const { t, money } = useI18n();
+  const { t, money, formatDate } = useI18n();
+  const formatEstimate = (iso: string) => formatDate(iso, ESTIMATE_FORMAT);
   const { data: cart, isLoading, refetch } = useCart();
   const queryClient = useQueryClient();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -58,7 +59,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
     try {
       queryClient.setQueryData(['cart'], await fn());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setError(err instanceof Error ? err.message : t('ui.somethingWentWrong'));
       refetch();
     }
   };
@@ -96,7 +97,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-4">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-950">
             <BagIcon className="h-[18px] w-[18px]" />
-            Your bag
+            <T id="ui.bag" />
             {items.length > 0 ? (
               <span data-numeric className="text-ink-500">
                 ({cart?.itemCount})
@@ -173,13 +174,15 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
               {cart?.deliveryEstimate ? (
                 <p className="mb-3 flex items-center gap-2 text-xs text-ink-500">
                   <TruckIcon className="h-4 w-4 shrink-0" />
-                  Estimated delivery {formatEstimate(cart.deliveryEstimate.earliest)} –{' '}
+                  {t('cart.deliveryEstimate')} {formatEstimate(cart.deliveryEstimate.earliest)} –{' '}
                   {formatEstimate(cart.deliveryEstimate.latest)}
                 </p>
               ) : null}
 
               <div className="flex items-baseline justify-between">
-                <span className="text-sm text-ink-600">Subtotal</span>
+                <span className="text-sm text-ink-600">
+                  <T id="cart.subtotal" />
+                </span>
                 <span data-numeric className="text-lg font-bold text-ink-950">
                   {money(cart?.subtotalMinor ?? 0)}
                 </span>
@@ -190,7 +193,7 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
 
               <Link href="/checkout" onClick={onClose} className="mt-3 block">
                 <Button size="lg" className="w-full">
-                  Checkout
+                  <T id="cart.checkout" />
                 </Button>
               </Link>
               <Link
@@ -250,7 +253,7 @@ function DrawerLine({
           {item.productName}
         </Link>
         <p className="mt-0.5 text-xs text-ink-500">
-          {[item.size && `Size ${item.size}`, item.color].filter(Boolean).join(' · ')}
+          {[item.size && `${t('ui.size')} ${item.size}`, item.color].filter(Boolean).join(' · ')}
         </p>
 
         <div className="mt-2 flex items-center justify-between gap-2">
@@ -258,7 +261,7 @@ function DrawerLine({
             <button
               type="button"
               onClick={() => (item.quantity > 1 ? onQuantity(item.quantity - 1) : onRemove())}
-              aria-label={item.quantity > 1 ? 'Decrease quantity' : 'Remove item'}
+              aria-label={item.quantity > 1 ? t('ui.decreaseQuantity') : t('ui.removeItem')}
               className="h-full w-7 text-ink-600 transition-colors hover:text-ink-950"
             >
               −
@@ -291,12 +294,17 @@ function DrawerLine({
   );
 }
 
-const ESTIMATE_FORMAT = new Intl.DateTimeFormat('en', {
+/**
+ * The delivery window's date parts.
+ *
+ * Passed through the active locale rather than a module-level formatter pinned
+ * to `'en'`: that one printed "Wed, Aug 19" underneath Georgian copy, in a
+ * calendar Georgian does not write. Held here as options because the formatter
+ * itself has to be built per render — the locale can change without this
+ * module reloading.
+ */
+const ESTIMATE_FORMAT: Intl.DateTimeFormatOptions = {
   weekday: 'short',
   day: 'numeric',
   month: 'short',
-});
-
-function formatEstimate(iso: string): string {
-  return ESTIMATE_FORMAT.format(new Date(iso));
-}
+};

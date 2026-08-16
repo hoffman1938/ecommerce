@@ -42,7 +42,7 @@ export function ProductCard({
   /** Skips lazy-loading for above-the-fold tiles. */
   priority?: boolean;
 }) {
-  const { money } = useI18n();
+  const { t, money } = useI18n();
   const soldOut = product.totalAvailable <= 0;
   const lastFew = !soldOut && product.totalAvailable <= 3;
   const discounted = product.discountPercent > 0;
@@ -203,12 +203,14 @@ export function ProductCard({
         ) : null}
 
         {product.colors && product.colors.length > 1 ? (
-          <p className="mt-1.5 text-xs text-ink-500">{product.colors.length} colours</p>
+          <p className="mt-1.5 text-xs text-ink-500">
+            {t('product.colours', { count: product.colors.length })}
+          </p>
         ) : null}
 
         {lastFew ? (
           <p data-numeric className="mt-1 text-xs text-warning-600">
-            Only {product.totalAvailable} left
+            {t('product.onlyLeft', { count: product.totalAvailable })}
           </p>
         ) : null}
       </div>

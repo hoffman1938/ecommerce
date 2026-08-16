@@ -368,14 +368,13 @@ export function ProductPurchasePanel({
           rather than in the footer is the point. */}
       <ul className="mt-6 space-y-3 border-t border-line pt-5 text-sm">
         <TrustRow icon={<TruckIcon className="h-[18px] w-[18px]" />} title={t('product.delivery')}>
-          Standard {money(495)}, 3–5 working days. Free over {money(10000)}. Express 1–2 days at
-          checkout.
+          {t('ui.deliveryTrustNote', { standard: money(495), threshold: money(10000) })}
         </TrustRow>
         <TrustRow
           icon={<ReturnIcon className="h-[18px] w-[18px]" />}
           title={t('product.freeReturns')}
         >
-          30 days from delivery. Request a return from your order page — no reason needed.
+          <T id="ui.returnsTrustNote" />
         </TrustRow>
         <TrustRow
           icon={<ShieldIcon className="h-[18px] w-[18px]" />}

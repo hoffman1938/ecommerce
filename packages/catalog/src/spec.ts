@@ -15,6 +15,7 @@
 
 import type { TargetGroup } from '@outlet/types';
 import { CATEGORY_NODES, type CategoryNodeSpec } from './taxonomy';
+import { coverageProducts } from './coverage';
 
 export interface BrandSpec {
   name: string;
@@ -105,11 +106,16 @@ const KIDS_CLOTHING_SIZES = ['4Y', '6Y', '8Y', '10Y', '12Y'];
 const KIDS_SHOE_SIZES = ['28', '30', '32', '34'];
 
 /**
+ * The written catalogue: the products that carry the shop's own character.
+ *
  * Discounts are deliberately uneven — roughly a third sit under 30% — so the
  * catalogue does not read as uniformly half-price, which is the fastest way to
  * make an outlet look fake.
+ *
+ * These stock 34 of the taxonomy's 122 subcategories. The rest are filled from
+ * ./coverage, and exported together as PRODUCTS below.
  */
-export const PRODUCTS: ProductSpec[] = [
+export const SIGNATURE_PRODUCTS: ProductSpec[] = [
   // --- Aster ---------------------------------------------------------------
   {
     name: 'Aster Essential Cotton T-Shirt',
@@ -1086,6 +1092,19 @@ export const PRODUCTS: ProductSpec[] = [
     shortDescription: 'Cushioned road runner on a lightweight foam midsole.',
     materials: 'Engineered mesh upper, rubber outsole',
   },
+];
+
+/**
+ * The catalogue as the shop actually offers it.
+ *
+ * The written products first — they are what the home page and the campaigns
+ * lead with, and order is what "newest" falls back to — followed by enough
+ * generated stock that every subcategory in the taxonomy has something behind
+ * it. See ./coverage for why the second half is derived rather than written.
+ */
+export const PRODUCTS: ProductSpec[] = [
+  ...SIGNATURE_PRODUCTS,
+  ...coverageProducts(SIGNATURE_PRODUCTS),
 ];
 
 export interface CampaignSpec {

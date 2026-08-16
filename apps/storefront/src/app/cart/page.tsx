@@ -15,7 +15,7 @@ import { useI18n } from '@/lib/i18n';
 import { T } from '@/components/t';
 
 export default function CartPage() {
-  const { t, money } = useI18n();
+  const { t, money, formatDate } = useI18n();
   const { data: cart, isLoading, refetch } = useCart();
   const queryClient = useQueryClient();
   const [couponCode, setCouponCode] = useState('');
@@ -29,7 +29,7 @@ export default function CartPage() {
       const result = await fn();
       queryClient.setQueryData(['cart'], result);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong.');
+      setError(err instanceof ApiError ? err.message : t('ui.somethingWentWrong'));
       refetch();
     } finally {
       setBusyId(null);
@@ -101,7 +101,7 @@ export default function CartPage() {
         title={t('ui.bag')}
         meta={
           <span data-numeric className="text-sm text-ink-500">
-            {cart.itemCount} {cart.itemCount === 1 ? 'item' : 'items'}
+            {cart.itemCount === 1 ? t('cart.oneItem') : t('cart.itemCount', { count: cart.itemCount })}
           </span>
         }
       />
@@ -176,7 +176,9 @@ export default function CartPage() {
             </div>
             {cart.discountMinor > 0 ? (
               <div className="flex justify-between text-success-700">
-                <dt>Coupon ({cart.couponCode})</dt>
+                <dt>
+                  {t('ui.couponApplied')} ({cart.couponCode})
+                </dt>
                 <dd data-numeric>−{money(cart.discountMinor)}</dd>
               </div>
             ) : null}
@@ -197,17 +199,21 @@ export default function CartPage() {
               </dd>
             </div>
             <p data-numeric className="text-xs text-ink-500">
-              Includes {money(cart.taxMinor)} VAT
+              {t('cart.includesVat', { amount: money(cart.taxMinor) })}
             </p>
           </dl>
 
           {cart.deliveryEstimate ? (
             <p className="mt-3 text-xs text-ink-600">
-              Estimated delivery{' '}
+              <T id="cart.deliveryEstimate" />{' '}
               <span data-numeric className="font-medium text-ink-900">
-                {formatDeliveryWindow(cart.deliveryEstimate.earliest, cart.deliveryEstimate.latest)}
+                {formatDeliveryWindow(
+                  cart.deliveryEstimate.earliest,
+                  cart.deliveryEstimate.latest,
+                  formatDate,
+                )}
               </span>{' '}
-              with standard shipping.
+              <T id="ui.withStandardShipping" />
             </p>
           ) : null}
 
@@ -382,13 +388,23 @@ function FreeShippingProgress({
   );
 }
 
-/** e.g. "Tue 10 – Thu 12 Feb". */
-function formatDeliveryWindow(earliest: string, latest: string): string {
+/**
+ * e.g. "Tue 10 – Thu 12 Feb", in the reader's language.
+ *
+ * `formatDate` is passed in rather than the function reaching for `toLocaleDateString('en-GB')`
+ * as it used to: that spelled the weekday and month in English under whatever
+ * copy surrounded it.
+ */
+function formatDeliveryWindow(
+  earliest: string,
+  latest: string,
+  formatDate: (iso: string | Date, opts?: Intl.DateTimeFormatOptions) => string,
+): string {
   const from = new Date(`${earliest}T00:00:00Z`);
   const to = new Date(`${latest}T00:00:00Z`);
   const day = (date: Date) =>
-    date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
-  const month = to.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' });
+    formatDate(date, { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
+  const month = formatDate(to, { month: 'short', timeZone: 'UTC' });
   return `${day(from)} – ${day(to)} ${month}`;
 }
 
@@ -410,18 +426,17 @@ function SavedForLater({
   onRestore: (id: string) => void;
   onDiscard: (id: string) => void;
 }) {
-  const { money } = useI18n();
+  const { t, money } = useI18n();
   return (
     <section className="mt-10 border-t border-line pt-6 lg:mt-12 lg:pt-8">
       <h2 className="text-lg font-bold tracking-[-0.02em] text-ink-950">
-        Saved for later{' '}
+        <T id="cart.savedForLater" />{' '}
         <span data-numeric className="font-normal text-ink-500">
           ({items.length})
         </span>
       </h2>
       <p className="mt-1 text-sm text-ink-500">
-        These are not reserved — stock is released back to other customers until you move them into
-        your bag.
+        <T id="ui.savedNotReserved" />
       </p>
 
       <ul className="mt-5 divide-y divide-ink-100 dark:divide-line border-t border-line">
@@ -450,7 +465,7 @@ function SavedForLater({
                   </Link>
                 </h3>
                 <p className="mt-0.5 text-sm text-ink-500">
-                  {[item.size ? `Size ${item.size}` : null, item.color].filter(Boolean).join(' · ')}
+                  {[item.size ? `${t('ui.size')} ${item.size}` : null, item.color].filter(Boolean).join(' · ')}
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -528,7 +543,7 @@ function CartRow({
               </Link>
             </h3>
             <p className="mt-1 text-sm text-ink-500">
-              {[item.size ? `Size ${item.size}` : null, item.color].filter(Boolean).join(' · ')}
+              {[item.size ? `${t('ui.size')} ${item.size}` : null, item.color].filter(Boolean).join(' · ')}
             </p>
             {item.campaignTitle ? (
               <p className="mt-1 text-xs font-medium text-sale-500">{item.campaignTitle}</p>
@@ -584,7 +599,8 @@ function CartRow({
 
           {item.reservation && !item.isExpired ? (
             <p className="text-sm text-ink-600">
-              Reserved <Countdown expiresAt={item.reservation.expiresAt} onExpired={onExpired} />
+              <T id="ui.reservedLabel" />{' '}
+              <Countdown expiresAt={item.reservation.expiresAt} onExpired={onExpired} />
             </p>
           ) : (
             <p className="text-sm font-medium text-sale-500">

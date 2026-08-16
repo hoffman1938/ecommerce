@@ -25,7 +25,7 @@ const checkoutFormSchema = z.object({
 type CheckoutForm = z.infer<typeof checkoutFormSchema>;
 
 export default function CheckoutPage() {
-  const { money } = useI18n();
+  const { t, money } = useI18n();
   const router = useRouter();
   const { data: me } = useCurrentUser();
   const [quote, setQuote] = useState<CheckoutQuoteDto | null>(null);
@@ -104,13 +104,11 @@ export default function CheckoutPage() {
       window.location.href = session.redirectUrl;
     } catch (err) {
       if (err instanceof ApiError && err.body.code === 'TOTALS_CHANGED') {
-        setError(
-          'Prices changed while you were checking out. The page will reload with the new totals.',
-        );
+        setError(t('checkout.totalsChanged'));
         const fresh = await api.post<CheckoutQuoteDto>('/checkout/start').catch(() => null);
         if (fresh) setQuote(fresh);
       } else if (err instanceof ApiError && err.body.code === 'RESERVATIONS_EXPIRED') {
-        setError('Your reservations expired. Redirecting you to the cart…');
+        setError(t('checkout.reservationsExpired'));
         setTimeout(() => router.push('/cart'), 1500);
       } else {
         setError((err as Error).message);
@@ -125,7 +123,7 @@ export default function CheckoutPage() {
   if (!quote) {
     return (
       <div className="container-page py-12 text-center lg:py-16 text-sm text-ink-500">
-        {error ?? 'Preparing checkout…'}
+        {error ?? t('checkout.preparing')}
       </div>
     );
   }
@@ -140,11 +138,11 @@ export default function CheckoutPage() {
       | 'shippingAddress.postalCode'
       | 'shippingAddress.countryCode'
       | 'shippingAddress.phone',
-    label: string,
+    labelKey: string,
     span2 = false,
   ) => (
     <label className={`block text-sm ${span2 ? 'sm:col-span-2' : ''}`}>
-      <span className="mb-1 block font-medium text-ink-700">{label}</span>
+      <span className="mb-1 block font-medium text-ink-700">{t(labelKey)}</span>
       <input {...form.register(name)} className="field-input" />
     </label>
   );
@@ -152,10 +150,12 @@ export default function CheckoutPage() {
   return (
     <div className="container-page py-6 lg:py-12">
       <div className="border-b border-line pb-5">
-        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">Checkout</h1>
+        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink-950 lg:text-3xl">
+          <T id="checkout.title" />
+        </h1>
         {quote.reservationDeadline ? (
           <p className="mt-1.5 text-sm text-ink-600">
-            Your items stay reserved for{' '}
+            <T id="checkout.reservedFor" />{' '}
             <Countdown
               expiresAt={quote.reservationDeadline}
               onExpired={() => router.push('/cart')}
@@ -176,7 +176,9 @@ export default function CheckoutPage() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-3 lg:gap-8">
         <div className="space-y-6 lg:col-span-2 lg:space-y-8">
           <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
-            <h2 className="mb-3 font-semibold">1 · Contact</h2>
+            <h2 className="mb-3 font-semibold">
+              1 · <T id="checkout.contact" />
+            </h2>
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink-700">
                 <T id="ui.email" />
@@ -189,16 +191,18 @@ export default function CheckoutPage() {
           </section>
 
           <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
-            <h2 className="mb-3 font-semibold">2 · Shipping address</h2>
+            <h2 className="mb-3 font-semibold">
+              2 · <T id="checkout.shippingAddress" />
+            </h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {field('shippingAddress.firstName', 'First name')}
-              {field('shippingAddress.lastName', 'Last name')}
-              {field('shippingAddress.line1', 'Street and number', true)}
-              {field('shippingAddress.line2', 'Apartment, suite (optional)', true)}
-              {field('shippingAddress.city', 'City')}
-              {field('shippingAddress.postalCode', 'Postal code')}
-              {field('shippingAddress.countryCode', 'Country code (e.g. DE)')}
-              {field('shippingAddress.phone', 'Phone (optional)')}
+              {field('shippingAddress.firstName', 'checkout.firstName')}
+              {field('shippingAddress.lastName', 'checkout.lastName')}
+              {field('shippingAddress.line1', 'checkout.line1', true)}
+              {field('shippingAddress.line2', 'checkout.line2', true)}
+              {field('shippingAddress.city', 'checkout.city')}
+              {field('shippingAddress.postalCode', 'checkout.postalCode')}
+              {field('shippingAddress.countryCode', 'checkout.country')}
+              {field('shippingAddress.phone', 'checkout.phone')}
             </div>
             {Object.keys(form.formState.errors.shippingAddress ?? {}).length > 0 ? (
               <p className="mt-2 text-xs text-sale-500">
@@ -211,14 +215,15 @@ export default function CheckoutPage() {
             </label>
             {!billingSame ? (
               <p className="mt-2 text-xs text-ink-500">
-                Billing address entry uses the shipping fields above in this MVP — uncheck is noted
-                on the order.
+                <T id="checkout.billingMvpNote" />
               </p>
             ) : null}
           </section>
 
           <section className="rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5">
-            <h2 className="mb-3 font-semibold">3 · Delivery</h2>
+            <h2 className="mb-3 font-semibold">
+              3 · <T id="checkout.delivery" />
+            </h2>
             <div className="space-y-2">
               {quote.shippingMethods.map((method) => (
                 <label
@@ -234,7 +239,7 @@ export default function CheckoutPage() {
                   </span>
                   <span>
                     {method.id === 'STANDARD' && quote.cart.shippingMinor === 0
-                      ? 'Free'
+                      ? t('cart.free')
                       : money(method.priceMinor)}
                   </span>
                 </label>
@@ -250,7 +255,9 @@ export default function CheckoutPage() {
         </div>
 
         <aside className="h-fit rounded border border-line bg-ink-25 p-4 dark:rounded-lg dark:bg-surface-raised sm:p-5 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]">
-          <h2 className="font-semibold">4 · Review &amp; pay</h2>
+          <h2 className="font-semibold">
+            4 · <T id="checkout.review" />
+          </h2>
           <ul className="mt-3 space-y-2 text-sm">
             {quote.cart.items.map((item) => (
               <li key={item.id} className="flex justify-between gap-2">
@@ -264,12 +271,16 @@ export default function CheckoutPage() {
           {totals ? (
             <dl className="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
               <div className="flex justify-between">
-                <dt className="text-ink-500">Subtotal</dt>
+                <dt className="text-ink-500">
+                  <T id="cart.subtotal" />
+                </dt>
                 <dd>{money(totals.subtotal)}</dd>
               </div>
               {totals.discount > 0 ? (
                 <div className="flex justify-between text-success-700">
-                  <dt>Discount</dt>
+                  <dt>
+                    <T id="checkout.discount" />
+                  </dt>
                   <dd>-{money(totals.discount)}</dd>
                 </div>
               ) : null}
@@ -277,7 +288,7 @@ export default function CheckoutPage() {
                 <dt className="text-ink-500">
                   <T id="ui.shipping" />
                 </dt>
-                <dd>{totals.shipping === 0 ? 'Free' : money(totals.shipping)}</dd>
+                <dd>{totals.shipping === 0 ? t('cart.free') : money(totals.shipping)}</dd>
               </div>
               <div className="flex items-baseline justify-between border-t border-line pt-3">
                 <dt className="text-base font-semibold text-ink-950">
@@ -304,11 +315,10 @@ export default function CheckoutPage() {
           */}
           <div className="mt-5 border border-line bg-surface p-3 dark:rounded">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-950">
-              Demo payment
+              <T id="checkout.demoPayment" />
             </p>
             <p className="mt-1 text-xs leading-relaxed text-ink-600">
-              No real money is charged and no card details are collected. Placing this order creates
-              a genuine order record, reduces stock and sends a confirmation to your account.
+              <T id="checkout.demoPaymentNote" />
             </p>
           </div>
           <button

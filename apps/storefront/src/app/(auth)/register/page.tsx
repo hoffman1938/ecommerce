@@ -50,10 +50,7 @@ export default function RegisterPage() {
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-ink-600">
           {signedIn ? (
-            <>
-              Your account was created and you are signed in. This environment has no mail provider,
-              so the email verification step is skipped rather than pretended.
-            </>
+            <T id="ui.registeredNoMailProvider" />
           ) : (
             <>
               We sent a verification link to your address. In local development, open Mailpit at{' '}

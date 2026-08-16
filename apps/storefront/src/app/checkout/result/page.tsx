@@ -175,8 +175,7 @@ function ResultInner() {
             <T id="ui.thisOrderWasCancelled" />
           </h1>
           <p className="mt-2 text-ink-600">
-            The payment did not complete (or stock ran out during a delayed payment and it was
-            automatically refunded).
+            <T id="ui.orderCancelledNote" />
           </p>
           <Link
             href="/cart"

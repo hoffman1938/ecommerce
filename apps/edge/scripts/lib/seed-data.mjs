@@ -771,6 +771,26 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
   const sellableProducts = PRODUCTS.filter((spec) => spec.stock !== 'sold-out');
   const orders = [];
 
+  /*
+   * Products that can actually give a unit away, at the moment of asking.
+   *
+   * The stock plan alone was not a strong enough filter: a 'single' product
+   * has one unit, and a line requires `onHand > 1` so the catalogue is never
+   * emptied by its own order history. Drawing one of those was a wasted draw,
+   * and enough wasted draws in a row left an order with no lines, at which
+   * point it was dropped — silently taking its status with it. That is how the
+   * seeded RETURN_REQUESTED order vanished when the catalogue grew, and how the
+   * OUT-1000nn series acquired the gaps that later collided with a live
+   * checkout's order number.
+   *
+   * Recomputed per order rather than hoisted, because placing these orders
+   * decrements `stock` as it goes.
+   */
+  const withStockToGive = () =>
+    sellableProducts.filter((spec) =>
+      (variantsByProduct.get(spec.slug) ?? []).some((v) => (stock.get(v.id)?.onHand ?? 0) > 1),
+    );
+
   for (const [index, status] of ORDER_PLAN.entries()) {
     const customer = CUSTOMERS[index % CUSTOMERS.length];
     const oid = idFor('ord', `${100001 + index}`);
@@ -784,18 +804,26 @@ export function buildSeed({ adminPasswordHash, customerPasswordHash, now = new D
     const lines = [];
     const usedVariants = new Set();
     for (let i = 0; i < lineCount; i += 1) {
-      const spec = pick(orderRandom, sellableProducts);
+      const stocked = withStockToGive();
+      if (stocked.length === 0) break;
+      const spec = pick(orderRandom, stocked);
       const variants = variantsByProduct.get(spec.slug) ?? [];
       const candidates = variants.filter(
         (v) => !usedVariants.has(v.id) && (stock.get(v.id)?.onHand ?? 0) > 1,
       );
+      // Only reachable when this order already took the product's last usable
+      // variant, so the draw is simply skipped rather than the order dropped.
       if (candidates.length === 0) continue;
       const variant = pick(orderRandom, candidates);
       usedVariants.add(variant.id);
       const quantity = 1 + Math.floor(orderRandom() * 2);
       lines.push({ spec, variant, quantity: Math.min(quantity, stock.get(variant.id).onHand - 1) });
     }
-    if (lines.length === 0) continue;
+    // The plan is a fixture: every status in it has to reach the database, or
+    // the screens that demonstrate that status have nothing to show.
+    if (lines.length === 0) {
+      throw new Error(`Order ${orderNumber} (${status}) could not be stocked from the catalogue.`);
+    }
 
     // Totals come from the same function the live checkout uses, so a seeded
     // order and a placed one are arithmetically the same kind of thing.

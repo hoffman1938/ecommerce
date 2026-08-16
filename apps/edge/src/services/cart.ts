@@ -156,17 +156,34 @@ async function readLines(db: Db, cartId: string): Promise<CartLineRow[]> {
                 ORDER BY i."position" LIMIT 1)
             ) AS "imageUrl",
             MAX(0, COALESCE(ib."onHandQuantity", 0) - COALESCE(ib."reservedQuantity", 0)
-                   + COALESCE(r."quantity", 0)) AS "available",
-            r."id" AS "reservationId", r."status" AS "reservationStatus", r."expiresAt" AS "reservationExpiresAt"
+                   + COALESCE(r."heldQuantity", 0)) AS "available",
+            r."reservationId", r."reservationStatus", r."reservationExpiresAt"
        FROM "cart_items" ci
        JOIN "product_variants" v ON v."id" = ci."variantId"
        JOIN "products" p ON p."id" = v."productId"
        JOIN "brands" b ON b."id" = p."brandId"
        LEFT JOIN "inventory_balances" ib ON ib."variantId" = v."id"
-       LEFT JOIN "inventory_reservations" r
-              ON r."cartItemId" = ci."id"
-             AND r."status" IN ('ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING')
-             AND r."expiresAt" > ?
+       -- Grouped, *not* joined row-wise. Topping a line up takes a second
+       -- reservation for the added units (see addItem), so a plain join
+       -- returns the line once per hold — the same item listed twice at full
+       -- quantity, with the subtotal and bag count doubled to match.
+       --
+       -- MIN("expiresAt") picks the hold that lapses first, which is the one
+       -- the countdown must show; SQLite lets the bare "id"/"status" columns
+       -- come from that same row. "heldQuantity" is every hold together, so
+       -- availability adds back all of this shopper's own units rather than
+       -- one arbitrary reservation's.
+       LEFT JOIN (
+              SELECT "cartItemId",
+                     "id" AS "reservationId",
+                     "status" AS "reservationStatus",
+                     MIN("expiresAt") AS "reservationExpiresAt",
+                     SUM("quantity") AS "heldQuantity"
+                FROM "inventory_reservations"
+               WHERE "status" IN ('ACTIVE', 'CHECKOUT_STARTED', 'PAYMENT_PROCESSING')
+                 AND "expiresAt" > ?
+               GROUP BY "cartItemId"
+            ) r ON r."cartItemId" = ci."id"
        LEFT JOIN "campaigns" ca
               ON ca."id" = ci."campaignId" AND ca."status" = 'ACTIVE'
              AND ca."startsAt" <= ? AND ca."endsAt" > ?

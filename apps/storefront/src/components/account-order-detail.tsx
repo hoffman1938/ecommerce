@@ -138,8 +138,7 @@ export function AccountOrderDetail() {
                 <T id="ui.cancelThisOrder" />
               </Button>
               <p className="mt-2 text-xs text-ink-500">
-                Cancelling releases the stock back to other customers. Once the parcel ships you
-                will need to request a return instead.
+                <T id="ui.cancelReleasesStock" />
               </p>
             </div>
           ) : null}
@@ -151,7 +150,9 @@ export function AccountOrderDetail() {
           </h2>
           <dl className="space-y-1">
             <div className="flex justify-between">
-              <dt className="text-ink-500">Subtotal</dt>
+              <dt className="text-ink-500">
+                <T id="cart.subtotal" />
+              </dt>
               <dd>{money(order.subtotalMinor)}</dd>
             </div>
             {order.discountMinor > 0 ? (

@@ -52,7 +52,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // suppressHydrationWarning: ThemeScript sets data-theme before React
     // hydrates, so the server markup intentionally differs on this element.
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    // lang matches DEFAULT_LOCALE in lib/i18n: this markup is pre-rendered in
+    // Georgian, and I18nProvider re-points it if the visitor has chosen
+    // another language.
+    <html lang="ka" className={inter.variable} suppressHydrationWarning>
       <head>
         <ThemeScript />
         <script

@@ -12,6 +12,17 @@ const LOCALES: Record<Locale, typeof en> = { en, ka, ru };
 export const LOCALE_LABELS: Record<Locale, string> = { en: 'EN', ka: 'KA', ru: 'RU' };
 
 /**
+ * Georgian is the shop's own language, not a translation of it.
+ *
+ * This is the locale the static export is pre-rendered in, so it is what a
+ * first-time visitor reads before any JavaScript runs — the site should not
+ * introduce itself in English and correct itself a moment later. A stored
+ * choice still wins, and English remains the fallback for any key Georgian
+ * has not yet been given.
+ */
+export const DEFAULT_LOCALE: Locale = 'ka';
+
+/**
  * Money presentation per locale.
  *
  * The catalogue is priced once, in the base currency below; a locale decides
@@ -70,6 +81,65 @@ export function formatMoneyIn(locale: Locale, amountMinorBase: number): string {
   }
 }
 
+/**
+ * Georgian month and weekday names, for engines whose ICU data omits `ka`.
+ *
+ * `Intl` does not fail when it has no data for a locale — it quietly resolves
+ * to the default and formats in English. On a build without Georgian data
+ * (`supportedLocalesOf(['ka-GE'])` comes back empty, while ru, de and ja do
+ * not) every date on a Georgian-language page therefore reads "Aug 19": the
+ * delivery estimate in the bag, a campaign's opening date, the stamps down an
+ * order's timeline. Georgian is this shop's default language, so that is not a
+ * cosmetic gap, and the words are few enough to carry ourselves.
+ */
+const KA_MONTHS_LONG = [
+  'იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი',
+  'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი',
+];
+const KA_MONTHS_SHORT = [
+  'იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ',
+];
+const KA_WEEKDAYS_LONG = [
+  'კვირა', 'ორშაბათი', 'სამშაბათი', 'ოთხშაბათი', 'ხუთშაბათი', 'პარასკევი', 'შაბათი',
+];
+const KA_WEEKDAYS_SHORT = ['კვი', 'ორშ', 'სამ', 'ოთხ', 'ხუთ', 'პარ', 'შაბ'];
+
+/** Whether the engine has real data for a tag, rather than silently using English. */
+function intlHasLocale(tag: string): boolean {
+  try {
+    return Intl.DateTimeFormat.supportedLocalesOf([tag]).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Georgian dates assembled by hand.
+ *
+ * `en-GB` supplies the skeleton because it orders day before month exactly as
+ * Georgian does, so only the words have to be replaced — the separators,
+ * numerals and time parts the caller asked for all survive untouched.
+ */
+function formatGeorgian(date: Date, options: Intl.DateTimeFormatOptions): string {
+  const formatter = new Intl.DateTimeFormat('en-GB', options);
+  const wantsLongMonth = formatter.resolvedOptions().month === 'long';
+  const wantsLongWeekday = formatter.resolvedOptions().weekday === 'long';
+
+  return formatter
+    .formatToParts(date)
+    .map((part) => {
+      // A numeric month is already language-neutral; only names need replacing.
+      if (part.type === 'month' && !/^\d+$/.test(part.value)) {
+        return (wantsLongMonth ? KA_MONTHS_LONG : KA_MONTHS_SHORT)[date.getMonth()];
+      }
+      if (part.type === 'weekday') {
+        return (wantsLongWeekday ? KA_WEEKDAYS_LONG : KA_WEEKDAYS_SHORT)[date.getDay()];
+      }
+      return part.value;
+    })
+    .join('');
+}
+
 /** Resolve a dot-separated key in a nested object, returning the string value or the key itself. */
 function resolve(obj: Record<string, unknown>, path: string): string {
   const parts = path.split('.');
@@ -95,15 +165,15 @@ interface I18nContext {
 }
 
 const Ctx = createContext<I18nContext>({
-  locale: 'en',
+  locale: DEFAULT_LOCALE,
   setLocale: () => {},
   t: (key) => key,
-  money: (amount) => formatMoneyIn('en', amount),
+  money: (amount) => formatMoneyIn(DEFAULT_LOCALE, amount),
   formatDate: (iso) => String(iso),
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en');
+  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
 
   useEffect(() => {
     try {
@@ -113,6 +183,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       // localStorage unavailable (SSR or private mode)
     }
   }, []);
+
+  // The document's own language has to follow the switcher. It is what a
+  // screen reader picks a voice from and what the browser offers to translate,
+  // so leaving it at the pre-rendered value would announce Georgian copy in an
+  // English accent for anyone who switched.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);
@@ -146,10 +224,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const formatDate = useCallback(
     (iso: string | Date, opts?: Intl.DateTimeFormatOptions) => {
       const date = typeof iso === 'string' ? new Date(iso) : iso;
-      return new Intl.DateTimeFormat(
-        INTL_LOCALE[locale],
-        opts ?? { dateStyle: 'medium', timeStyle: 'short' },
-      ).format(date);
+      const options = opts ?? { dateStyle: 'medium', timeStyle: 'short' };
+      if (locale === 'ka' && !intlHasLocale(INTL_LOCALE.ka)) {
+        return formatGeorgian(date, options);
+      }
+      return new Intl.DateTimeFormat(INTL_LOCALE[locale], options).format(date);
     },
     [locale],
   );
