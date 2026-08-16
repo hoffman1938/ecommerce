@@ -1271,6 +1271,88 @@ describe('every screen the panel loads', () => {
   });
 
   /*
+   * The log covered the panel and nothing else.
+   *
+   * Every entry was written by an admin route, so the shop itself — who signed
+   * in, who was refused, who placed an order — left no trace at all. "Show me
+   * everything that happened" could not be answered about the half of the
+   * system customers actually use.
+   */
+  it('records what happens on the storefront, not just in the panel', async () => {
+    const shopper = harness.client();
+
+    const refused = await shopper.post('/auth/login', {
+      email: 'customer@demo.local',
+      password: 'definitely-not-the-password',
+    });
+    expect(refused.status).toBe(401);
+
+    const ok = await shopper.post('/auth/login', {
+      email: 'customer@demo.local',
+      password: TEST_CUSTOMER_PASSWORD,
+    });
+    expect(ok.status).toBe(200);
+
+    const find = async (q: string) =>
+      (await admin.get(`/admin/audit-logs?page=1&pageSize=50&q=${encodeURIComponent(q)}`)).body;
+
+    // A refused sign-in has no session, so the address has to be carried
+    // explicitly or the entry names nobody.
+    const failed = (await find('auth.login_failed')).items[0];
+    expect(failed).toBeTruthy();
+    expect(failed.actorEmail).toBe('customer@demo.local');
+    expect(failed.actorType).toBe('CUSTOMER');
+
+    const success = (await find('auth.login')).items.find(
+      (r: any) => r.action === 'auth.login' && r.actorEmail === 'customer@demo.local',
+    );
+    expect(success).toBeTruthy();
+    expect(success.actorType).toBe('CUSTOMER');
+
+    // An administrator signing in is an ADMIN entry, even though the session
+    // that would say so is created by the very request being recorded.
+    const adminSignIn = (await find('auth.login')).items.find(
+      (r: any) => r.action === 'auth.login' && r.actorEmail === 'admin@demo.local',
+    );
+    expect(adminSignIn).toBeTruthy();
+    expect(adminSignIn.actorType).toBe('ADMIN');
+
+    // And the actor filter separates the shop from the back office.
+    const customers = (await admin.get('/admin/audit-logs?page=1&pageSize=50&actorType=CUSTOMER'))
+      .body;
+    expect(customers.total).toBeGreaterThan(0);
+    expect(customers.items.every((r: any) => r.actorType === 'CUSTOMER')).toBe(true);
+  });
+
+  /*
+   * Searching the columns beside the payload finds the entry that mentions an
+   * id you already knew, and misses every entry about the thing you are
+   * actually looking for. The name someone typed lives in `after`.
+   */
+  it('searches inside the before and after payloads', async () => {
+    const created = await admin.post('/admin/campaigns', {
+      title: 'Distinctive Payload Title',
+      slug: 'distinctive-payload-title',
+      shortDescription: null,
+      description: null,
+      status: 'DRAFT',
+      position: 0,
+      isVisible: true,
+      seoTitle: null,
+      seoDescription: null,
+      ...openWindow(),
+    });
+    expect(created.status).toBe(201);
+
+    // The words appear nowhere but inside the recorded payload.
+    const byTitle = (
+      await admin.get('/admin/audit-logs?page=1&pageSize=50&q=Distinctive%20Payload')
+    ).body;
+    expect(byTitle.total).toBeGreaterThan(0);
+    expect(byTitle.items.some((r: any) => r.entityId === created.body.id)).toBe(true);
+  });
+
+  /*
    * Totals describe the filter, not the page.
    *
    * The orders screen shows 25 rows; summing those in the browser answers

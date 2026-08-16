@@ -60,6 +60,19 @@ export interface AuditEntry {
   before?: unknown;
   after?: unknown;
   reason?: string | null;
+  /**
+   * Who acted, when the session cannot say.
+   *
+   * Sign-in is the case these exist for: the session is created *by* the
+   * request being recorded, so there is nothing to read it from, and a refused
+   * attempt has no session by definition. An entry that records a sign-in
+   * without naming the account is not worth writing. All three are ignored
+   * when a session is present, so a signed-in actor can never be
+   * misattributed.
+   */
+  actorEmail?: string | null;
+  actorUserId?: string | null;
+  actorType?: 'ADMIN' | 'CUSTOMER' | 'SYSTEM';
 }
 
 /**
@@ -82,9 +95,16 @@ export function auditStatement(
         "entityId", "before", "after", "reason", "ip", "createdAt")
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     newId(),
-    session?.user.id ?? null,
-    session?.user.email ?? null,
-    session ? (session.permissions.size > 0 ? 'ADMIN' : 'CUSTOMER') : 'SYSTEM',
+    session?.user.id ?? entry.actorUserId ?? null,
+    session?.user.email ?? entry.actorEmail ?? null,
+    session
+      ? session.permissions.size > 0
+        ? 'ADMIN'
+        : 'CUSTOMER'
+      : // An email without a session is someone signing in or registering; the
+        // caller says whether they turned out to hold admin rights, because
+        // this side cannot see it. Only genuinely actorless work is SYSTEM.
+        (entry.actorType ?? (entry.actorEmail ? 'CUSTOMER' : 'SYSTEM')),
     entry.action,
     entry.entityType,
     entry.entityId ?? null,

@@ -1889,10 +1889,32 @@ admin.get('/audit-logs', async (c) => {
     clauses.push(
       `(LOWER("action") LIKE ? OR LOWER("entityType") LIKE ? OR LOWER(COALESCE("entityId", '')) LIKE ?
         OR LOWER(COALESCE("actorEmail", '')) LIKE ? OR LOWER(COALESCE("reason", '')) LIKE ?
-        OR LOWER("actorType") LIKE ?)`,
+        OR LOWER("actorType") LIKE ?
+        OR LOWER(COALESCE("before", '')) LIKE ? OR LOWER(COALESCE("after", '')) LIKE ?)`,
     );
-    bindings.push(like, like, like, like, like, like);
+    // `before` and `after` too, because that is where the answer usually is: a
+    // product name, an order number, the slug someone typed. Searching only
+    // the columns beside them finds the entry that mentions an id you already
+    // knew, and misses every entry about the thing you are actually looking
+    // for. They are JSON text, so this matches values and key names alike.
+    bindings.push(like, like, like, like, like, like, like, like);
   }
+
+  /** Only entries this actor type produced — admin, customer or system. */
+  if (query.actorType) {
+    clauses.push(`"actorType" = ?`);
+    bindings.push(query.actorType.toUpperCase());
+  }
+  // The same window the orders report uses, for the same reason.
+  if (query.from) {
+    clauses.push(`"createdAt" >= ?`);
+    bindings.push(query.from);
+  }
+  if (query.to) {
+    clauses.push(`"createdAt" <= ?`);
+    bindings.push(`${query.to}T23:59:59.999Z`);
+  }
+
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
   const pageSize = Math.max(1, Math.min(200, Number(query.pageSize) || 50));

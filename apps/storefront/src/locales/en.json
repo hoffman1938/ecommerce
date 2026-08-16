@@ -537,6 +537,7 @@
     "filterByActionEG": "Filter by action (e.g. inventory, reservation, order)…",
     "searchLogsPlaceholder": "Search logs — action, actor, entity, id or reason…",
     "searchLogsHint": "Searches every recorded field. Paste an order id, a customer email or part of an action such as “campaign”.",
+    "everyActor": "Every actor",
     "searching": "Searching…",
     "entriesFound": "{{count}} entries",
     "auditEntryFailed": "Could not load this entry.",

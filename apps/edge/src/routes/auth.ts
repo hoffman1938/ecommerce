@@ -36,7 +36,7 @@ import {
   revokeSession,
   sessionCookie,
 } from '../auth/session';
-import { requireSession } from '../auth/rbac';
+import { requireSession, writeAudit } from '../auth/rbac';
 import { mergeAnonymousCart } from '../services/cart';
 import {
   changePasswordSchema,
@@ -133,6 +133,15 @@ auth.post('/register', async (c) => {
   if (ctx.cartToken) await mergeAnonymousCart(ctx.db, ctx.cartToken, userId);
   ctx.setCookies.push(sessionCookie(ctx.config, token));
 
+  await writeAudit(ctx.db, null, ctx.ip, {
+    action: 'auth.register',
+    entityType: 'User',
+    entityId: userId,
+    actorUserId: userId,
+    actorEmail: body.email,
+    after: { email: body.email, newsletterOptIn: body.newsletterOptIn },
+  });
+
   return c.json(
     { id: userId, email: body.email, firstName: body.firstName, lastName: body.lastName },
     201,
@@ -161,11 +170,28 @@ auth.post('/login', async (c) => {
 
   if (!user || !correct) {
     if (user) await recordFailedLogin(ctx.db, user.id, user.failedLoginAttempts);
+    await writeAudit(ctx.db, null, ctx.ip, {
+      action: 'auth.login_failed',
+      entityType: 'User',
+      entityId: user?.id ?? null,
+      actorEmail: body.email,
+      // Deliberately not distinguishing "no such account" from "wrong
+      // password": the response does not, and neither should the record.
+      reason: 'Sign-in refused',
+    });
     throw new ApiError('UNAUTHORIZED', SIGN_IN_FAILED);
   }
   // A locked or disabled account gets the same message as a wrong password, so
   // the response never confirms that the address exists.
   if (isLocked(user.lockedUntil) || user.status !== 'ACTIVE') {
+    await writeAudit(ctx.db, null, ctx.ip, {
+      action: 'auth.login_blocked',
+      entityType: 'User',
+      entityId: user.id,
+      actorUserId: user.id,
+      actorEmail: body.email,
+      reason: isLocked(user.lockedUntil) ? 'Account locked' : 'Account disabled',
+    });
     throw new ApiError('UNAUTHORIZED', SIGN_IN_FAILED);
   }
 
@@ -195,6 +221,26 @@ auth.post('/login', async (c) => {
     lastName: string;
   }>(`SELECT "id", "email", "firstName", "lastName" FROM "users" WHERE "id" = ?`, user.id);
 
+  /*
+   * Whether this sign-in was an administrator's cannot be read from the
+   * session — the session is created by this very request. One indexed lookup
+   * settles it, and without it every admin sign-in files itself under
+   * CUSTOMER, which is exactly the distinction the log exists to draw.
+   */
+  const staff = await ctx.db.first<{ one: number }>(
+    `SELECT 1 AS "one" FROM "user_roles" WHERE "userId" = ? LIMIT 1`,
+    user.id,
+  );
+
+  await writeAudit(ctx.db, null, ctx.ip, {
+    action: 'auth.login',
+    entityType: 'User',
+    entityId: user.id,
+    actorUserId: user.id,
+    actorEmail: session?.email ?? body.email,
+    actorType: staff ? 'ADMIN' : 'CUSTOMER',
+  });
+
   return c.json(session);
 });
 
@@ -202,7 +248,14 @@ auth.post('/logout', async (c) => {
   const ctx = ctxOf(c);
   // Revoked server-side, not just un-cookied: a captured token has to stop
   // working, and deleting the client's copy does not achieve that.
-  if (ctx.session) await revokeSession(ctx.db, ctx.session.sessionId);
+  if (ctx.session) {
+    await revokeSession(ctx.db, ctx.session.sessionId);
+    await writeAudit(ctx.db, ctx.session, ctx.ip, {
+      action: 'auth.logout',
+      entityType: 'User',
+      entityId: ctx.session.user.id,
+    });
+  }
   ctx.setCookies.push(clearedSessionCookie(ctx.config));
   return c.json({ ok: true });
 });
@@ -229,6 +282,13 @@ auth.post('/change-password', async (c) => {
   // Every other device is signed out. A password change is usually a response
   // to suspecting someone else has it.
   await revokeAllSessions(ctx.db, session.user.id, session.sessionId);
+
+  await writeAudit(ctx.db, session, ctx.ip, {
+    action: 'auth.password_change',
+    entityType: 'User',
+    entityId: session.user.id,
+    reason: 'Other sessions revoked',
+  });
 
   return c.json({ ok: true, otherSessionsRevoked: true });
 });

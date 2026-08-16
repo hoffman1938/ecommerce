@@ -63,7 +63,7 @@ import {
   wishlistAddSchema,
 } from '../lib/validate';
 import { cartCookie } from '../auth/session';
-import { requireSession } from '../auth/rbac';
+import { requireSession, writeAudit } from '../auth/rbac';
 
 export const storefront = new Hono<AppEnv>();
 
@@ -402,6 +402,23 @@ storefront.post('/checkout/submit', async (c) => {
     amountMinor: result.totalMinor,
     currencyCode: result.currencyCode,
   };
+
+  // Only the first submission is an event; a double-clicked replay returns the
+  // same order and is not a second purchase.
+  if (!result.alreadyPlaced) {
+    await writeAudit(ctx.db, ctx.session, ctx.ip, {
+      action: 'order.placed',
+      entityType: 'Order',
+      entityId: result.orderId,
+      after: {
+        orderNumber: result.orderNumber,
+        totalMinor: result.totalMinor,
+        currencyCode: result.currencyCode,
+        email: body.email ?? ctx.session?.user.email ?? null,
+      },
+    });
+  }
+
   return c.json(session, result.alreadyPlaced ? 200 : 201);
 });
 
@@ -843,6 +860,13 @@ storefront.post('/account/returns', async (c) => {
     }),
   ]);
 
+  await writeAudit(ctx.db, session, ctx.ip, {
+    action: 'return.requested',
+    entityType: 'ReturnRequest',
+    entityId: returnId,
+    after: { rmaNumber, orderId: order.id, orderNumber: order.orderNumber, reason: body.reason },
+  });
+
   return c.json({ id: returnId, rmaNumber: rmaNumber, status: 'REQUESTED' }, 201);
 });
 
@@ -990,6 +1014,17 @@ storefront.post('/catalog/products/:slug/reviews', async (c) => {
     body.body,
     purchased > 0 ? 1 : 0,
   );
+
+  await writeAudit(ctx.db, session, ctx.ip, {
+    action: 'review.submitted',
+    entityType: 'ProductReview',
+    entityId: product.id,
+    after: {
+      rating: body.rating,
+      title: body.title ?? null,
+      verifiedPurchase: purchased > 0,
+    },
+  });
 
   return c.json({ ok: true, status: 'PENDING' }, 201);
 });

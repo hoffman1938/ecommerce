@@ -129,13 +129,18 @@ function AuditDetail({ id }: { id: string }) {
 export default function AuditLogsPage() {
   const { t } = useI18n();
   const [search, setSearch] = useState('');
+  const [actorType, setActorType] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [page, setPage] = useState(1);
   const [openId, setOpenId] = useState<string | null>(null);
   const { data, isFetching } = useQuery({
-    queryKey: ['admin-audit', search, page],
+    queryKey: ['admin-audit', search, actorType, from, to, page],
     queryFn: () =>
       api.get<{ items: AuditRow[]; total: number; totalPages: number }>(
-        `/admin/audit-logs?page=${page}&pageSize=50${search ? `&q=${encodeURIComponent(search)}` : ''}`,
+        `/admin/audit-logs?page=${page}&pageSize=50${search ? `&q=${encodeURIComponent(search)}` : ''}${
+          actorType ? `&actorType=${actorType}` : ''
+        }${from ? `&from=${from}` : ''}${to ? `&to=${to}` : ''}`,
       ),
     placeholderData: (previous) => previous,
   });
@@ -155,11 +160,47 @@ export default function AuditLogsPage() {
           placeholder={t('ui.searchLogsPlaceholder')}
           className="w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
-        {search ? (
+        <select
+          value={actorType}
+          onChange={(e) => {
+            setActorType(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+        >
+          <option value="">{t('ui.everyActor')}</option>
+          <option value="ADMIN">ADMIN</option>
+          <option value="CUSTOMER">CUSTOMER</option>
+          <option value="SYSTEM">SYSTEM</option>
+        </select>
+        <input
+          type="date"
+          value={from}
+          onChange={(e) => {
+            setFrom(e.target.value);
+            setPage(1);
+          }}
+          aria-label={t('ui.placedFrom')}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+        <input
+          type="date"
+          value={to}
+          onChange={(e) => {
+            setTo(e.target.value);
+            setPage(1);
+          }}
+          aria-label={t('ui.placedTo')}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+        {search || actorType || from || to ? (
           <button
             type="button"
             onClick={() => {
               setSearch('');
+              setActorType('');
+              setFrom('');
+              setTo('');
               setPage(1);
             }}
             className="text-sm text-gray-500 underline"
