@@ -101,7 +101,9 @@ export default function CartPage() {
         title={t('ui.bag')}
         meta={
           <span data-numeric className="text-sm text-ink-500">
-            {cart.itemCount === 1 ? t('cart.oneItem') : t('cart.itemCount', { count: cart.itemCount })}
+            {cart.itemCount === 1
+              ? t('cart.oneItem')
+              : t('cart.itemCount', { count: cart.itemCount })}
           </span>
         }
       />
@@ -465,7 +467,9 @@ function SavedForLater({
                   </Link>
                 </h3>
                 <p className="mt-0.5 text-sm text-ink-500">
-                  {[item.size ? `${t('ui.size')} ${item.size}` : null, item.color].filter(Boolean).join(' · ')}
+                  {[item.size ? `${t('ui.size')} ${item.size}` : null, item.color]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -543,7 +547,9 @@ function CartRow({
               </Link>
             </h3>
             <p className="mt-1 text-sm text-ink-500">
-              {[item.size ? `${t('ui.size')} ${item.size}` : null, item.color].filter(Boolean).join(' · ')}
+              {[item.size ? `${t('ui.size')} ${item.size}` : null, item.color]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
             {item.campaignTitle ? (
               <p className="mt-1 text-xs font-medium text-sale-500">{item.campaignTitle}</p>

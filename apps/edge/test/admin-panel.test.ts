@@ -281,9 +281,9 @@ describe('campaigns', () => {
     await admin.post(`/admin/campaigns/${created.body.id}/status`, { action: 'activate' });
 
     const shopper = harness.client();
-    expect((await shopper.get('/campaigns?status=active')).body.map((c: any) => c.slug)).not.toContain(
-      'not-for-shoppers',
-    );
+    expect(
+      (await shopper.get('/campaigns?status=active')).body.map((c: any) => c.slug),
+    ).not.toContain('not-for-shoppers');
   });
 
   it.each(['pause', 'end', 'archive', 'draft', 'publish'])('still accepts %s', async (action) => {
