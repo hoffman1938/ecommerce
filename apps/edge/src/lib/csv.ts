@@ -25,8 +25,7 @@ export const csvRow = (values: Array<string | number | null | undefined>): strin
   values.map(csvEscape).join(',');
 
 /** A whole file: header first, `\r\n` so Excel does not run the rows together. */
-export const csvFile = (header: string, rows: string[]): string =>
-  [header, ...rows].join('\r\n');
+export const csvFile = (header: string, rows: string[]): string => [header, ...rows].join('\r\n');
 
 /**
  * One line back into fields, honouring quotes.

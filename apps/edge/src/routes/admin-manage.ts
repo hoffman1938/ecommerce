@@ -731,10 +731,7 @@ adminManage.post('/reviews/bulk', async (c) => {
 
   if (body.action === 'delete') {
     await ctx.db.batch([
-      ctx.db.statement(
-        `DELETE FROM "product_reviews" WHERE "id" IN (${idPlaceholders})`,
-        ...ids,
-      ),
+      ctx.db.statement(`DELETE FROM "product_reviews" WHERE "id" IN (${idPlaceholders})`, ...ids),
       ...affected.map((productId) => recomputeRating(ctx.db, productId)),
       auditStatement(ctx.db, session, ctx.ip, {
         action: 'review.bulk_delete',

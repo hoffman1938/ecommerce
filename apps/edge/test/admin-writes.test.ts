@@ -53,12 +53,10 @@ async function freeVariant(): Promise<{ id: string; sku: string; onHand: number 
 }
 
 const onHandOf = async (variantId: string): Promise<number> =>
-  (
-    await harness.database.d1
-      .prepare(`SELECT "onHandQuantity" AS q FROM "inventory_balances" WHERE "variantId" = ?`)
-      .bind(variantId)
-      .first<{ q: number }>()
-  )!.q;
+  (await harness.database.d1
+    .prepare(`SELECT "onHandQuantity" AS q FROM "inventory_balances" WHERE "variantId" = ?`)
+    .bind(variantId)
+    .first<{ q: number }>())!.q;
 
 const columnOf = async <T>(sql: string, ...bindings: string[]): Promise<T> =>
   (await harness.database.d1
@@ -378,10 +376,9 @@ describe('reservations, as the reservations screen drives them', () => {
     const reservation = active.items.find((r: any) => r.status === 'ACTIVE');
     expect(reservation).toBeTruthy();
 
-    const { status } = await admin.post(
-      `/admin/inventory/reservations/${reservation.id}/cancel`,
-      { reason: 'Cancelled by an administrator' },
-    );
+    const { status } = await admin.post(`/admin/inventory/reservations/${reservation.id}/cancel`, {
+      reason: 'Cancelled by an administrator',
+    });
     expect(status).toBe(200);
 
     const after = await columnOf<{ s: string }>(
@@ -691,14 +688,13 @@ describe('the product screen’s remaining actions', () => {
     );
 
     expect(body.total).toBeGreaterThan(0);
-    const found = body.items.some((p: any) =>
-      p.variants.some((v: any) => v.sku === variant.sku),
-    );
+    const found = body.items.some((p: any) => p.variants.some((v: any) => v.sku === variant.sku));
     expect(found).toBe(true);
   });
 
   it('still finds a product by name and by slug', async () => {
-    const product = await (async () => (await admin.get('/admin/products?page=1&pageSize=1')).body.items[0])();
+    const product = await (async () =>
+      (await admin.get('/admin/products?page=1&pageSize=1')).body.items[0])();
     const byName = await admin.get(
       `/admin/products?page=1&pageSize=25&q=${encodeURIComponent(product.name.split(' ')[0])}`,
     );
@@ -790,7 +786,7 @@ describe('the products CSV round trip', () => {
     // Never published by an import; somebody decides that.
     expect(found.status).toBe('DRAFT');
     expect(found.variants[0].sku).toBe(sku);
-    expect(found.variants[0].inventory.onHandQuantity).toBe(7);  // list view nests it
+    expect(found.variants[0].inventory.onHandQuantity).toBe(7); // list view nests it
   });
 
   it('puts two rows of one product under a single product', async () => {
@@ -1316,8 +1312,9 @@ describe('customer support actions', () => {
    */
   it('counts low stock at the threshold the administrator saved', async () => {
     const at = async (threshold: number) => {
-      expect((await admin.put('/admin/settings/lowStockThreshold', { value: threshold })).status)
-        .toBe(200);
+      expect(
+        (await admin.put('/admin/settings/lowStockThreshold', { value: threshold })).status,
+      ).toBe(200);
       return (await admin.get('/admin/dashboard')).body;
     };
 
@@ -1530,10 +1527,7 @@ describe('money the panel can send back', () => {
     expect(orderId).toBeTruthy();
 
     const before = (await shopper.get('/account/inbox')).body;
-    const { status, body } = await admin.post(
-      `/admin/orders/${orderId}/resend-confirmation`,
-      {},
-    );
+    const { status, body } = await admin.post(`/admin/orders/${orderId}/resend-confirmation`, {});
     expect(status).toBe(200);
     expect(body.delivered).toBe('in-app');
     expect(body.email).toBe(false);
@@ -1545,10 +1539,7 @@ describe('money the panel can send back', () => {
 
   it('says plainly that a guest order has no inbox to send to', async () => {
     const orderId = await freshPaidOrder();
-    const { status, body } = await admin.post(
-      `/admin/orders/${orderId}/resend-confirmation`,
-      {},
-    );
+    const { status, body } = await admin.post(`/admin/orders/${orderId}/resend-confirmation`, {});
     expect(status).toBe(409);
     expect(body.message).toContain('guest');
   });

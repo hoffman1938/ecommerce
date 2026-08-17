@@ -45,10 +45,7 @@ export default function AdminOrderDetailPage() {
   const [refundForm, setRefundForm] = useState({ amount: '', reason: '' });
   const [note, setNote] = useState('');
 
-  const {
-    data: order,
-    error: loadError,
-  } = useQuery({
+  const { data: order, error: loadError } = useQuery({
     queryKey: ['admin-order', params.id],
     queryFn: () => api.get<AdminOrderDetail>(`/admin/orders/${params.id}`),
   });
