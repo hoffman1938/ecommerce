@@ -7,6 +7,7 @@ import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 import { T } from '@/components/t';
+import { DetailState } from '@/components/detail-state';
 import {
   EMPTY_PRODUCT,
   ProductForm,
@@ -49,7 +50,7 @@ export default function EditProductPage({ id }: { id?: string } = {}) {
     initialQuantity: 0,
   });
 
-  const { data: product } = useQuery({
+  const { data: product, error: loadError } = useQuery({
     queryKey: ['admin-product', productId],
     queryFn: () => api.get<AdminProductDetail>(`/admin/products/${productId}`),
   });
@@ -82,9 +83,13 @@ export default function EditProductPage({ id }: { id?: string } = {}) {
 
   if (!product)
     return (
-      <p className="text-gray-500">
-        <T id="ui.loadingProduct" />
-      </p>
+      <DetailState
+        error={loadError}
+        loadingLabel={t('ui.loadingProduct')}
+        noun="product"
+        backHref="/products"
+        backLabel="Back to products"
+      />
     );
 
   return (

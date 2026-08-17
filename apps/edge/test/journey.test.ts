@@ -49,6 +49,64 @@ describe('browsing', () => {
     expect(campaigns.body.length).toBeGreaterThan(0);
   });
 
+  /*
+   * A campaign page, with the products in it.
+   *
+   * `CampaignDetail` types this response as `CampaignDto & { products:
+   * ProductListItemDto[] }` and reads `campaign.products.length` for its heading
+   * before handing the array to the grid. This route returned the campaign row
+   * alone, so every campaign page on the deployed site threw on
+   * `undefined.length` and rendered a blank screen — a public route, reachable
+   * from the home page and from any promotion just published in the panel.
+   */
+  it('serves a campaign with the products the page renders', async () => {
+    const client = harness.client();
+    const listed = (await client.get('/campaigns?status=active')).body;
+    const slug = (listed.items ?? listed)[0].slug;
+
+    const { status, body } = await client.get(`/campaigns/${slug}`);
+    expect(status).toBe(200);
+    expect(body.slug).toBe(slug);
+    expect(Array.isArray(body.products)).toBe(true);
+    expect(body.products.length).toBeGreaterThan(0);
+
+    // Described exactly as the grid describes a product anywhere else.
+    for (const key of [
+      'id',
+      'slug',
+      'name',
+      'brand',
+      'imageUrl',
+      'currentPriceMinor',
+      'originalPriceMinor',
+      'discountPercent',
+      'totalAvailable',
+    ]) {
+      expect(body.products[0]).toHaveProperty(key);
+    }
+    /*
+     * And every one of them really is in this campaign — checked against the
+     * membership table rather than against `campaignSlug`, which names whichever
+     * campaign is *pricing* the product and can legitimately be a different one
+     * when a product runs in two at once.
+     */
+    const members = await harness.database.d1
+      .prepare(
+        `SELECT p."slug" FROM "campaign_products" cp
+           JOIN "campaigns" c ON c."id" = cp."campaignId"
+           JOIN "products" p ON p."id" = cp."productId"
+          WHERE c."slug" = ?`,
+      )
+      .bind(slug)
+      .all<{ slug: string }>();
+    const memberSlugs = new Set(members.results.map((row) => row.slug));
+    expect(body.products.every((p: any) => memberSlugs.has(p.slug))).toBe(true);
+  });
+
+  it('still reports an unknown campaign as missing', async () => {
+    expect((await harness.client().get('/campaigns/no-such-campaign')).status).toBe(404);
+  });
+
   it('serves CMS pages', async () => {
     const { status, body } = await harness.client().get('/content/pages/shipping_info');
     expect(status).toBe(200);

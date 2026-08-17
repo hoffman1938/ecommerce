@@ -19,6 +19,7 @@
  */
 
 import { Hono } from 'hono';
+import { z } from 'zod';
 import type { AppEnv } from '../http/context';
 import { ctxOf } from '../http/context';
 import { ApiError } from '../lib/errors';
@@ -36,6 +37,7 @@ import {
   revokeSession,
   sessionCookie,
 } from '../auth/session';
+import { hashToken } from '../auth/tokens';
 import { requireSession, writeAudit } from '../auth/rbac';
 import { mergeAnonymousCart } from '../services/cart';
 import {
@@ -356,6 +358,78 @@ auth.post('/reset-password', async (c) => {
   await enforceRateLimit(ctx.env.RATE_LIMIT, 'passwordReset', ctx.ip);
   await readJson(c.req.raw).catch(() => ({}));
   throw new ApiError('FEATURE_UNAVAILABLE', RESET_UNAVAILABLE);
+});
+
+/**
+ * Email verification.
+ *
+ * The storefront has a `/verify-email` page that posts here, and this route did
+ * not exist — so anyone landing on that page, from a bookmark or from a link
+ * issued by the NestJS stack, was told "No such endpoint." That is the same
+ * failure `/reset-password` above documents: a 404 on a page the site itself
+ * ships reads as a broken deployment rather than as a feature this environment
+ * does not have.
+ *
+ * Unlike password reset, though, verification has a true and useful answer here.
+ * `/register` sets `isEmailVerified = 1` at creation, precisely because no email
+ * can be sent — so an account reaching this page really is verified, and saying
+ * so is honest rather than a placation.
+ *
+ * A genuine token is still honoured if one is ever present: the columns exist,
+ * and a database seeded or migrated from the NestJS stack can carry one. Only
+ * when there is nothing to check does it fall through to reporting the state
+ * registration already put the account in.
+ */
+auth.post('/verify-email', async (c) => {
+  const ctx = ctxOf(c);
+  await enforceRateLimit(ctx.env.RATE_LIMIT, 'register', ctx.ip);
+  const body = parse(
+    z.object({ token: z.string().trim().min(1).max(200) }).strict(),
+    await readJson(c.req.raw),
+  );
+
+  const hash = await hashToken(body.token, ctx.config.sessionSecret);
+  const pending = await ctx.db.first<{ id: string; expiresAt: string | null }>(
+    `SELECT "id", "emailVerificationExpiresAt" AS "expiresAt" FROM "users"
+      WHERE "emailVerificationTokenHash" IS NOT NULL AND "emailVerificationTokenHash" = ?`,
+    hash,
+  );
+
+  if (pending) {
+    if (pending.expiresAt && pending.expiresAt <= nowIso()) {
+      throw new ApiError('BAD_REQUEST', 'That verification link has expired.');
+    }
+    await ctx.db.run(
+      `UPDATE "users"
+          SET "isEmailVerified" = 1, "emailVerifiedAt" = ?, "emailVerificationTokenHash" = NULL,
+              "emailVerificationExpiresAt" = NULL, "updatedAt" = ?
+        WHERE "id" = ?`,
+      nowIso(),
+      nowIso(),
+      pending.id,
+    );
+    await writeAudit(ctx.db, null, ctx.ip, {
+      action: 'auth.email_verified',
+      entityType: 'User',
+      entityId: pending.id,
+      actorUserId: pending.id,
+      after: { isEmailVerified: true },
+    });
+    return c.json({ ok: true, verified: true });
+  }
+
+  /*
+   * No such token, and none can have been issued. Reporting success is the
+   * accurate answer about this deployment — every account is verified from the
+   * moment it is created — and it is not a way in: verification grants nothing
+   * here, no session is created, and no row was changed.
+   */
+  return c.json({
+    ok: true,
+    verified: true,
+    message:
+      'Accounts in this demo are verified as soon as they are created, so there is nothing to confirm. You can sign in.',
+  });
 });
 
 export { auth as default };

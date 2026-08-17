@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 import { T } from '@/components/t';
+import { DetailState } from '@/components/detail-state';
 import {
   CampaignForm,
   EMPTY_CAMPAIGN,
@@ -31,7 +32,7 @@ function toLocalInput(iso: string): string {
 }
 
 export default function EditCampaignPage() {
-  const { money } = useI18n();
+  const { t, money } = useI18n();
   // Addressed as ?id=… rather than as a route segment; see ./page.tsx.
   const params = { id: useSearchParams().get('id') ?? '' };
   const queryClient = useQueryClient();
@@ -40,7 +41,7 @@ export default function EditCampaignPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [assignForm, setAssignForm] = useState({ productId: '', campaignPriceMinor: '' });
 
-  const { data: campaign } = useQuery({
+  const { data: campaign, error: loadError } = useQuery({
     queryKey: ['admin-campaign', params.id],
     queryFn: () => api.get<AdminCampaignDetail>(`/admin/campaigns/${params.id}`),
   });
@@ -74,9 +75,13 @@ export default function EditCampaignPage() {
 
   if (!campaign)
     return (
-      <p className="text-gray-500">
-        <T id="ui.loadingCampaign" />
-      </p>
+      <DetailState
+        error={loadError}
+        loadingLabel={t('ui.loadingCampaign')}
+        noun="campaign"
+        backHref="/campaigns"
+        backLabel="Back to campaigns"
+      />
     );
 
   return (

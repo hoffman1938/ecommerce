@@ -80,7 +80,7 @@ pnpm dev:edge                 # the Worker locally (wrangler dev)
 pnpm db:migrate:demo          # apply D1 migrations, local
 pnpm db:seed:demo             # seed the local D1 database (idempotent)
 pnpm db:reset-demo            # wipe and re-seed the local D1 database
-pnpm --filter @outlet/edge test    # 147 tests: journeys, security, catalogue, admin panel
+pnpm --filter @outlet/edge test    # 294 tests: journeys, security, catalogue, admin panel
 API_BASE_URL=… pnpm build:cloudflare   # the static export Pages serves
 pnpm deploy:edge              # deploy the Worker
 ```
@@ -292,6 +292,14 @@ docs/          architecture, local setup, deployment strategies
 `apps/edge` holds the demo's whole backend: `migrations/` is the D1 schema,
 `scripts/` builds and applies the seed, `src/` is the API, and `test/` walks the customer
 and administrator journeys against both.
+
+Three of those test files are about the admin panel specifically, and the split is
+deliberate: `admin-panel.test.ts` drives each screen the way the panel drives it,
+`admin-writes.test.ts` covers the endpoints behind every button that writes, and
+`admin-routability.test.ts` asserts that every path the panel can reach — including the
+four downloads that are plain links rather than fetch calls — is actually served. **Adding
+a call to `apps/admin` means adding its path to that last file**, which is what stops a
+button shipping without an endpoint behind it.
 
 ## Documentation
 
