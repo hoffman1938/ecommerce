@@ -29,6 +29,22 @@ const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 export const MAX_JSON_BODY_BYTES = 64 * 1024;
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
+/**
+ * Endpoints that carry a document rather than a form, and are allowed an
+ * upload-sized body despite being JSON.
+ *
+ * CSV import is the whole reason this exists. 64 KB is a generous limit for a
+ * form and far too small for a spreadsheet: the panel's own products export is
+ * around 500 KB, so exporting the catalogue, editing it and importing it back —
+ * the round trip those two buttons exist to make — failed at the transport layer
+ * with `413` before any handler ran. The import schema's own 1,000,000-character
+ * cap was unreachable, so the two limits disagreed about what was allowed.
+ *
+ * Kept as an explicit list of paths rather than a rule about size, so widening
+ * the limit stays a decision somebody makes per endpoint.
+ */
+const DOCUMENT_BODY_PATHS = new Set(['/admin/products/import/csv', '/admin/inventory/import/csv']);
+
 function originAllowed(origin: string | null, allowed: string[]): boolean {
   if (!origin) return false;
   return allowed.includes(origin);
@@ -38,11 +54,26 @@ function originAllowed(origin: string | null, allowed: string[]): boolean {
  * A JSON API serves no HTML and loads no subresources, so the strictest
  * possible policy is also the correct one: nothing may be loaded, nothing may
  * frame it, and no plugin content exists.
+ *
+ * Two responses are not JSON and are handled by name rather than by loosening
+ * the policy for everything: catalogue media, which other origins are meant to
+ * embed, and the printable invoice and packing slip, which are HTML documents
+ * this API generates itself. Those need `style-src 'unsafe-inline'` for their
+ * own `<style>` block — under `default-src 'none'` the browser fetched the
+ * document, refused the stylesheet, and printed an unformatted invoice. Scripts
+ * stay forbidden: these documents contain none, and never should.
  */
-function securityHeaders(headers: Headers, isDevelopment: boolean, isMedia = false): void {
+function securityHeaders(
+  headers: Headers,
+  isDevelopment: boolean,
+  isMedia = false,
+  isDocument = false,
+): void {
   headers.set(
     'Content-Security-Policy',
-    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+    isDocument
+      ? "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+      : "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
   );
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'no-referrer');
@@ -110,7 +141,14 @@ export const security: MiddlewareHandler<AppEnv> = async (c, next) => {
     headers.set('Access-Control-Allow-Credentials', 'true');
   }
   headers.append('Vary', 'Origin');
-  securityHeaders(headers, config.isDevelopment, isMediaPath(c.req.url));
+  securityHeaders(
+    headers,
+    config.isDevelopment,
+    isMediaPath(c.req.url),
+    // Read from what the handler actually produced rather than from a list of
+    // paths, so a future HTML response cannot be added without its policy.
+    (headers.get('content-type') ?? '').includes('text/html'),
+  );
 };
 
 /** Catalogue imagery, which other origins are meant to embed. */
@@ -164,9 +202,11 @@ function assertBodyWithinLimit(c: Context<AppEnv>): void {
   if (!Number.isFinite(length)) return;
 
   const contentType = c.req.header('content-type') ?? '';
-  const limit = contentType.includes('multipart/form-data')
-    ? MAX_UPLOAD_BYTES
-    : MAX_JSON_BODY_BYTES;
+  const limit =
+    contentType.includes('multipart/form-data') ||
+    DOCUMENT_BODY_PATHS.has(new URL(c.req.url).pathname)
+      ? MAX_UPLOAD_BYTES
+      : MAX_JSON_BODY_BYTES;
   if (length > limit) {
     throw new ApiError('PAYLOAD_TOO_LARGE', 'That request body is too large.');
   }

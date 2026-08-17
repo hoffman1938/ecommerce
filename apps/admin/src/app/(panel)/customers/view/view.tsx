@@ -8,6 +8,7 @@ import { formatDate, Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 import { T } from '@/components/t';
+import { DetailState } from '@/components/detail-state';
 
 interface CustomerDetail {
   id: string;
@@ -51,7 +52,7 @@ export default function CustomerDetailPage() {
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const { data: customer } = useQuery({
+  const { data: customer, error: loadError } = useQuery({
     queryKey: ['admin-customer', params.id],
     queryFn: () => api.get<CustomerDetail>(`/admin/customers/${params.id}`),
   });
@@ -59,9 +60,13 @@ export default function CustomerDetailPage() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-customer', params.id] });
   if (!customer)
     return (
-      <p className="text-gray-500">
-        <T id="ui.loadingCustomer" />
-      </p>
+      <DetailState
+        error={loadError}
+        loadingLabel={t('ui.loadingCustomer')}
+        noun="customer"
+        backHref="/customers"
+        backLabel="Back to customers"
+      />
     );
 
   return (

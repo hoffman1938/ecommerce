@@ -130,6 +130,22 @@ admin.get('/dashboard', async (c) => {
   const now = nowIso();
 
   /*
+   * "Low stock" is whatever the administrator said it is.
+   *
+   * `lowStockThreshold` is on the Content & Settings screen, it is stored, and
+   * `GET /admin/settings` hands it back — but this dashboard hardcoded 5, so
+   * saving a new threshold changed nothing here and the field looked broken. The
+   * NestJS dashboard reads the setting; so does the panel's bundled demo router.
+   *
+   * The two queries below also disagreed with each other: the tile counted
+   * `BETWEEN 1 AND 5` and the list under it selected `BETWEEN 0 AND 5`, so the
+   * headline number excluded exactly the sold-out rows the list was full of.
+   * Both now mean the same thing — at or below the threshold, sold-out included,
+   * since nothing is lower on stock than nothing.
+   */
+  const { lowStockThreshold } = await readSettings(db);
+
+  /*
    * Revenue counts orders that were actually paid for and not cancelled.
    * Including cancelled orders would make the number bigger and wrong, which
    * is the kind of dashboard figure that quietly destroys trust in all the
@@ -157,7 +173,8 @@ admin.get('/dashboard', async (c) => {
     db.count(
       `SELECT COUNT(*) AS "c" FROM "inventory_balances" b
            JOIN "product_variants" v ON v."id" = b."variantId"
-          WHERE v."isEnabled" = 1 AND b."onHandQuantity" - b."reservedQuantity" BETWEEN 1 AND 5`,
+          WHERE v."isEnabled" = 1 AND b."onHandQuantity" - b."reservedQuantity" <= ?`,
+      lowStockThreshold,
     ),
     db.first<{ active: number; expired: number }>(
       `SELECT SUM(CASE WHEN "status" IN ('ACTIVE','CHECKOUT_STARTED','PAYMENT_PROCESSING') AND "expiresAt" > ? THEN 1 ELSE 0 END) AS "active",
@@ -211,8 +228,9 @@ admin.get('/dashboard', async (c) => {
            JOIN "product_variants" v ON v."id" = b."variantId"
            JOIN "products" p ON p."id" = v."productId"
           WHERE v."isEnabled" = 1 AND p."status" = 'ACTIVE'
-            AND b."onHandQuantity" - b."reservedQuantity" BETWEEN 0 AND 5
+            AND b."onHandQuantity" - b."reservedQuantity" <= ?
           ORDER BY "availableQuantity", p."name" LIMIT 20`,
+      lowStockThreshold,
     ),
     db.first<{
       products: number;
@@ -283,10 +301,22 @@ admin.get('/products', async (c) => {
     clauses.push(`p."status" = ?`);
     bindings.push(query.status);
   }
+  /*
+   * Name, slug, brand — and SKU, which the search box has always promised
+   * ("Search by name, slug, or SKU") and this query did not deliver. A SKU is
+   * the identifier an operator has in hand when they are holding the garment or
+   * reading a packing list, so it is the likeliest thing to be typed here; every
+   * such search silently returned nothing. Brand stays in: it is a useful
+   * addition, not drift.
+   */
   if (query.q) {
     const needle = `%${query.q.toLowerCase()}%`;
-    clauses.push(`(LOWER(p."name") LIKE ? OR LOWER(p."slug") LIKE ? OR LOWER(b."name") LIKE ?)`);
-    bindings.push(needle, needle, needle);
+    clauses.push(
+      `(LOWER(p."name") LIKE ? OR LOWER(p."slug") LIKE ? OR LOWER(b."name") LIKE ?
+        OR EXISTS (SELECT 1 FROM "product_variants" sv
+                    WHERE sv."productId" = p."id" AND LOWER(sv."sku") LIKE ?))`,
+    );
+    bindings.push(needle, needle, needle, needle);
   }
   if (query.brandId) {
     clauses.push(`p."brandId" = ?`);
@@ -634,8 +664,12 @@ admin.get('/inventory', async (c) => {
     clauses.push(`(LOWER(v."sku") LIKE ? OR LOWER(p."name") LIKE ?)`);
     bindings.push(needle, needle);
   }
+  // The same administrator-set threshold the dashboard uses, not a second
+  // hardcoded 5 that would disagree with the tile the operator clicked through.
   if (query.lowStock === 'true') {
-    clauses.push(`b."onHandQuantity" - b."reservedQuantity" <= 5`);
+    const { lowStockThreshold } = await readSettings(ctx.db);
+    clauses.push(`b."onHandQuantity" - b."reservedQuantity" <= ?`);
+    bindings.push(lowStockThreshold);
   }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
@@ -1074,24 +1108,77 @@ admin.get('/customers/:id', async (c) => {
     ),
   ]);
 
+  /*
+   * The author, nested the way the screen reads it.
+   *
+   * The support-notes list binds to `note.author?.email` and falls back to
+   * "unknown", so a flat `authorEmail` meant every note on every customer was
+   * attributed to nobody — which is most of the value of keeping notes. Rebuilt
+   * here rather than selected differently, exactly as the moderation queue does
+   * for `review.moderatedBy.email`; the flat column stays for anything reading
+   * it by that name.
+   */
+  const supportNotes = notes.map((row) => {
+    const note = row as { authorEmail: string | null };
+    return { ...note, author: note.authorEmail ? { email: note.authorEmail } : null };
+  });
+
   return c.json({
     ...customer,
     orders,
     addresses,
-    notes,
+    notes: supportNotes,
     // `supportNotes` is the name the screen binds to; `notes` is this API's.
-    supportNotes: notes,
+    supportNotes,
     returnRequests,
     refunds,
     roles: roles.map((r) => (r as { name: string }).name),
   });
 });
 
+/**
+ * A support note on a customer's record.
+ *
+ * The field is `note`, which is what the form on the customer screen sends and
+ * what `POST /admin/orders/:id/notes` next door already accepts. This route
+ * parsed `adminNoteSchema` instead — `{ internalNote }`, the vocabulary of the
+ * *order* note column — so every note an agent typed came back 422 on a form
+ * with no other way to submit. `internalNote` is still accepted so anything
+ * written against the older shape keeps working.
+ */
+const customerNoteSchema = z
+  .object({
+    note: z.string().trim().min(1).max(2000).optional(),
+    internalNote: z.string().trim().min(1).max(2000).optional(),
+  })
+  .strict()
+  // `transform` rather than `refine` so the note is a plain string afterwards:
+  // the parsed type is what gets bound to the statement, and `string |
+  // undefined` is not bindable however sure the refinement makes us.
+  .transform((value, ctx) => {
+    const note = value.note ?? value.internalNote;
+    if (!note) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'A note cannot be empty.',
+        path: ['note'],
+      });
+      return z.NEVER;
+    }
+    return { note };
+  });
+
 admin.post('/customers/:id/notes', async (c) => {
   const ctx = ctxOf(c);
   const session = requirePermission(ctx.session, Permissions.CustomersSupport);
   const id = pathId(c.req.param('id'));
-  const body = parse(adminNoteSchema, await readJson(c.req.raw));
+  const body = parse(customerNoteSchema, await readJson(c.req.raw));
+
+  const customer = await ctx.db.first<{ id: string }>(
+    `SELECT "id" FROM "users" WHERE "id" = ?`,
+    id,
+  );
+  if (!customer) throw notFound('Customer not found.');
 
   await ctx.db.batch([
     ctx.db.statement(
@@ -1099,7 +1186,7 @@ admin.post('/customers/:id/notes', async (c) => {
       newId(),
       id,
       session.user.id,
-      body.internalNote,
+      body.note,
     ),
     auditStatement(ctx.db, session, ctx.ip, {
       action: 'customer.support_note',

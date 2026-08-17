@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@outlet/ui';
 import { api, API_BASE_URL } from '@/lib/api';
+import { useAdminUser, hasPermission } from '@/lib/hooks';
 import { useI18n } from '@/lib/i18n';
 import { T } from '@/components/t';
 
@@ -30,6 +31,24 @@ export default function AdminProductsPage() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [importResult, setImportResult] = useState<string | null>(null);
 
+  /*
+   * Which controls this role can actually use, the way the reviews screen
+   * already does it.
+   *
+   * `products.view` is enough to open this screen, and an Inventory Manager has
+   * exactly that — so New product, Import CSV and the status dropdown were all
+   * on offer to someone the API refuses. A button that returns 403 to the only
+   * role it is shown to is worse than an absent one: it reads as a broken panel
+   * rather than as a permission they do not hold. Export stays: it needs nothing
+   * beyond `products.view`.
+   *
+   * Hiding is presentation, not enforcement — every one of these is still
+   * checked server-side by the Worker.
+   */
+  const { data: me } = useAdminUser();
+  const canCreate = hasPermission(me?.user, 'products.create');
+  const canUpdate = hasPermission(me?.user, 'products.update');
+
   const { data, isLoading } = useQuery({
     queryKey: ['admin-products', q, page],
     queryFn: () =>
@@ -51,42 +70,48 @@ export default function AdminProductsPage() {
           >
             <T id="ui.exportCsv" />
           </a>
-          <button
-            type="button"
-            onClick={() => fileInput.current?.click()}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
-          >
-            <T id="ui.importCsv" />
-          </button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".csv,text/csv"
-            className="hidden"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const csv = await file.text();
-              try {
-                const result = await api.post<{ created: number; skipped: number }>(
-                  '/admin/products/import/csv',
-                  { csv },
-                );
-                setImportResult(`Imported ${result.created} variants (${result.skipped} skipped).`);
-                queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-              } catch (err) {
-                setImportResult(`Import failed: ${(err as Error).message}`);
-              }
-              e.target.value = '';
-            }}
-          />
-          <Link
-            href="/products/new"
-            data-testid="new-product"
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-          >
-            <T id="ui.newProduct" />
-          </Link>
+          {canCreate ? (
+            <>
+              <button
+                type="button"
+                onClick={() => fileInput.current?.click()}
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:border-gray-900"
+              >
+                <T id="ui.importCsv" />
+              </button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const csv = await file.text();
+                  try {
+                    const result = await api.post<{ created: number; skipped: number }>(
+                      '/admin/products/import/csv',
+                      { csv },
+                    );
+                    setImportResult(
+                      `Imported ${result.created} variants (${result.skipped} skipped).`,
+                    );
+                    queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+                  } catch (err) {
+                    setImportResult(`Import failed: ${(err as Error).message}`);
+                  }
+                  e.target.value = '';
+                }}
+              />
+              <Link
+                href="/products/new"
+                data-testid="new-product"
+                className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
+              >
+                <T id="ui.newProduct" />
+              </Link>
+            </>
+          ) : null}
         </div>
       </div>
       {importResult ? <p className="mb-3 text-sm text-gray-600">{importResult}</p> : null}
@@ -181,6 +206,10 @@ export default function AdminProductsPage() {
                     <td className="text-right">
                       <select
                         value={product.status}
+                        // Read-only for a role that may look but not publish, so
+                        // the control still reports the status without offering a
+                        // change the API would refuse.
+                        disabled={!canUpdate}
                         aria-label={`Status for ${product.name}`}
                         data-testid={`status-${product.slug}`}
                         onChange={async (event) => {

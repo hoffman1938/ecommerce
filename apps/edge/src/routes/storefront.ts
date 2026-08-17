@@ -153,10 +153,36 @@ storefront.get('/campaigns', async (c) =>
   c.json(await listCampaigns(ctxOf(c).db, c.req.query('status'))),
 );
 
+/**
+ * A campaign page, with the products in it.
+ *
+ * `products` is not optional: the page's own type is `CampaignDto & { products:
+ * ProductListItemDto[] }`, and `CampaignDetail` reads `campaign.products.length`
+ * for its heading before passing the array to the grid. Returning the campaign
+ * row alone threw on `undefined.length` during render, so every campaign page on
+ * the deployed site was a blank screen — reachable from the home page, the
+ * campaigns list, and any promotion just published from the admin panel.
+ *
+ * Built through `listProducts` with the campaign filter rather than a query of
+ * its own, so a product in a campaign is described exactly as the same product
+ * is described everywhere else: same price maths, same availability, same
+ * discount, same shape the grid already renders.
+ */
 storefront.get('/campaigns/:slug', async (c) => {
-  const campaign = await getCampaign(ctxOf(c).db, pathSlug(c.req.param('slug')));
+  const { db } = ctxOf(c);
+  const campaign = await getCampaign(db, pathSlug(c.req.param('slug')));
   if (!campaign) throw notFound('Campaign not found.');
-  return c.json(campaign);
+
+  const products = await listProducts(db, {
+    campaign: campaign.slug,
+    // A campaign is a short run of a bounded set; 96 is the ceiling the
+    // listing enforces anyway, and paginating a campaign page is not something
+    // the front end offers.
+    pageSize: '96',
+    sort: 'recommended',
+  });
+
+  return c.json({ ...campaign, products: products.items });
 });
 
 storefront.get('/content/pages/:key', async (c) => {

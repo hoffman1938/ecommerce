@@ -28,7 +28,7 @@ const NAV: Array<{ href: string; labelKey: string; permission: string }> = [
 
 export default function PanelLayout({ children }: { children: ReactNode }) {
   const { t } = useI18n();
-  const { data: me, isLoading } = useAdminUser();
+  const { data: me, isPending, isFetching } = useAdminUser();
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -38,13 +38,23 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
   // covering it.
   useEffect(() => setNavOpen(false), [pathname]);
 
+  /*
+   * Redirect only once the session question has actually been answered.
+   *
+   * `isLoading` was the wrong gate: a cached `{ user: null }` from a previous
+   * visit makes it false immediately, so this fired while the real answer was
+   * still in flight — and signing in bounced the operator straight back to the
+   * login screen they had just come from. Waiting for `isFetching` to settle
+   * means a background refetch can never be mistaken for "not signed in".
+   */
+  const settled = !isPending && !isFetching;
   useEffect(() => {
-    if (!isLoading && (!me?.user || me.user.permissions.length === 0)) {
+    if (settled && (!me?.user || me.user.permissions.length === 0)) {
       router.replace('/login');
     }
-  }, [isLoading, me?.user, router]);
+  }, [settled, me?.user, router]);
 
-  if (isLoading || !me?.user) {
+  if (!me?.user) {
     return (
       <p className="py-16 text-center text-gray-500">
         <T id="ui.loadingAdminPanel" />

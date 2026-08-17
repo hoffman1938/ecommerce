@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, ApiError, DEMO_MODE } from '@/lib/api';
+import type { AdminSessionUser } from '@/lib/hooks';
 import { T } from '@/components/t';
+
+/** The `/auth/me` envelope, in the shape `useAdminUser` caches it under. */
+type AdminMe = { user: AdminSessionUser | null };
 
 /**
  * Whether this panel is pointed at the local Docker stack, whose Postgres seed
@@ -47,14 +51,34 @@ export default function AdminLoginPage() {
             setError(null);
             try {
               await api.post('/auth/login', { email, password });
-              const me = await api.get<{ user: { permissions: string[] } | null }>('/auth/me');
+              const me = await api.get<AdminMe>('/auth/me');
               if (!me.user || me.user.permissions.length === 0) {
                 await api.post('/auth/logout').catch(() => undefined);
                 setError('This account has no admin permissions.');
                 setBusy(false);
                 return;
               }
-              await queryClient.invalidateQueries();
+              /*
+               * Write the session into the cache before navigating, rather than
+               * only invalidating.
+               *
+               * Reaching this screen normally means the panel sent you here: the
+               * layout asked `/auth/me`, got `{ user: null }`, and redirected —
+               * which leaves that answer cached under `admin-me`.
+               * `invalidateQueries` marks it stale but does not refetch a query
+               * nothing is subscribed to, so the layout would mount, read the
+               * stale `null` with `isLoading` already false, and bounce straight
+               * back here. A correct password looked like a silently ignored one,
+               * and only a manual reload got you in.
+               *
+               * The response we just received is the truth, so it is written
+               * directly. Everything else is still invalidated, because it was
+               * fetched as nobody.
+               */
+              queryClient.setQueryData(['admin-me'], me);
+              await queryClient.invalidateQueries({
+                predicate: (query) => query.queryKey[0] !== 'admin-me',
+              });
               router.push('/');
             } catch (err) {
               setError(err instanceof ApiError ? err.message : 'Login failed.');

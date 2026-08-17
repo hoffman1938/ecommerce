@@ -13,9 +13,10 @@ import { z } from 'zod';
 import type { AppEnv } from '../http/context';
 import { ctxOf } from '../http/context';
 import { admin } from './admin';
-import { ApiError, conflict, notFound } from '../lib/errors';
+import { ApiError, conflict, forbidden, notFound } from '../lib/errors';
 import { newId } from '../lib/ids';
 import { Db, bool, fromBool, nowIso, toJson } from '../lib/sql';
+import { readCsvTable } from '../lib/csv';
 import { auditStatement, requirePermission, writeAudit } from '../auth/rbac';
 import { adjustStock, release } from '../services/inventory';
 import { notify } from '../services/inbox';
@@ -431,8 +432,12 @@ adminManage.delete('/products/:id/images/:imageId', async (c) => {
 // --- Inventory ---------------------------------------------------------------
 
 /**
- * Stock adjustment, as the inventory screen sends it: a delta and a movement
- * type rather than an absolute figure.
+ * Stock adjustment, as the inventory screen sends it: a movement type plus a
+ * quantity that is a delta for four of the five types and an absolute figure for
+ * `CORRECTION`.
+ *
+ * `min(0)` rather than `min(1)`, because "correct this to zero" is a real thing
+ * to tell the system and the delta types are floored to 1 below instead.
  */
 adminManage.post('/inventory/adjust', async (c) => {
   const ctx = ctxOf(c);
@@ -448,7 +453,7 @@ adminManage.post('/inventory/adjust', async (c) => {
           'CORRECTION',
           'DAMAGED',
         ]),
-        quantity: z.number().int().min(1).max(1_000_000),
+        quantity: z.number().int().min(0).max(1_000_000),
         reason: z.string().trim().min(1).max(200),
       })
       .strict(),
@@ -461,14 +466,35 @@ adminManage.post('/inventory/adjust', async (c) => {
   );
   if (!balance) throw notFound('That variant has no inventory record.');
 
-  const increases = body.type === 'RESTOCK' || body.type === 'ADJUSTMENT_INCREASE';
-  const target = increases
-    ? balance.onHandQuantity + body.quantity
-    : balance.onHandQuantity - body.quantity;
+  /*
+   * `CORRECTION` is the new on-hand figure; the other four are deltas.
+   *
+   * That is what `inventoryAdjustSchema` in packages/validation documents, what
+   * the NestJS implementation does, and what the panel's own label promises —
+   * it relabels the field "New on-hand quantity" the moment CORRECTION is
+   * chosen. Treating it as a decrease read "correct to 50" as "take 50 away",
+   * which on a variant holding 30 wrote -30, clamped at zero, and reported
+   * success: the screen's one way of setting a count destroyed it instead.
+   */
+  if (body.type !== 'CORRECTION' && body.quantity < 1) {
+    throw new ApiError('BAD_REQUEST', 'A stock movement needs a quantity of at least 1.');
+  }
+  const target =
+    body.type === 'CORRECTION'
+      ? body.quantity
+      : body.type === 'RESTOCK' || body.type === 'ADJUSTMENT_INCREASE'
+        ? balance.onHandQuantity + body.quantity
+        : balance.onHandQuantity - body.quantity;
 
+  /*
+   * Not clamped to zero. `adjustStock` refuses a negative figure and one below
+   * the units shoppers are already holding, and hearing which of those went
+   * wrong is what lets the operator send the right number — a silent clamp
+   * turned "you cannot take 50 from 30" into "done".
+   */
   const result = await adjustStock(ctx.db, {
     variantId: body.variantId,
-    newOnHand: Math.max(0, target),
+    newOnHand: target,
     reason: body.reason,
     actorUserId: session.user.id,
     type: body.type,
@@ -485,18 +511,39 @@ adminManage.post('/inventory/adjust', async (c) => {
   return c.json(result);
 });
 
+/**
+ * The stock ledger, as the inventory screen's "Show movements" panel reads it.
+ *
+ * Paginated rather than a bare array, and for the same reason the reservations
+ * list below is: the page asks for `?page=1&pageSize=50` and maps over
+ * `data.items`. Returning the rows unwrapped made `items` undefined, and the
+ * `?? []` behind it turned that into an empty table — no error, no rows, and no
+ * way to read the ledger from the panel at all.
+ */
 adminManage.get('/inventory/movements', async (c) => {
   const ctx = ctxOf(c);
   requirePermission(ctx.session, Permissions.InventoryView);
-  const variantId = c.req.query('variantId');
+  const query = c.req.query();
+  const variantId = query.variantId;
 
-  const rows = variantId
-    ? await ctx.db.all(
-        MOVEMENT_SELECT + ` WHERE m."variantId" = ? ORDER BY m."createdAt" DESC LIMIT 100`,
-        variantId,
-      )
-    : await ctx.db.all(MOVEMENT_SELECT + ` ORDER BY m."createdAt" DESC LIMIT 100`);
-  return c.json(rows);
+  const where = variantId ? `WHERE m."variantId" = ?` : '';
+  const bindings = variantId ? [variantId] : [];
+
+  const pageSize = Math.max(1, Math.min(200, Number(query.pageSize) || 50));
+  const total = await ctx.db.count(
+    `SELECT COUNT(*) AS "c" FROM "inventory_movements" m ${where}`,
+    ...bindings,
+  );
+  const totalPages = Math.ceil(total / pageSize);
+  const page = totalPages === 0 ? 1 : Math.min(Math.max(1, Number(query.page) || 1), totalPages);
+
+  const items = await ctx.db.all(
+    MOVEMENT_SELECT + ` ${where} ORDER BY m."createdAt" DESC LIMIT ? OFFSET ?`,
+    ...bindings,
+    pageSize,
+    (page - 1) * pageSize,
+  );
+  return c.json({ items, total, page, pageSize, totalPages });
 });
 
 const MOVEMENT_SELECT = `
@@ -615,6 +662,19 @@ adminManage.post('/reviews/:id/status', async (c) => {
   return c.json({ id, status: body.status });
 });
 
+/**
+ * The moderation queue's bulk bar.
+ *
+ * Six actions, because that is what `reviewBulkSchema` in packages/validation
+ * declares and what the bar offers: four status moves plus `delete` and
+ * `clearReports`. The enum here listed only the four, so the panel's own Delete
+ * and Clear-reports buttons came back 422 — a validation error on a request the
+ * screen was built to send.
+ *
+ * `delete` additionally requires `reviews.delete`. Moderation alone must not
+ * become a way to remove reviews permanently, and a bulk endpoint is exactly
+ * where that would go unnoticed.
+ */
 adminManage.post('/reviews/bulk', async (c) => {
   const ctx = ctxOf(c);
   const session = requirePermission(ctx.session, Permissions.ReviewsModerate);
@@ -622,11 +682,68 @@ adminManage.post('/reviews/bulk', async (c) => {
     z
       .object({
         ids: z.array(z.string().trim().max(64)).min(1).max(100),
-        action: z.enum(['publish', 'reject', 'hide', 'pending']),
+        action: z.enum(['publish', 'reject', 'hide', 'pending', 'delete', 'clearReports']),
+        note: z.string().trim().max(500).nullish(),
       })
       .strict(),
     await readJson(c.req.raw),
   );
+
+  if (body.action === 'delete' && !session.permissions.has(Permissions.ReviewsDelete)) {
+    throw forbidden('Deleting reviews requires the "reviews.delete" permission.');
+  }
+
+  const placeholders = body.ids.map(() => '?').join(', ');
+  /*
+   * Only the rows that exist are acted on, and the ids are reported back from
+   * this query rather than echoed from the request — otherwise the toast would
+   * claim "3 reviews updated" for three ids that matched nothing.
+   */
+  const targets = await ctx.db.all<{ id: string; productId: string }>(
+    `SELECT "id", "productId" FROM "product_reviews" WHERE "id" IN (${placeholders})`,
+    ...body.ids,
+  );
+  if (targets.length === 0) throw notFound('No matching reviews.');
+
+  const ids = targets.map((row) => row.id);
+  const affected = [...new Set(targets.map((row) => row.productId))];
+  const idPlaceholders = ids.map(() => '?').join(', ');
+  const now = nowIso();
+
+  if (body.action === 'clearReports') {
+    // Reports are a signal for moderators, not part of the review's content, so
+    // clearing them touches neither status nor the product's rating.
+    await ctx.db.batch([
+      ctx.db.statement(
+        `UPDATE "product_reviews" SET "reportCount" = 0, "reportedAt" = NULL, "updatedAt" = ?
+          WHERE "id" IN (${idPlaceholders})`,
+        now,
+        ...ids,
+      ),
+      auditStatement(ctx.db, session, ctx.ip, {
+        action: 'review.bulk_clear_reports',
+        entityType: 'ProductReview',
+        after: { ids },
+      }),
+    ]);
+    return c.json({ count: ids.length, ids });
+  }
+
+  if (body.action === 'delete') {
+    await ctx.db.batch([
+      ctx.db.statement(
+        `DELETE FROM "product_reviews" WHERE "id" IN (${idPlaceholders})`,
+        ...ids,
+      ),
+      ...affected.map((productId) => recomputeRating(ctx.db, productId)),
+      auditStatement(ctx.db, session, ctx.ip, {
+        action: 'review.bulk_delete',
+        entityType: 'ProductReview',
+        after: { ids },
+      }),
+    ]);
+    return c.json({ count: ids.length, ids });
+  }
 
   const STATUS = {
     publish: 'PUBLISHED',
@@ -636,34 +753,28 @@ adminManage.post('/reviews/bulk', async (c) => {
   } as const;
   const status = STATUS[body.action];
 
-  const placeholders = body.ids.map(() => '?').join(', ');
-  const affected = await ctx.db.all<{ productId: string }>(
-    `SELECT DISTINCT "productId" FROM "product_reviews" WHERE "id" IN (${placeholders})`,
-    ...body.ids,
-  );
-
-  const now = nowIso();
   await ctx.db.batch([
     ctx.db.statement(
       `UPDATE "product_reviews"
-          SET "status" = ?, "moderatedAt" = ?, "moderatedByUserId" = ?, "updatedAt" = ?
-        WHERE "id" IN (${placeholders})`,
+          SET "status" = ?, "moderationNote" = ?, "moderatedAt" = ?, "moderatedByUserId" = ?, "updatedAt" = ?
+        WHERE "id" IN (${idPlaceholders})`,
       status,
+      body.note ?? null,
       now,
       session.user.id,
       now,
-      ...body.ids,
+      ...ids,
     ),
     // Every product touched has its aggregate recomputed, not just the first.
-    ...affected.map((row) => recomputeRating(ctx.db, row.productId)),
+    ...affected.map((productId) => recomputeRating(ctx.db, productId)),
     auditStatement(ctx.db, session, ctx.ip, {
       action: 'review.bulk_moderate',
       entityType: 'ProductReview',
-      after: { ids: body.ids, status },
+      after: { ids, status },
     }),
   ]);
 
-  return c.json({ count: body.ids.length, ids: body.ids });
+  return c.json({ count: ids.length, ids });
 });
 
 /**
@@ -1516,85 +1627,177 @@ adminManage.post('/products/:id/duplicate', async (c) => {
 });
 
 /**
- * Bulk stock import.
+ * Product and variant import, as the Products screen's Import CSV button sends
+ * it: the same file `GET /admin/products/export/csv` writes.
  *
- * Two columns — `sku,quantity`. Rows naming an unknown SKU are skipped and
- * counted rather than failing the whole file, because a spreadsheet with one
- * stale line should not cost the operator the other four hundred.
+ * This used to be a two-column stock importer (`sku,quantity`) that created
+ * nothing — so the panel's own export could not be read back in, and the message
+ * it prints ("Imported N variants") described work no code here did. The columns
+ * are addressed by name, because a spreadsheet round trip reorders them.
+ *
+ * What it will and will not do, matching the NestJS implementation:
+ *
+ *  - A product whose slug is new is created as a **DRAFT**. An import must not
+ *    put anything in front of shoppers on its own; somebody publishes it.
+ *  - A product whose slug exists is left exactly as it is. Overwriting live
+ *    prices and descriptions from a spreadsheet is not what "import" means.
+ *  - A SKU that already exists is skipped, never re-stocked. Stock moves through
+ *    adjustments, which are audited per movement; a silent overwrite here would
+ *    be an unlogged inventory change.
+ *  - A row naming an unknown brand is skipped and counted, so one stale line
+ *    does not cost the operator the other four hundred.
  */
 adminManage.post('/products/import/csv', async (c) => {
   const ctx = ctxOf(c);
-  const session = requirePermission(ctx.session, Permissions.InventoryAdjust);
+  // ProductsCreate, not InventoryAdjust: this creates catalogue rows, and the
+  // button lives on the Products screen. Requiring the inventory permission
+  // meant a Catalog Manager was refused by a button on their own screen, while
+  // the only role allowed could not open that screen at all.
+  const session = requirePermission(ctx.session, Permissions.ProductsCreate);
   const body = parse(
     z.object({ csv: z.string().min(1).max(1_000_000) }).strict(),
     await readJson(c.req.raw),
   );
 
-  const rows = body.csv
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.split(',').map((cell) => cell.trim().replace(/^"|"$/g, '')))
-    // A header row is common and must not be read as a SKU.
-    .filter((cells, index) => !(index === 0 && cells[0]?.toLowerCase() === 'sku'));
-
-  if (rows.length > 5000) {
+  const table = readCsvTable(body.csv);
+  for (const column of ['productSlug', 'productName', 'brandSlug', 'sku']) {
+    if (!table.has(column)) {
+      throw new ApiError('BAD_REQUEST', `The CSV is missing the required column "${column}".`);
+    }
+  }
+  if (table.count === 0) throw new ApiError('BAD_REQUEST', 'The CSV has no data rows.');
+  if (table.count > 5000) {
     throw new ApiError('PAYLOAD_TOO_LARGE', 'Import at most 5000 rows at a time.');
   }
 
   let created = 0;
   let skipped = 0;
   const now = nowIso();
-  const statements = [];
+  const statements: D1PreparedStatement[] = [];
+  /*
+   * Slugs created earlier in this same file, so two rows of one product (two
+   * sizes, say) produce one product and two variants rather than a duplicate
+   * slug and a failed batch — the statements have not run yet, so the database
+   * cannot be asked.
+   */
+  const createdProducts = new Map<string, string>();
+  const claimedSkus = new Set<string>();
 
-  for (const [sku, rawQuantity] of rows) {
-    const quantity = Number.parseInt(rawQuantity ?? '', 10);
-    if (!sku || !Number.isFinite(quantity) || quantity < 0) {
+  for (const row of table.rows) {
+    const productSlug = row('productSlug');
+    const sku = row('sku');
+    if (!productSlug || !sku) {
       skipped += 1;
       continue;
     }
-    const variant = await ctx.db.first<{ id: string; onHand: number }>(
-      `SELECT v."id", COALESCE(b."onHandQuantity", 0) AS "onHand"
-         FROM "product_variants" v
-         LEFT JOIN "inventory_balances" b ON b."variantId" = v."id"
-        WHERE v."sku" = ?`,
+
+    const brand = await ctx.db.first<{ id: string }>(
+      `SELECT "id" FROM "brands" WHERE "slug" = ?`,
+      row('brandSlug'),
+    );
+    if (!brand) {
+      skipped += 1;
+      continue;
+    }
+
+    const existingVariant = await ctx.db.first<{ id: string }>(
+      `SELECT "id" FROM "product_variants" WHERE "sku" = ?`,
       sku,
     );
-    if (!variant) {
+    if (existingVariant || claimedSkus.has(sku)) {
       skipped += 1;
       continue;
     }
 
+    let productId = createdProducts.get(productSlug);
+    if (!productId) {
+      const existingProduct = await ctx.db.first<{ id: string }>(
+        `SELECT "id" FROM "products" WHERE "slug" = ?`,
+        productSlug,
+      );
+      if (existingProduct) {
+        productId = existingProduct.id;
+      } else {
+        const categorySlug = row('categorySlug');
+        const category = categorySlug
+          ? await ctx.db.first<{ id: string }>(
+              `SELECT "id" FROM "categories" WHERE "slug" = ?`,
+              categorySlug,
+            )
+          : null;
+        const original = Number.parseInt(row('originalPriceMinor'), 10);
+        const outlet = Number.parseInt(row('outletPriceMinor'), 10);
+
+        productId = newId();
+        statements.push(
+          ctx.db.statement(
+            `INSERT INTO "products"
+               ("id", "name", "slug", "brandId", "categoryId", "targetGroup",
+                "originalPriceMinor", "outletPriceMinor", "status")
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT')`,
+            productId,
+            row('productName') || productSlug,
+            productSlug,
+            brand.id,
+            category?.id ?? null,
+            // The column is NOT NULL and the export does not carry it; UNISEX is
+            // the honest default for a row that never said.
+            'UNISEX',
+            Number.isFinite(original) && original > 0 ? original : 1000,
+            Number.isFinite(outlet) && outlet > 0 ? outlet : 1000,
+          ),
+        );
+      }
+      createdProducts.set(productSlug, productId);
+    }
+
+    const quantityColumn = table.has('initialQuantity') ? 'initialQuantity' : 'onHandQuantity';
+    const parsedQuantity = Number.parseInt(row(quantityColumn), 10);
+    const quantity = Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : 0;
+
+    const variantId = newId();
+    claimedSkus.add(sku);
     statements.push(
       ctx.db.statement(
-        `UPDATE "inventory_balances" SET "onHandQuantity" = ?, "version" = "version" + 1, "updatedAt" = ?
-          WHERE "variantId" = ? AND ? >= "reservedQuantity"`,
-        quantity,
-        now,
-        variant.id,
-        quantity,
+        `INSERT INTO "product_variants" ("id", "productId", "sku", "size", "color")
+         VALUES (?, ?, ?, ?, ?)`,
+        variantId,
+        productId,
+        sku,
+        row('size') || null,
+        row('color') || null,
       ),
       ctx.db.statement(
-        `INSERT INTO "inventory_movements"
-           ("id", "variantId", "type", "quantityChange", "previousOnHand", "newOnHand", "reason", "actorUserId", "createdAt")
-         VALUES (?, ?, 'CORRECTION', ?, ?, ?, 'CSV import', ?, ?)`,
+        `INSERT INTO "inventory_balances" ("id", "variantId", "onHandQuantity") VALUES (?, ?, ?)`,
         newId(),
-        variant.id,
-        quantity - variant.onHand,
-        variant.onHand,
+        variantId,
         quantity,
-        session.user.id,
-        now,
       ),
     );
+    if (quantity > 0) {
+      statements.push(
+        ctx.db.statement(
+          `INSERT INTO "inventory_movements"
+             ("id", "variantId", "type", "quantityChange", "previousOnHand", "newOnHand",
+              "reason", "actorUserId", "createdAt")
+           VALUES (?, ?, 'INITIAL', ?, 0, ?, 'CSV import', ?, ?)`,
+          newId(),
+          variantId,
+          quantity,
+          quantity,
+          session.user.id,
+          now,
+        ),
+      );
+    }
     created += 1;
   }
 
   statements.push(
     auditStatement(ctx.db, session, ctx.ip, {
-      action: 'inventory.import',
-      entityType: 'InventoryBalance',
-      after: { rows: rows.length, applied: created, skipped },
+      action: 'product.csv_import',
+      entityType: 'Product',
+      after: { rows: table.count, created, skipped },
     }),
   );
 

@@ -8,6 +8,7 @@ import { formatDate, Badge } from '@outlet/ui';
 import { api, API_BASE_URL, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 import { T } from '@/components/t';
+import { DetailState } from '@/components/detail-state';
 
 interface AdminOrderDetail extends OrderDto {
   internalNote: string | null;
@@ -44,7 +45,10 @@ export default function AdminOrderDetailPage() {
   const [refundForm, setRefundForm] = useState({ amount: '', reason: '' });
   const [note, setNote] = useState('');
 
-  const { data: order } = useQuery({
+  const {
+    data: order,
+    error: loadError,
+  } = useQuery({
     queryKey: ['admin-order', params.id],
     queryFn: () => api.get<AdminOrderDetail>(`/admin/orders/${params.id}`),
   });
@@ -52,9 +56,13 @@ export default function AdminOrderDetailPage() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-order', params.id] });
   if (!order)
     return (
-      <p className="text-gray-500">
-        <T id="ui.loadingOrder" />
-      </p>
+      <DetailState
+        error={loadError}
+        loadingLabel={t('ui.loadingOrder')}
+        noun="order"
+        backHref="/orders"
+        backLabel="Back to orders"
+      />
     );
 
   const paidPayment = order.payments.find((p) => ['PAID', 'PARTIALLY_REFUNDED'].includes(p.status));

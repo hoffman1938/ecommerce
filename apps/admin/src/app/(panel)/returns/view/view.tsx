@@ -8,9 +8,10 @@ import { Badge } from '@outlet/ui';
 import { api, ApiError } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 import { T } from '@/components/t';
+import { DetailState } from '@/components/detail-state';
 
 export default function ReturnDetailPage() {
-  const { money } = useI18n();
+  const { t, money } = useI18n();
   // Addressed as ?id=… rather than as a route segment; see ./page.tsx.
   const params = { id: useSearchParams().get('id') ?? '' };
   const queryClient = useQueryClient();
@@ -20,7 +21,7 @@ export default function ReturnDetailPage() {
   >({});
   const [refundForm, setRefundForm] = useState({ amount: '', reason: 'Return refund' });
 
-  const { data: request } = useQuery({
+  const { data: request, error: loadError } = useQuery({
     queryKey: ['admin-return', params.id],
     queryFn: () => api.get<ReturnRequestDto>(`/admin/returns/${params.id}`),
   });
@@ -28,9 +29,13 @@ export default function ReturnDetailPage() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-return', params.id] });
   if (!request)
     return (
-      <p className="text-gray-500">
-        <T id="ui.loadingReturn" />
-      </p>
+      <DetailState
+        error={loadError}
+        loadingLabel={t('ui.loadingReturn')}
+        noun="return"
+        backHref="/returns"
+        backLabel="Back to returns"
+      />
     );
 
   const run = async (fn: () => Promise<unknown>) => {

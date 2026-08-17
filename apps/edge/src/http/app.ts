@@ -14,8 +14,9 @@ import { toErrorResponse } from '../lib/errors';
 import { security } from './security';
 import { storefront } from '../routes/storefront';
 import { admin } from '../routes/admin';
-// Imported for its side effect: it registers further routes on `admin`.
+// Imported for their side effect: they register further routes on `admin`.
 import '../routes/admin-manage';
+import '../routes/admin-reports';
 import { media } from '../routes/media';
 import { health } from '../routes/health';
 
